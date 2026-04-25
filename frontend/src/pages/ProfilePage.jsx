@@ -5,6 +5,7 @@ import { useAuthStore } from "../store/authStore";
 
 export default function ProfilePage() {
   const queryClient = useQueryClient();
+  const currentUser = useAuthStore((s) => s.user);
   const updateSessionUser = useAuthStore((s) => s.updateUser);
 
   const { data: profile, isLoading } = useQuery({
@@ -63,6 +64,10 @@ export default function ProfilePage() {
     e.preventDefault();
     setPasswordMessage("");
     setPasswordError("");
+    if (!currentUser?.email) {
+      setPasswordError("Current user not found. Please login again.");
+      return;
+    }
     if (!oldPassword || !newPassword || !confirmPassword) {
       setPasswordError("Fill in all password fields.");
       return;
@@ -74,7 +79,16 @@ export default function ProfilePage() {
     try {
       setIsChangingPassword(true);
       console.log("Sending request...");
-      await api.put("/auth/change-password", { oldPassword, newPassword });
+      console.log({
+        email: currentUser.email,
+        oldPassword,
+        newPassword,
+      });
+      await api.put("/auth/change-password", {
+        email: currentUser.email,
+        oldPassword,
+        newPassword,
+      });
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
