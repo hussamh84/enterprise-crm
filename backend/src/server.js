@@ -1,6 +1,5 @@
 const env = require("./config/env");
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
 const { app } = require("./app");
 const User = require("./modules/users/user.model");
 
@@ -11,10 +10,10 @@ const start = async () => {
         const existing = await User.findOne({ email: "admin@demo.com" });
 
         if (!existing) {
-          const hashed = await bcrypt.hash("12345678", 10);
+          const bcrypt = await import("bcrypt");
+          const hashed = await bcrypt.default.hash("12345678", 10);
           await User.create({
             fullName: "Admin",
-            name: "Admin",
             email: "admin@demo.com",
             passwordHash: hashed,
             role: "admin",
