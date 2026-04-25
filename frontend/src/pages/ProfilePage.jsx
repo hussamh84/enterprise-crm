@@ -17,6 +17,7 @@ export default function ProfilePage() {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
   const [profileError, setProfileError] = useState("");
@@ -47,21 +48,6 @@ export default function ProfilePage() {
     },
   });
 
-  const changePassword = useMutation({
-    mutationFn: async () => api.post("/users/me/change-password", { oldPassword, newPassword, confirmPassword }),
-    onSuccess: () => {
-      setPasswordError("");
-      setPasswordMessage("Password changed successfully.");
-      setOldPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    },
-    onError: (err) => {
-      setPasswordMessage("");
-      setPasswordError(err?.response?.data?.message || "Could not change password.");
-    },
-  });
-
   const onSaveProfile = (e) => {
     e.preventDefault();
     setProfileMessage("");
@@ -73,7 +59,7 @@ export default function ProfilePage() {
     updateProfile.mutate();
   };
 
-  const onChangePassword = (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
     setPasswordMessage("");
     setPasswordError("");
@@ -85,7 +71,24 @@ export default function ProfilePage() {
       setPasswordError("New password and confirmation do not match.");
       return;
     }
-    changePassword.mutate();
+    try {
+      setIsChangingPassword(true);
+      console.log("Sending request...");
+      await api.put("/auth/change-password", { oldPassword, newPassword });
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordError("");
+      setPasswordMessage("Password changed successfully.");
+      alert("Password changed successfully");
+    } catch (err) {
+      console.error(err);
+      setPasswordMessage("");
+      setPasswordError(err?.response?.data?.message || "Error changing password");
+      alert("Error changing password");
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   if (isLoading && !profile) {
@@ -133,7 +136,7 @@ export default function ProfilePage() {
         </button>
       </form>
 
-      <form onSubmit={onChangePassword} className="premium-card p-5 space-y-4">
+      <form onSubmit={handleChangePassword} className="premium-card p-5 space-y-4">
         <h2 className="text-sm font-semibold text-[#0a2540]">Change password</h2>
         <div>
           <label className="block text-xs font-medium text-[#6b7c93] mb-1">Current password</label>
@@ -169,10 +172,10 @@ export default function ProfilePage() {
         {passwordMessage ? <p className="text-sm text-emerald-600">{passwordMessage}</p> : null}
         <button
           type="submit"
-          disabled={changePassword.isPending}
+          disabled={isChangingPassword}
           className="rounded-md bg-[#635bff] text-white px-3 py-1.5 text-sm hover:opacity-90 transition disabled:opacity-60"
         >
-          {changePassword.isPending ? "Updating…" : "Update password"}
+          {isChangingPassword ? "Updating…" : "Update password"}
         </button>
       </form>
     </div>
