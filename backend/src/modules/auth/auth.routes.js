@@ -265,16 +265,17 @@ router.post(
 );
 
 /* ===================== CHANGE PASSWORD (AUTHENTICATED) ===================== */
-router.put("/change-password", authMiddleware, async (req, res, next) => {
+router.put("/change-password", async (req, res, next) => {
   try {
+    const email = String(req.body?.email || "").trim().toLowerCase();
     const oldPassword = String(req.body?.oldPassword || "");
     const newPassword = String(req.body?.newPassword || "");
 
-    if (!oldPassword || !newPassword) {
-      return res.status(400).json({ message: "oldPassword and newPassword are required" });
+    if (!email || !oldPassword || !newPassword) {
+      return res.status(400).json({ message: "email, oldPassword and newPassword are required" });
     }
 
-    const user = await User.findById(req.user?.id || req.body?.userId);
+    const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
     if (!user.passwordHash) return res.status(400).json({ message: "Password hash missing" });
 
