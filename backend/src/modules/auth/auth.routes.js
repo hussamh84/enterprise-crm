@@ -145,14 +145,17 @@ router.post(
       const password = String(req.body.password || "");
 
       const user = await User.findOne({ email });
-      if (!user) {
-        console.error(`[auth.login] failed: user not found for email=${email}`);
+      console.log("USER:", user);
+      console.log("INPUT PASSWORD:", password);
+      console.log("HASH:", user?.passwordHash);
+
+      if (!user || !user.passwordHash) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      const valid = await bcrypt.compare(password, user.passwordHash);
-      if (!valid) {
-        console.error(`[auth.login] failed: invalid password for email=${email}`);
+      const isMatch = await bcrypt.compare(password, user.passwordHash);
+
+      if (!isMatch) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
@@ -177,8 +180,9 @@ router.post(
           tenantId: user.tenantId,
         },
       });
-    } catch (error) {
-      next(error);
+    } catch (err) {
+      console.error("LOGIN ERROR:", err);
+      return res.status(500).json({ message: "Server error" });
     }
   }
 );
