@@ -34,39 +34,12 @@ const login = async (req, res) => {
 };
 
 const changePassword = async (req, res) => {
+  console.log("CHANGE PASSWORD HIT");
   try {
-    console.log("CHANGE PASSWORD HIT");
-    const { email, oldPassword, newPassword } = req.body;
-
-    console.log("BODY:", req.body);
-
-    const user = await User.findOne({ email });
-
-    console.log("USER:", user);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (!user.passwordHash) {
-      return res.status(500).json({ message: "Password hash missing" });
-    }
-
-    const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
-
-    if (!isMatch) {
-      return res.status(401).json({ message: "Old password incorrect" });
-    }
-
-    const hashed = await bcrypt.hash(newPassword, 10);
-
-    user.passwordHash = hashed;
-    await user.save();
-
-    return res.json({ message: "Password updated successfully" });
+    return res.json({ message: "Test success" });
   } catch (err) {
-    console.error("CHANGE PASSWORD ERROR:", err);
-    return res.status(500).json({ message: err.message });
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
