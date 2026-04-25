@@ -35,6 +35,7 @@ const login = async (req, res) => {
 
 const changePassword = async (req, res) => {
   try {
+    console.log("CHANGE PASSWORD HIT");
     const { email, oldPassword, newPassword } = req.body;
 
     console.log("BODY:", req.body);
