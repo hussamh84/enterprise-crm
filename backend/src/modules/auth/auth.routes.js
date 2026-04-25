@@ -7,6 +7,7 @@ const { body, validationResult } = require("express-validator");
 
 const env = require("../../config/env");
 const { ROLES } = require("../../constants/roles");
+const { authMiddleware } = require("../../middlewares/authMiddleware");
 
 const router = express.Router();
 
@@ -262,5 +263,35 @@ router.post(
   }
 }
 );
+
+/* ===================== CHANGE PASSWORD (AUTHENTICATED) ===================== */
+router.put("/change-password", authMiddleware, async (req, res, next) => {
+  try {
+    const oldPassword = String(req.body?.oldPassword || "");
+    const newPassword = String(req.body?.newPassword || "");
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ message: "oldPassword and newPassword are required" });
+    }
+
+    const user = await User.findById(req.user?.id);
+    if (!user || !user.passwordHash) {
+      return res.status(401).json({ message: "Old password incorrect" });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Old password incorrect" });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    user.passwordHash = hashed;
+    await user.save();
+
+    return res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = { authRouter: router, ensureDefaultAdmin, User };
