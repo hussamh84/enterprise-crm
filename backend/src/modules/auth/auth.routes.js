@@ -274,10 +274,9 @@ router.put("/change-password", authMiddleware, async (req, res, next) => {
       return res.status(400).json({ message: "oldPassword and newPassword are required" });
     }
 
-    const user = await User.findById(req.user?.id);
-    if (!user || !user.passwordHash) {
-      return res.status(401).json({ message: "Old password incorrect" });
-    }
+    const user = await User.findById(req.user?.id || req.body?.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user.passwordHash) return res.status(400).json({ message: "Password hash missing" });
 
     const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
     if (!isMatch) {
@@ -290,6 +289,7 @@ router.put("/change-password", authMiddleware, async (req, res, next) => {
 
     return res.json({ message: "Password updated successfully" });
   } catch (error) {
+    console.error("CHANGE PASSWORD ERROR:", error);
     next(error);
   }
 });
