@@ -3,36 +3,33 @@ const User = require("../users/user.model");
 
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    console.log("LOGIN INPUT:", email, password);
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    const password = String(req.body?.password || "");
 
     const user = await User.findOne({ email });
+    console.log("LOGIN USER:", user);
+    console.log("LOGIN HASH:", user?.passwordHash);
 
-    console.log("FOUND USER:", user);
-
-    if (!user) {
-      return res.status(401).json({ message: "User not found" });
-    }
-
-    console.log("HASH:", user.passwordHash);
-
-    if (!user.passwordHash) {
-      return res.status(500).json({ message: "Password hash missing" });
+    if (!user || !user.passwordHash) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
-
-    console.log("MATCH:", isMatch);
-
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid password" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    return res.json({ message: "Login success" });
+    return res.status(200).json({
+      message: "Login success",
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (err) {
     console.error("LOGIN ERROR:", err);
-    return res.status(500).json({ message: "Server error" });
+    return res.status(401).json({ message: "Invalid credentials" });
   }
 };
 
