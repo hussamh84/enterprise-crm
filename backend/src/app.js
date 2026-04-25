@@ -16,6 +16,7 @@ const { tenantMiddleware } = require("./middlewares/tenantMiddleware");
 const { errorHandler } = require("./middlewares/errorHandler");
 
 const app = express();
+app.set("trust proxy", 1);
 
 /* ===================== SECURITY: RATE LIMIT ===================== */
 
