@@ -7,7 +7,7 @@ const { body, validationResult } = require("express-validator");
 
 const env = require("../../config/env");
 const { ROLES } = require("../../constants/roles");
-const { authMiddleware } = require("../../middlewares/authMiddleware");
+const { changePassword } = require("./auth.controller");
 
 const router = express.Router();
 
@@ -264,42 +264,7 @@ router.post(
 }
 );
 
-/* ===================== CHANGE PASSWORD (AUTHENTICATED) ===================== */
-const changePassword = async (req, res, next) => {
-  try {
-    console.log("CHANGE PASSWORD HIT");
-    console.log("BODY:", req.body);
-    const email = String(req.body?.email || "").trim().toLowerCase();
-    const oldPassword = String(req.body?.oldPassword || "");
-    const newPassword = String(req.body?.newPassword || "");
-
-    if (!oldPassword || !newPassword) {
-      return res.status(400).json({ message: "oldPassword and newPassword are required" });
-    }
-
-    const user = req.user?.id
-      ? await User.findById(req.user.id)
-      : await User.findOne({ email });
-    console.log("USER:", user);
-    if (!user) return res.status(404).json({ message: "User not found" });
-    if (!user.passwordHash) return res.status(400).json({ message: "Password hash missing" });
-
-    const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Old password incorrect" });
-    }
-
-    const hashed = await bcrypt.hash(newPassword, 10);
-    user.passwordHash = hashed;
-    await user.save();
-
-    return res.json({ message: "Password updated successfully" });
-  } catch (err) {
-    console.error("CHANGE PASSWORD ERROR:", err);
-    return res.status(500).json({ message: err.message });
-  }
-};
-
-router.put("/change-password", authMiddleware, changePassword);
+/* ===================== CHANGE PASSWORD ===================== */
+router.put("/change-password", changePassword);
 
 module.exports = { authRouter: router, ensureDefaultAdmin, User };
