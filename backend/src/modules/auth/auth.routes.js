@@ -267,6 +267,7 @@ router.post(
 /* ===================== CHANGE PASSWORD (AUTHENTICATED) ===================== */
 router.put("/change-password", async (req, res, next) => {
   try {
+    console.log("BODY:", req.body);
     const email = String(req.body?.email || "").trim().toLowerCase();
     const oldPassword = String(req.body?.oldPassword || "");
     const newPassword = String(req.body?.newPassword || "");
@@ -276,6 +277,7 @@ router.put("/change-password", async (req, res, next) => {
     }
 
     const user = await User.findOne({ email });
+    console.log("USER:", user);
     if (!user) return res.status(404).json({ message: "User not found" });
     if (!user.passwordHash) return res.status(400).json({ message: "Password hash missing" });
 
@@ -289,9 +291,9 @@ router.put("/change-password", async (req, res, next) => {
     await user.save();
 
     return res.json({ message: "Password updated successfully" });
-  } catch (error) {
-    console.error("CHANGE PASSWORD ERROR:", error);
-    next(error);
+  } catch (err) {
+    console.error("CHANGE PASSWORD ERROR:", err);
+    return res.status(500).json({ message: err.message });
   }
 });
 
