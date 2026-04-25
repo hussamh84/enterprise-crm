@@ -41,36 +41,39 @@ const sendResetPasswordEmail = async ({ to, resetToken }) => {
 
 /* ===================== CREATE DEFAULT ADMIN ===================== */
 const ensureDefaultAdmin = async () => {
-  const existingAdmin = await User.findOne({ email: env.defaultAdminEmail });
+  const adminEmail = "admin@demo.com";
+  const adminPassword = "12345678";
+  const existingAdmin = await User.findOne({ email: adminEmail });
   if (existingAdmin) {
     const hasPasswordHash = typeof existingAdmin.passwordHash === "string";
     const isPasswordValid = hasPasswordHash
-      ? await bcrypt.compare(env.defaultAdminPassword, existingAdmin.passwordHash)
+      ? await bcrypt.compare(adminPassword, existingAdmin.passwordHash)
       : false;
 
     if (!isPasswordValid) {
-      existingAdmin.passwordHash = await bcrypt.hash(env.defaultAdminPassword, 10);
+      existingAdmin.passwordHash = await bcrypt.hash(adminPassword, 10);
       await existingAdmin.save();
-      console.log(`✅ Default admin password hash repaired: ${env.defaultAdminEmail}`);
+      console.log("Admin created");
     }
 
     return existingAdmin;
   }
 
-  const passwordHash = await bcrypt.hash(env.defaultAdminPassword, 10);
+  const passwordHash = await bcrypt.hash(adminPassword, 10);
 
   const adminUser = await User.create({
-    fullName: env.defaultAdminName,
-    email: env.defaultAdminEmail,
-    tenantId: env.defaultAdminTenantId,
-    role: ROLES.COMPANY_ADMIN,
+    fullName: "Admin",
+    name: "Admin",
+    email: adminEmail,
+    tenantId: "default",
+    role: "admin",
     passwordHash,
     permissions: [
       { module: "*", actions: ["create", "read", "update", "delete"] },
     ],
   });
 
-  console.log(`✅ Default admin created: ${env.defaultAdminEmail}`);
+  console.log("Admin created");
   return adminUser;
 };
 
@@ -142,12 +145,16 @@ router.post(
       const password = String(req.body.password || "");
 
       const user = await User.findOne({ email });
-      if (!user)
+      if (!user) {
+        console.error(`[auth.login] failed: user not found for email=${email}`);
         return res.status(401).json({ message: "Invalid credentials" });
+      }
 
       const valid = await bcrypt.compare(password, user.passwordHash);
-      if (!valid)
+      if (!valid) {
+        console.error(`[auth.login] failed: invalid password for email=${email}`);
         return res.status(401).json({ message: "Invalid credentials" });
+      }
 
       const token = jwt.sign(
         {

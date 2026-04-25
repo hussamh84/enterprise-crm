@@ -1,22 +1,38 @@
 const env = require("./config/env");
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 const { app } = require("./app");
-const { ensureDefaultAdmin } = require("./modules/auth/auth.routes");
+const User = require("./modules/users/user.model");
 
 const start = async () => {
   try {
-    // الاتصال بـ MongoDB Atlas
+    mongoose.connection.once("open", async () => {
+      try {
+        const existing = await User.findOne({ email: "admin@demo.com" });
+
+        if (!existing) {
+          const hashed = await bcrypt.hash("12345678", 10);
+          await User.create({
+            fullName: "Admin",
+            name: "Admin",
+            email: "admin@demo.com",
+            passwordHash: hashed,
+            role: "admin",
+            tenantId: "default",
+          });
+          console.log("Admin created");
+        }
+      } catch (err) {
+        console.error(err.message);
+      }
+    });
+
     await mongoose.connect(env.mongoUri);
     console.log("MongoDB connected successfully ✅");
 
-    // إنشاء الأدمن الافتراضي
-    await ensureDefaultAdmin();
-
-    // تشغيل السيرفر
     app.listen(env.port, () => {
       console.log(`API running on http://localhost:${env.port}`);
     });
-
   } catch (error) {
     console.error("MongoDB connection error ❌");
     console.error(error);
