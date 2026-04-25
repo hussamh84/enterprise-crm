@@ -265,18 +265,21 @@ router.post(
 );
 
 /* ===================== CHANGE PASSWORD (AUTHENTICATED) ===================== */
-router.put("/change-password", async (req, res, next) => {
+const changePassword = async (req, res, next) => {
   try {
+    console.log("CHANGE PASSWORD HIT");
     console.log("BODY:", req.body);
     const email = String(req.body?.email || "").trim().toLowerCase();
     const oldPassword = String(req.body?.oldPassword || "");
     const newPassword = String(req.body?.newPassword || "");
 
-    if (!email || !oldPassword || !newPassword) {
-      return res.status(400).json({ message: "email, oldPassword and newPassword are required" });
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ message: "oldPassword and newPassword are required" });
     }
 
-    const user = await User.findOne({ email });
+    const user = req.user?.id
+      ? await User.findById(req.user.id)
+      : await User.findOne({ email });
     console.log("USER:", user);
     if (!user) return res.status(404).json({ message: "User not found" });
     if (!user.passwordHash) return res.status(400).json({ message: "Password hash missing" });
@@ -295,6 +298,8 @@ router.put("/change-password", async (req, res, next) => {
     console.error("CHANGE PASSWORD ERROR:", err);
     return res.status(500).json({ message: err.message });
   }
-});
+};
+
+router.put("/change-password", authMiddleware, changePassword);
 
 module.exports = { authRouter: router, ensureDefaultAdmin, User };
