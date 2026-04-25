@@ -10,6 +10,14 @@ export const useAuthStore = create((set) => ({
     setAuthToken(token);
     set({ token, user });
   },
+  updateUser: (partial) =>
+    set((state) => {
+      const next = state.user ? { ...state.user, ...partial } : partial;
+      if (next && typeof next === "object") {
+        localStorage.setItem("crm_user", JSON.stringify(next));
+      }
+      return { user: next };
+    }),
   clearSession: () => {
     localStorage.removeItem("crm_token");
     localStorage.removeItem("crm_user");

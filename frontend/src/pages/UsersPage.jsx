@@ -35,6 +35,17 @@ export default function UsersPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/users"] }),
   });
 
+  const updateUser = useMutation({
+    mutationFn: async ({ id, payload }) => api.put(`/users/${id}`, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/users"] }),
+  });
+
+  const changePassword = useMutation({
+    mutationFn: async ({ id, oldPassword, newPassword }) =>
+      api.post(`/users/${id}/change-password`, { oldPassword, newPassword }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/users"] }),
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -76,7 +87,38 @@ export default function UsersPage() {
             <p className="col-span-2 capitalize">{user.role}</p>
             <p className="col-span-2 text-[#6b7c93]">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-"}</p>
             <div className="col-span-2 flex items-center gap-3">
+              <button
+                type="button"
+                className="text-[#635bff] hover:underline"
+                onClick={() => {
+                  const nextName = window.prompt("Update name", user.fullName || "");
+                  if (nextName == null) return;
+                  const nextEmail = window.prompt("Update email", user.email || "");
+                  if (nextEmail == null) return;
+                  const nextRole = window.prompt("Update role (admin/employee)", user.role || "employee");
+                  if (nextRole == null) return;
+                  updateUser.mutate({
+                    id: user._id || user.id,
+                    payload: { fullName: nextName, email: nextEmail, role: nextRole },
+                  });
+                }}
+              >
+                Edit
+              </button>
               <button type="button" className="text-[#635bff] hover:underline" onClick={() => resetPassword.mutate(user._id || user.id)}>Reset Password</button>
+              <button
+                type="button"
+                className="text-[#635bff] hover:underline"
+                onClick={() => {
+                  const oldPassword = window.prompt("Old password");
+                  if (oldPassword == null || !oldPassword) return;
+                  const newPassword = window.prompt("New password");
+                  if (newPassword == null || !newPassword) return;
+                  changePassword.mutate({ id: user._id || user.id, oldPassword, newPassword });
+                }}
+              >
+                Change Password
+              </button>
               <button type="button" className="text-rose-600 hover:underline" onClick={() => deleteUser.mutate(user._id || user.id)}>Delete</button>
             </div>
           </div>

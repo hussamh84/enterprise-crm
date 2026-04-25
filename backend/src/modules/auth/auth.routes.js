@@ -176,6 +176,7 @@ router.post(
           id: user._id,
           fullName: user.fullName,
           name: user.name || user.fullName,
+          email: user.email,
           role: user.role,
           tenantId: user.tenantId,
         },
@@ -262,4 +263,4 @@ router.post(
 }
 );
 
-module.exports = { authRouter: router, ensureDefaultAdmin };
+module.exports = { authRouter: router, ensureDefaultAdmin, User };

@@ -16,6 +16,7 @@ import QuotationViewPage from "./pages/QuotationViewPage";
 import CreateProjectPage from "./pages/CreateProjectPage";
 import InvoiceDetailPage from "./pages/InvoiceDetailPage";
 import UsersPage from "./pages/UsersPage";
+import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import ReportsPage from "./pages/ReportsPage";
 import { useAuthStore } from "./store/authStore";
@@ -55,6 +56,7 @@ function App() {
         <Route path="inventory" element={<ModulePage title="Inventory" endpoint="/inventory" />} />
         <Route path="tickets" element={<ModulePage title="Support Tickets" endpoint="/tickets" />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="profile" element={<ProfilePage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="reports" element={<ReportsPage />} />
       </Route>
