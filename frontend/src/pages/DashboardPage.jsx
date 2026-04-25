@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, BriefcaseBusiness, Headset, TrendingUp } from "lucide-react";
+import { Activity, BriefcaseBusiness, Headset, Search, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { formatCurrency } from "../utils/formatCurrency";
@@ -7,6 +8,7 @@ import { formatCurrency } from "../utils/formatCurrency";
 export default function DashboardPage() {
   const navigate = useNavigate();
   const now = new Date();
+  const [search, setSearch] = useState("");
   const { data } = useQuery({
     queryKey: ["kpis"],
     queryFn: async () => (await api.get("/dashboard/kpis")).data,
@@ -33,11 +35,12 @@ export default function DashboardPage() {
   const totalProfit = Number(yearlyReport?.totals?.totalProfit || monthlyReport?.totals?.totalProfit || 0);
 
   const cards = [
-    { label: "Leads", value: data?.leads ?? 0, icon: Activity },
-    { label: "Projects", value: data?.projects ?? 0, icon: BriefcaseBusiness },
-    { label: "Quotations", value: data?.quotations ?? 0, icon: BriefcaseBusiness },
-    { label: "Tickets", value: data?.tickets ?? 0, icon: Headset },
+    { name: "Leads", label: "Leads", value: data?.leads ?? 0, icon: Activity },
+    { name: "Projects", label: "Projects", value: data?.projects ?? 0, icon: BriefcaseBusiness },
+    { name: "Quotations", label: "Quotations", value: data?.quotations ?? 0, icon: BriefcaseBusiness },
+    { name: "Tickets", label: "Tickets", value: data?.tickets ?? 0, icon: Headset },
   ];
+  const filteredCards = cards.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="space-y-7">
@@ -55,8 +58,20 @@ export default function DashboardPage() {
         </button>
       </div>
 
+      <div className="premium-card p-4">
+        <div className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-1.5 text-slate-500 bg-white">
+          <Search size={15} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="outline-none border-none bg-transparent text-sm w-full placeholder:text-slate-400"
+            placeholder="Search dashboard cards..."
+          />
+        </div>
+      </div>
+
       <div className="grid md:grid-cols-4 gap-5">
-        {cards.map((card) => (
+        {filteredCards.map((card) => (
           <div key={card.label} className="premium-card p-5">
             <div className="flex items-start justify-between">
               <div>
@@ -72,6 +87,11 @@ export default function DashboardPage() {
             </div>
           </div>
         ))}
+        {!filteredCards.length ? (
+          <div className="premium-card p-5 md:col-span-4 text-sm text-[#6b7c93]">
+            No dashboard results found for "{search}".
+          </div>
+        ) : null}
       </div>
 
       <div className="grid md:grid-cols-3 gap-5">

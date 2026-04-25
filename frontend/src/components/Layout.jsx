@@ -57,8 +57,10 @@ export default function Layout() {
 
   useEffect(() => {
     if (theme === "dark") {
+      document.documentElement.classList.add("dark");
       document.body.classList.add("dark-mode");
     } else {
+      document.documentElement.classList.remove("dark");
       document.body.classList.remove("dark-mode");
     }
     localStorage.setItem("ce_theme", theme);
@@ -66,8 +68,8 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen gap-3 px-4 py-4">
-      <aside className="w-64 h-screen bg-white border-r border-slate-200 rounded-xl overflow-hidden flex flex-col">
-          <div className="p-4 border-b border-slate-100">
+      <aside className="w-64 h-screen bg-white dark:bg-gray-900 border-r border-slate-200 dark:border-gray-700 rounded-xl overflow-hidden flex flex-col">
+          <div className="p-4 border-b border-slate-100 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <img
                 src={resolveLogoSrc(settings?.companyLogoUrl)}
@@ -77,7 +79,7 @@ export default function Layout() {
               />
               <div>
                 <p className="muted-label">Enterprise Suite</p>
-                <h1 className="text-base font-semibold mt-1 text-[#0a2540]">{settings?.companyName || "Config Engineering"}</h1>
+                <h1 className="text-base font-semibold mt-1 text-[#0a2540] dark:text-white">{settings?.companyName || "Config Engineering"}</h1>
               </div>
             </div>
           </div>
@@ -93,8 +95,8 @@ export default function Layout() {
                   className={({ isActive }) =>
                     `flex items-center gap-2 rounded-md px-4 py-2 text-sm transition ${
                       isActive
-                        ? "bg-[#eef4ff] text-[#1f3d7a] border border-[#d6e4ff]"
-                        : "text-[#425466] hover:bg-slate-50"
+                        ? "bg-[#eef4ff] text-[#1f3d7a] border border-[#d6e4ff] dark:bg-gray-800 dark:text-white dark:border-gray-700"
+                        : "text-[#425466] dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800"
                     }`
                   }
                 >
@@ -105,9 +107,9 @@ export default function Layout() {
             })}
           </nav>
           </div>
-          <div className="mt-auto p-4 border-t border-slate-100">
-            <p className="text-xs font-medium text-[#0a2540]">{user?.fullName ?? "CRM User"}</p>
-            <p className="text-xs text-[#6b7c93]">{user?.role ?? "team_member"}</p>
+          <div className="mt-auto p-4 border-t border-slate-100 dark:border-gray-700">
+            <p className="text-xs font-medium text-[#0a2540] dark:text-white">{user?.fullName ?? "CRM User"}</p>
+            <p className="text-xs text-[#6b7c93] dark:text-gray-300">{user?.role ?? "team_member"}</p>
             <button onClick={clearSession} className="mt-3 w-full flex items-center justify-center gap-2 bg-red-500 text-white h-9 rounded-md text-sm hover:bg-red-600 transition">
               <LogOut size={14} /> Logout
             </button>

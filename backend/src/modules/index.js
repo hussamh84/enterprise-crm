@@ -1400,7 +1400,8 @@ router.post("/users/me/change-password", async (req, res, next) => {
     const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
     if (!isMatch) return res.status(401).json({ message: "Old password is incorrect" });
 
-    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    const hashed = await bcrypt.hash(newPassword, 10);
+    user.passwordHash = hashed;
     user.resetPasswordToken = null;
     user.resetPasswordExpiresAt = null;
     await user.save();
@@ -1507,7 +1508,8 @@ router.post("/users/:id/change-password", async (req, res, next) => {
     const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
     if (!isMatch) return res.status(401).json({ message: "Old password is incorrect" });
 
-    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    const hashed = await bcrypt.hash(newPassword, 10);
+    user.passwordHash = hashed;
     user.resetPasswordToken = null;
     user.resetPasswordExpiresAt = null;
     await user.save();
