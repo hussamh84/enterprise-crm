@@ -66,8 +66,14 @@ export default function Layout() {
     localStorage.setItem("ce_theme", theme);
   }, [theme]);
 
+  useEffect(() => {
+    // Temporary debug safeguard to restore interactions while troubleshooting overlays.
+    document.body.style.pointerEvents = "auto";
+    console.log("LAYOUT FIX APPLIED");
+  }, []);
+
   return (
-    <div className="flex min-h-screen gap-3 px-4 py-4">
+    <div className="relative z-[1] flex min-h-screen gap-3 px-4 py-4">
       <aside className="w-64 h-screen bg-white dark:bg-gray-900 border-r border-slate-200 dark:border-gray-700 rounded-xl overflow-hidden flex flex-col">
           <div className="p-4 border-b border-slate-100 dark:border-gray-700">
             <div className="flex items-center gap-3">
@@ -115,8 +121,8 @@ export default function Layout() {
             </button>
           </div>
       </aside>
-      <main className="flex-1">
-        <div className="premium-card min-h-[calc(100vh-3rem)]">
+      <main className="relative z-[1] flex-1">
+        <div className="relative z-[1] premium-card min-h-[calc(100vh-3rem)]">
           <header className="h-14 px-6 border-b border-slate-100 flex items-center justify-between">
             <div>
               <p className="muted-label">Operations Control Center</p>
