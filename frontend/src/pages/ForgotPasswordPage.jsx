@@ -20,7 +20,15 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-<div style={{ padding: 40 }}> <h1>Forgot Password</h1>
+  <div style={{
+    padding: 40,
+    maxWidth: 400,
+    margin: "100px auto",
+    background: "white",
+    borderRadius: "12px",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.1)"
+  }}>
+    <h1 style={{ marginBottom: 20 }}>Forgot Password</h1>
 
     <form onSubmit={handleSubmit}>
       <input
@@ -28,10 +36,31 @@ export default function ForgotPasswordPage() {
         placeholder="Enter email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        style={{ display: "block", marginBottom: 20, padding: 10 }}
+        style={{
+          width: "100%",
+          padding: "12px",
+          marginBottom: "20px",
+          borderRadius: "8px",
+          border: "1px solid #ccc",
+          fontSize: "16px"
+        }}
       />
 
-      <button type="submit">Send Reset Link</button>
+      <button
+        type="submit"
+        style={{
+          width: "100%",
+          padding: "12px",
+          background: "#4f46e5",
+          color: "white",
+          border: "none",
+          borderRadius: "8px",
+          fontSize: "16px",
+          cursor: "pointer"
+        }}
+      >
+        Send Reset Link
+      </button>
     </form>
   </div>
 );
