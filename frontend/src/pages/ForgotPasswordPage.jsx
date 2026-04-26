@@ -8,14 +8,14 @@ const [email, setEmail] = useState("");
 const handleSubmit = async (e) => {
 e.preventDefault();
 
-console.log("FORGOT PASSWORD CLICKED");
+console.log("FORM SUBMITTED");
 
 try {
   await axios.post("/api/v1/auth/forgot-password", {
     email
   });
 
-  alert("If email exists, reset link sent");
+  alert("Request sent");
 
 } catch (err) {
   console.error(err);
@@ -35,7 +35,12 @@ return (
       onChange={(e) => setEmail(e.target.value)}
     />
 
-    <button type="submit">Send Reset Link</button>
+    <button
+      type="submit"
+      onClick={() => console.log("BUTTON CLICKED")}
+    >
+      Send Reset Link
+    </button>
   </form>
 </div>
 
