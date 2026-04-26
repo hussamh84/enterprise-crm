@@ -28,7 +28,7 @@ const mailTransporter =
     : nodemailer.createTransport({ jsonTransport: true });
 
 const sendResetPasswordEmail = async ({ to, resetToken }) => {
-  const resetLink = `${env.clientOrigin || "http://localhost:5173"}/reset-password?token=${encodeURIComponent(
+  const resetLink = `${env.clientOrigin || "http://localhost:5173"}/reset-password/${encodeURIComponent(
     resetToken
   )}`;
   await mailTransporter.sendMail({
@@ -200,14 +200,12 @@ router.post("/forgot-password", body("email").isEmail(), async (req, res, next) 
         message: "If this account exists, reset instructions were generated.",
       });
 
-    const rawToken = crypto.randomBytes(24).toString("hex");
-    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
-
-    user.resetPasswordToken = tokenHash;
-    user.resetPasswordExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+    const token = crypto.randomBytes(32).toString("hex");
+    user.resetToken = token;
+    user.resetTokenExpiry = new Date(Date.now() + 1000 * 60 * 15);
 
     await user.save();
-    await sendResetPasswordEmail({ to: user.email, resetToken: rawToken });
+    await sendResetPasswordEmail({ to: user.email, resetToken: token });
 
     res.json({
       message: "If this account exists, reset instructions were sent by email.",
@@ -219,8 +217,7 @@ router.post("/forgot-password", body("email").isEmail(), async (req, res, next) 
 
 /* ===================== RESET PASSWORD ===================== */
 router.post(
-  "/reset-password",
-  body("token").notEmpty(),
+  "/reset-password/:token",
   body("newPassword").isLength({ min: 6 }),
   async (req, res, next) => {
   try {
@@ -228,17 +225,12 @@ router.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const token = String(req.body.token || "").trim();
+    const token = String(req.params.token || "").trim();
     const newPassword = String(req.body.newPassword || "");
 
-    const tokenHash = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
-
     const user = await User.findOne({
-      resetPasswordToken: tokenHash,
-      resetPasswordExpiresAt: { $gt: new Date() },
+      resetToken: token,
+      resetTokenExpiry: { $gt: new Date() },
     });
 
     if (!user)
@@ -247,8 +239,8 @@ router.post(
         .json({ message: "Invalid or expired reset token" });
 
     user.passwordHash = await bcrypt.hash(newPassword, 10);
-    user.resetPasswordToken = null;
-    user.resetPasswordExpiresAt = null;
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
 
     await user.save();
 

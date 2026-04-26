@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { api } from "../lib/api";
 
 export default function ResetPasswordPage() {
-  const [searchParams] = useSearchParams();
-  const token = useMemo(() => searchParams.get("token") || "", [searchParams]);
+  const { token = "" } = useParams();
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -24,10 +23,7 @@ export default function ResetPasswordPage() {
     }
     setIsSubmitting(true);
     try {
-      const { data } = await api.post("/auth/reset-password", {
-        token,
-        newPassword,
-      });
+      const { data } = await api.post(`/auth/reset-password/${encodeURIComponent(token)}`, { newPassword });
       setMessage(data?.message || "Password reset successful.");
       setNewPassword("");
     } catch (err) {

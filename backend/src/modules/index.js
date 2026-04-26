@@ -1327,7 +1327,7 @@ router.post("/settings/logo", logoUpload.single("logo"), async (req, res, next) 
 
 router.get("/users", async (req, res, next) => {
   try {
-    const users = await User.find({ tenantId: req.tenantId }).select("-passwordHash -resetPasswordToken -resetPasswordExpiresAt").sort({ createdAt: -1 });
+    const users = await User.find({ tenantId: req.tenantId }).select("-passwordHash -resetToken -resetTokenExpiry").sort({ createdAt: -1 });
     const normalized = users.map((user) => ({
       ...user.toObject(),
       role: user.role === "company_admin" ? "admin" : "employee",
@@ -1340,7 +1340,7 @@ router.get("/users", async (req, res, next) => {
 
 router.get("/users/me", async (req, res, next) => {
   try {
-    const user = await User.findOne({ _id: req.user.id, tenantId: req.tenantId }).select("-passwordHash -resetPasswordToken -resetPasswordExpiresAt");
+    const user = await User.findOne({ _id: req.user.id, tenantId: req.tenantId }).select("-passwordHash -resetToken -resetTokenExpiry");
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json({
       ...user.toObject(),
@@ -1367,7 +1367,7 @@ router.put("/users/me", async (req, res, next) => {
     if (!Object.keys(updates).length) {
       return res.status(400).json({ message: "Nothing to update" });
     }
-    const user = await User.findOneAndUpdate({ _id: req.user.id, tenantId: req.tenantId }, updates, { new: true }).select("-passwordHash -resetPasswordToken -resetPasswordExpiresAt");
+    const user = await User.findOneAndUpdate({ _id: req.user.id, tenantId: req.tenantId }, updates, { new: true }).select("-passwordHash -resetToken -resetTokenExpiry");
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json({
       ...user.toObject(),
@@ -1419,7 +1419,7 @@ router.put("/users/:id", async (req, res, next) => {
       updates.role = role === "admin" ? "company_admin" : "sales";
     }
     if (typeof req.body?.email === "string") updates.email = req.body.email.trim().toLowerCase();
-    const user = await User.findOneAndUpdate({ _id: req.params.id, tenantId: req.tenantId }, updates, { new: true }).select("-passwordHash -resetPasswordToken -resetPasswordExpiresAt");
+    const user = await User.findOneAndUpdate({ _id: req.params.id, tenantId: req.tenantId }, updates, { new: true }).select("-passwordHash -resetToken -resetTokenExpiry");
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json({
       ...user.toObject(),
@@ -1446,7 +1446,7 @@ router.post("/users/:id/reset-password", async (req, res, next) => {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     const user = await User.findOneAndUpdate(
       { _id: req.params.id, tenantId: req.tenantId },
-      { passwordHash, resetPasswordToken: null, resetPasswordExpiresAt: null },
+      { passwordHash, resetToken: null, resetTokenExpiry: null },
       { new: true }
     );
     if (!user) return res.status(404).json({ message: "User not found" });
