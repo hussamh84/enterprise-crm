@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import { api } from "../lib/api";
 
 export default function ForgotPasswordPage() {
   console.log("PAGE LOADED");
@@ -11,7 +11,7 @@ export default function ForgotPasswordPage() {
     console.log("FORM SUBMITTED");
 
     try {
-      await axios.post("/api/v1/auth/forgot-password", { email });
+      await api.post("/auth/forgot-password", { email });
       alert("Request sent");
     } catch (err) {
       console.error(err);
