@@ -13,10 +13,6 @@ export default function DashboardPage() {
     queryKey: ["kpis"],
     queryFn: async () => (await api.get("/dashboard/kpis")).data,
   });
-  const { data: quotations = [] } = useQuery({
-    queryKey: ["/quotations", "dashboard-financials"],
-    queryFn: async () => (await api.get("/quotations")).data,
-  });
   const { data: monthlyReport } = useQuery({
     queryKey: ["monthly-report", now.getFullYear(), now.getMonth() + 1],
     queryFn: async () =>
@@ -29,7 +25,6 @@ export default function DashboardPage() {
     queryFn: async () => (await api.get(`/reports/yearly?year=${now.getFullYear()}`)).data,
   });
 
-  const totalQuoted = quotations.reduce((sum, quotation) => sum + Number(quotation.grandTotal || quotation.total || 0), 0);
   const totalRevenue = Number(yearlyReport?.totals?.totalRevenue || monthlyReport?.totals?.totalRevenue || 0);
   const totalExpenses = Number(yearlyReport?.totals?.totalExpenses || monthlyReport?.totals?.totalExpenses || 0);
   const totalProfit = Number(yearlyReport?.totals?.totalProfit || monthlyReport?.totals?.totalProfit || 0);
@@ -43,40 +38,37 @@ export default function DashboardPage() {
   const filteredCards = cards.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="space-y-7">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="section-title">Executive Dashboard</h1>
-          <p className="text-[#6b7c93] mt-1">Real-time visibility across sales, project delivery, and support operations.</p>
+          <p className="page-subtitle text-[#6b7c93]">Real-time visibility across sales, project delivery, and support operations.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => navigate("/reports")}
-          className="rounded-lg bg-[#635bff] text-white px-4 py-2.5 text-sm font-medium hover:bg-[#5849ff]"
-        >
+        <button type="button" onClick={() => navigate("/reports")} className="btn-primary">
           Generate Report
         </button>
       </div>
 
-      <div className="premium-card p-4">
-        <div className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-1.5 text-slate-500 bg-white">
-          <Search size={15} />
+      <div className="premium-card p-5">
+        <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 h-9 text-slate-500 bg-white max-w-md">
+          <Search size={15} className="shrink-0" />
           <input
+            type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="outline-none border-none bg-transparent text-sm w-full placeholder:text-slate-400"
+            className="layout-search-input !min-h-0 h-full py-0 border-0 shadow-none bg-transparent text-sm w-full placeholder:text-slate-400 outline-none"
             placeholder="Search dashboard cards..."
           />
         </div>
       </div>
 
-      <div className="grid md:grid-cols-4 gap-5">
+      <div className="grid md:grid-cols-4 gap-3">
         {filteredCards.map((card) => (
           <div key={card.label} className="premium-card p-5">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[#6b7c93] text-sm">{card.label}</p>
-                <p className="text-3xl font-semibold mt-2 text-[#0a2540]">{card.value}</p>
+                <p className="text-2xl font-semibold mt-2 text-[#0a2540] tabular-nums">{card.value}</p>
               </div>
               <div className="h-10 w-10 rounded-lg border border-slate-200 text-[#0a2540] flex items-center justify-center bg-slate-50">
                 <card.icon size={18} />
@@ -94,28 +86,28 @@ export default function DashboardPage() {
         ) : null}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-5">
+      <div className="grid md:grid-cols-3 gap-3">
         <div className="premium-card p-5">
           <p className="text-[#6b7c93] text-sm">Total Revenue</p>
-          <p className="text-2xl font-semibold mt-2 text-[#0a2540]">
+          <p className="text-xl font-semibold mt-2 text-[#0a2540]">
             <span className="currency">{formatMoney(totalRevenue)}</span>
           </p>
         </div>
         <div className="premium-card p-5">
           <p className="text-[#6b7c93] text-sm">Total Expenses</p>
-          <p className="text-2xl font-semibold mt-2 text-[#0a2540]">
+          <p className="text-xl font-semibold mt-2 text-[#0a2540]">
             <span className="currency">{formatMoney(totalExpenses)}</span>
           </p>
         </div>
         <div className="premium-card p-5">
           <p className="text-[#6b7c93] text-sm">Total Profit</p>
-          <p className={`text-2xl font-semibold mt-2 ${totalProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+          <p className={`text-xl font-semibold mt-2 ${totalProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
             <span className="currency">{formatMoney(totalProfit)}</span>
           </p>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-5">
+      <div className="grid md:grid-cols-2 gap-3">
         <div className="premium-card p-5">
           <p className="text-[#6b7c93] text-sm">Monthly Report</p>
           <p className="text-xs text-[#94a3b8] mt-1">
@@ -138,9 +130,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-5">
+      <div className="grid lg:grid-cols-3 gap-3">
         <div className="premium-card p-5 lg:col-span-2">
-          <h2 className="font-semibold text-[#0a2540]">Performance Snapshot</h2>
+          <h2 className="text-[#0a2540]">Performance Snapshot</h2>
           <p className="text-sm text-[#6b7c93] mb-4">Pipeline conversion, installation velocity, and revenue trend.</p>
           <div className="grid grid-cols-3 gap-3">
             {["Lead Conversion", "Project Completion", "Quotation Approval"].map((kpi, idx) => (
@@ -152,7 +144,7 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="premium-card p-5">
-          <h2 className="font-semibold text-[#0a2540]">Today's Priorities</h2>
+          <h2 className="text-[#0a2540]">Today's Priorities</h2>
           <ul className="mt-4 space-y-3 text-sm">
             <li className="rounded-lg border border-slate-200 text-[#425466] px-3 py-2">Follow-up high-score solar leads</li>
             <li className="rounded-lg border border-slate-200 text-[#425466] px-3 py-2">Resolve critical support tickets</li>

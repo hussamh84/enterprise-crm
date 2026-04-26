@@ -183,8 +183,8 @@ export default function QuotationViewPage() {
                   </tbody>
                 </table>
               </div>
-              <div className="flex justify-end pt-8 mt-2 border-t border-[#eee]">
-                <div className="text-right">
+              <div className="flex justify-end pt-6 mt-4 border-t border-[#eee]">
+                <div className="totals-box text-right min-w-[200px]">
                   <p className="text-sm font-semibold text-[#64748b] mb-1">Grand Total</p>
                   <p className="enterprise-doc-grand-total">
                     <span className="currency enterprise-doc-grand-total-inner">{formatMoney(total)}</span>

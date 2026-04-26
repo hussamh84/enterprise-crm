@@ -47,23 +47,23 @@ export default function UsersPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
         <h1 className="section-title">User Management</h1>
-        <p className="text-[#6b7c93] mt-1">Manage Admin and Employee users for Config Engineering.</p>
+        <p className="page-subtitle text-[#6b7c93]">Manage Admin and Employee users for Config Engineering.</p>
       </div>
 
       <div className="premium-card p-5 grid md:grid-cols-2 lg:grid-cols-5 gap-3">
-        <input className="rounded-lg border border-slate-200 px-3 py-2" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full name" />
-        <input className="rounded-lg border border-slate-200 px-3 py-2" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
-        <select className="rounded-lg border border-slate-200 px-3 py-2" value={role} onChange={(e) => setRole(e.target.value)}>
+        <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full name" />
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
+        <select value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="admin">Admin</option>
           <option value="employee">Employee</option>
         </select>
-        <input className="rounded-lg border border-slate-200 px-3 py-2" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
         <button
           type="button"
-          className="rounded-lg bg-[#635bff] text-white px-3 py-2 font-medium hover:bg-[#5849ff] disabled:opacity-60"
+          className="btn-primary w-full md:w-auto"
           disabled={!fullName || !email || createUser.isPending}
           onClick={() => createUser.mutate()}
         >
@@ -71,8 +71,8 @@ export default function UsersPage() {
         </button>
       </div>
 
-      <div className="premium-card overflow-hidden">
-        <div className="grid grid-cols-12 bg-slate-50 px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#6b7c93]">
+      <div className="saas-table-shell">
+        <div className="saas-grid-head grid grid-cols-12">
           <p className="col-span-3">Name</p>
           <p className="col-span-3">Email</p>
           <p className="col-span-2">Role</p>
@@ -81,7 +81,7 @@ export default function UsersPage() {
         </div>
         {isLoading && <div className="p-8 text-center text-[#6b7c93]">Loading users...</div>}
         {!isLoading && users.map((user) => (
-          <div key={user._id || user.id} className="grid grid-cols-12 px-5 py-3 border-t border-slate-100 text-sm items-center">
+          <div key={user._id || user.id} className="saas-grid-row grid grid-cols-12 items-center text-sm">
             <p className="col-span-3 font-medium text-[#0a2540]">{user.fullName}</p>
             <p className="col-span-3 text-[#425466]">{user.email}</p>
             <p className="col-span-2 capitalize">{user.role}</p>

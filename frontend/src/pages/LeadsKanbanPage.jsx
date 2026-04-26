@@ -94,36 +94,35 @@ export default function LeadsKanbanPage() {
   };
 
   return (
-    <div className="p-4 space-y-3">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-[#0a2540]">Leads</h1>
-          <p className="text-xs text-gray-500">Track, convert, and manage your sales pipeline.</p>
+          <h1 className="page-title">Leads</h1>
+          <p className="page-subtitle">Track, convert, and manage your sales pipeline.</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-4">
-        <div className="grid md:grid-cols-4 gap-2">
+      <div className="premium-card p-5">
+        <div className="grid md:grid-cols-4 gap-3">
           <input
-            className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#d6e4ff]"
             value={form.name}
             onChange={(event) => setForm((previous) => ({ ...previous, name: event.target.value }))}
             placeholder="Lead name"
           />
           <input
-            className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#d6e4ff]"
             value={form.phone}
             onChange={(event) => setForm((previous) => ({ ...previous, phone: event.target.value }))}
             placeholder="Phone"
           />
           <input
-            className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#d6e4ff]"
+            type="email"
             value={form.email}
             onChange={(event) => setForm((previous) => ({ ...previous, email: event.target.value }))}
             placeholder="Email"
           />
           <button
-            className="h-8 px-3 text-sm rounded-md bg-[#635bff] text-white hover:opacity-90 transition inline-flex items-center justify-center disabled:opacity-60"
+            type="button"
+            className="btn-primary"
             disabled={!form.name.trim() || createLeadMutation.isPending}
             onClick={() => createLeadMutation.mutate(form)}
           >
@@ -133,38 +132,31 @@ export default function LeadsKanbanPage() {
       </div>
 
       {editingLeadId ? (
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex items-center justify-between mb-2">
+        <div className="premium-card p-5">
+          <div className="flex items-center justify-between gap-3 mb-3">
             <p className="text-sm font-semibold text-[#0a2540]">Edit Lead</p>
-            <button
-              type="button"
-              className="h-7 px-2 text-xs rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-slate-50 transition inline-flex items-center justify-center"
-              onClick={() => setEditingLeadId(null)}
-            >
+            <button type="button" className="btn-secondary btn-compact" onClick={() => setEditingLeadId(null)}>
               Cancel
             </button>
           </div>
-          <div className="grid md:grid-cols-5 gap-2">
+          <div className="grid md:grid-cols-5 gap-3">
             <input
-              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#d6e4ff]"
               value={editForm.name}
               onChange={(event) => setEditForm((previous) => ({ ...previous, name: event.target.value }))}
               placeholder="Lead name"
             />
             <input
-              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#d6e4ff]"
               value={editForm.phone}
               onChange={(event) => setEditForm((previous) => ({ ...previous, phone: event.target.value }))}
               placeholder="Phone"
             />
             <input
-              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#d6e4ff]"
+              type="email"
               value={editForm.email}
               onChange={(event) => setEditForm((previous) => ({ ...previous, email: event.target.value }))}
               placeholder="Email"
             />
             <select
-              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#d6e4ff]"
               value={editForm.status}
               onChange={(event) => setEditForm((previous) => ({ ...previous, status: event.target.value }))}
             >
@@ -175,7 +167,8 @@ export default function LeadsKanbanPage() {
               ))}
             </select>
             <button
-              className="h-8 px-3 text-sm rounded-md bg-[#635bff] text-white hover:opacity-90 transition inline-flex items-center justify-center disabled:opacity-60"
+              type="button"
+              className="btn-primary"
               disabled={!editForm.name.trim() || updateLeadMutation.isPending}
               onClick={() =>
                 updateLeadMutation.mutate({
@@ -193,12 +186,12 @@ export default function LeadsKanbanPage() {
               {updateLeadMutation.isPending ? "Saving..." : "Update Lead"}
             </button>
           </div>
-          <div className="mt-2">
+          <div className="mt-3">
             <button
               type="button"
               disabled={editForm.status === "converted" || convertLeadMutation.isPending}
               onClick={() => editingLeadId && convertLeadMutation.mutate(editingLeadId)}
-              className="h-7 px-2 text-xs rounded-md bg-[#635bff] text-white hover:opacity-90 transition inline-flex items-center justify-center disabled:opacity-60"
+              className="btn-primary btn-compact disabled:opacity-60"
             >
               {convertLeadMutation.isPending ? "Converting..." : "Convert to Client"}
             </button>
@@ -206,8 +199,9 @@ export default function LeadsKanbanPage() {
         </div>
       ) : null}
 
-      <div className="bg-white rounded-xl shadow-sm p-4 overflow-x-auto">
-        <div className="grid grid-cols-12 py-3 text-xs font-semibold text-gray-500 uppercase border-b border-slate-100">
+      <div className="overflow-x-auto">
+        <div className="saas-table-shell min-w-[640px]">
+        <div className="saas-grid-head grid grid-cols-12">
           <div className="col-span-3">Lead</div>
           <div className="col-span-2">Phone</div>
           <div className="col-span-2">Date</div>
@@ -218,7 +212,7 @@ export default function LeadsKanbanPage() {
         {sortedLeads.map((lead) => {
           const status = mapLeadStatus(lead);
           return (
-            <div key={lead._id} className="grid grid-cols-12 py-3 border-b border-slate-100 last:border-b-0 items-center">
+            <div key={lead._id} className="saas-grid-row grid grid-cols-12 items-center">
               <div className="col-span-3 flex items-center gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-full bg-gray-200 text-[#334155] flex items-center justify-center text-sm font-semibold shrink-0">
                   {getInitials(lead?.name)}
@@ -237,20 +231,12 @@ export default function LeadsKanbanPage() {
                   {status === "new" ? "New" : status === "contacted" ? "Contacted" : "Converted"}
                 </span>
               </div>
-              <div className="col-span-3 align-middle min-w-[220px] overflow-hidden">
-                <div className="flex items-center gap-1 whitespace-nowrap">
-                  <button
-                    type="button"
-                    onClick={() => startEdit(lead)}
-                    className="h-7 px-2 text-xs rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-slate-50 transition inline-flex items-center justify-center"
-                  >
+              <div className="col-span-3 min-w-[220px]">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button type="button" onClick={() => startEdit(lead)} className="btn-secondary btn-compact whitespace-nowrap">
                     View
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => startEdit(lead)}
-                    className="h-7 px-2 text-xs rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-slate-50 transition inline-flex items-center justify-center"
-                  >
+                  <button type="button" onClick={() => startEdit(lead)} className="btn-secondary btn-compact whitespace-nowrap">
                     Edit
                   </button>
                   <button
@@ -261,7 +247,7 @@ export default function LeadsKanbanPage() {
                         deleteLeadMutation.mutate(lead._id);
                       }
                     }}
-                    className="h-7 px-2 text-xs rounded-md bg-rose-600 text-white hover:opacity-90 transition inline-flex items-center justify-center disabled:opacity-60"
+                    className="btn-danger whitespace-nowrap disabled:opacity-60"
                   >
                     Delete
                   </button>
@@ -270,6 +256,7 @@ export default function LeadsKanbanPage() {
             </div>
           );
         })}
+        </div>
       </div>
     </div>
   );

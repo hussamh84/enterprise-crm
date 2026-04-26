@@ -150,8 +150,8 @@ export default function InvoiceDetailPage() {
               </tbody>
             </table>
           </div>
-          <div className="flex justify-end pt-8 mt-2 border-t border-[#eee]">
-            <div className="text-right">
+          <div className="flex justify-end pt-6 mt-4 border-t border-[#eee]">
+            <div className="totals-box text-right min-w-[200px]">
               <p className="text-sm font-semibold text-[#64748b] mb-1">Grand Total</p>
               <p className="enterprise-doc-grand-total">
                 <span className="currency enterprise-doc-grand-total-inner">{formatMoney(total)}</span>
@@ -169,8 +169,7 @@ export default function InvoiceDetailPage() {
               type="number"
               min="0.01"
               step="0.01"
-              className="rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4f46e5]/25 min-w-[140px]"
-              style={{ fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" }}
+              className="min-w-[140px]"
               placeholder="Payment amount"
               value={paymentAmount}
               onChange={(event) => setPaymentAmount(event.target.value)}
@@ -178,7 +177,7 @@ export default function InvoiceDetailPage() {
             />
             <button
               type="button"
-              className="h-9 px-4 text-sm rounded-lg bg-[#4f46e5] text-white font-medium hover:bg-[#4338ca] transition disabled:opacity-60 shadow-sm"
+              className="btn-primary"
               disabled={
                 payMutation.isPending ||
                 remainingAmount <= 0 ||
@@ -192,7 +191,7 @@ export default function InvoiceDetailPage() {
             {remainingAmount > 0 ? (
               <button
                 type="button"
-                className="h-9 px-4 text-sm rounded-lg border border-[#e2e8f0] text-[#0f172a] font-medium hover:bg-[#f8fafc] transition disabled:opacity-60"
+                className="btn-secondary"
                 disabled={payMutation.isPending}
                 onClick={() => payMutation.mutate(remainingAmount)}
               >

@@ -67,14 +67,12 @@ export default function Layout() {
   }, [theme]);
 
   useEffect(() => {
-    // Temporary debug safeguard to restore interactions while troubleshooting overlays.
     document.body.style.pointerEvents = "auto";
-    console.log("LAYOUT FIX APPLIED");
   }, []);
 
   return (
     <div className="relative z-[1] flex min-h-screen gap-3 px-4 py-4">
-      <aside className="w-64 h-screen bg-white dark:bg-gray-900 border-r border-slate-200 dark:border-gray-700 rounded-xl overflow-hidden flex flex-col">
+      <aside className="w-[240px] shrink-0 h-screen bg-white dark:bg-gray-900 border-r border-slate-200 dark:border-gray-700 rounded-xl overflow-hidden flex flex-col text-sm">
           <div className="p-4 border-b border-slate-100 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <img
@@ -85,7 +83,7 @@ export default function Layout() {
               />
               <div>
                 <p className="muted-label">Enterprise Suite</p>
-                <h1 className="text-base font-semibold mt-1 text-[#0a2540] dark:text-white">{settings?.companyName || "Config Engineering"}</h1>
+                <p className="text-sm font-semibold mt-1 text-[#0a2540] dark:text-white leading-snug">{settings?.companyName || "Config Engineering"}</p>
               </div>
             </div>
           </div>
@@ -99,9 +97,9 @@ export default function Layout() {
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `flex items-center gap-2 rounded-md px-4 py-2 text-sm transition ${
+                    `flex items-center gap-2 rounded-lg px-3 py-2 text-[14px] transition ${
                       isActive
-                        ? "bg-[#eef4ff] text-[#1f3d7a] border border-[#d6e4ff] dark:bg-gray-800 dark:text-white dark:border-gray-700"
+                        ? "bg-[#eef2ff] text-[#4f46e5] font-medium dark:bg-gray-800 dark:text-white dark:border dark:border-gray-700"
                         : "text-[#425466] dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800"
                     }`
                   }
@@ -116,14 +114,14 @@ export default function Layout() {
           <div className="mt-auto p-4 border-t border-slate-100 dark:border-gray-700">
             <p className="text-xs font-medium text-[#0a2540] dark:text-white">{user?.fullName ?? "CRM User"}</p>
             <p className="text-xs text-[#6b7c93] dark:text-gray-300">{user?.role ?? "team_member"}</p>
-            <button onClick={clearSession} className="mt-3 w-full flex items-center justify-center gap-2 bg-red-500 text-white h-9 rounded-md text-sm hover:bg-red-600 transition">
+            <button onClick={clearSession} className="mt-3 w-full flex items-center justify-center gap-2 bg-red-500 text-white h-9 rounded-lg text-sm font-medium hover:bg-red-600 transition">
               <LogOut size={14} /> Logout
             </button>
           </div>
       </aside>
       <main className="relative z-[1] flex-1">
         <div className="relative z-[1] premium-card min-h-[calc(100vh-3rem)]">
-          <header className="h-14 px-6 border-b border-slate-100 flex items-center justify-between">
+          <header className="min-h-14 px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
             <div>
               <p className="muted-label">Operations Control Center</p>
               <div className="flex items-center gap-2 text-[#0a2540] font-semibold mt-0.5">
@@ -138,23 +136,27 @@ export default function Layout() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-1.5 text-slate-500 min-w-72 bg-white">
-                <Search size={15} />
-                <input className="outline-none border-none bg-transparent text-xs w-full placeholder:text-slate-400" placeholder="Search leads, clients, projects..." />
+              <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 h-9 text-slate-500 min-w-[240px] max-w-md bg-white">
+                <Search size={15} className="shrink-0" />
+                <input
+                  type="search"
+                  className="layout-search-input !min-h-0 h-full py-0 border-0 shadow-none bg-transparent text-sm w-full placeholder:text-slate-400 outline-none"
+                  placeholder="Search leads, clients, projects..."
+                />
               </div>
-              <button className="rounded-lg border border-slate-200 p-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-50">
+              <button type="button" className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 h-9 w-9 inline-flex items-center justify-center">
                 <Bell size={16} />
               </button>
               <button
                 type="button"
-                className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+                className="btn-secondary btn-compact !text-slate-600"
                 onClick={() => setTheme((prev) => (prev === "light" ? "dark" : "light"))}
               >
                 {theme === "light" ? "Dark Mode" : "Light Mode"}
               </button>
             </div>
           </header>
-          <section className="p-4 space-y-4">
+          <section className="p-5 space-y-5">
             <Outlet />
           </section>
         </div>

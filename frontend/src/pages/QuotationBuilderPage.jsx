@@ -148,24 +148,24 @@ export default function QuotationBuilderPage() {
   }
 
   return (
-    <div className="space-y-3 p-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="section-title">{isEdit ? "Edit quotation" : "New quotation"}</h1>
-          <p className="text-[#6b7c93] text-xs mt-1">Dynamic quotation builder with real-time totals.</p>
+          <p className="page-subtitle text-[#6b7c93]">Dynamic quotation builder with real-time totals.</p>
         </div>
         <Link
           to={isEdit && quotationId ? `/quotations/${quotationId}` : "/quotations"}
-          className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-[#425466] hover:bg-slate-50 transition"
+          className="btn-secondary"
         >
           {isEdit ? "Cancel" : "Back to Quotations"}
         </Link>
       </div>
 
-      <div className="premium-card p-4 space-y-3">
+      <div className="premium-card p-5 space-y-5">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <input className="rounded-lg border border-slate-200 px-3 py-2" value={name} onChange={(event) => setName(event.target.value)} placeholder="Quotation title" />
-          <select className="rounded-lg border border-slate-200 px-3 py-2" value={clientId} onChange={(event) => { setClientId(event.target.value); setProjectId(""); }}>
+          <input className="w-full" value={name} onChange={(event) => setName(event.target.value)} placeholder="Quotation title" />
+          <select className="w-full" value={clientId} onChange={(event) => { setClientId(event.target.value); setProjectId(""); }}>
             <option value="">Select client</option>
             {clients.map((client) => (
               <option key={client._id} value={client._id}>
@@ -173,7 +173,7 @@ export default function QuotationBuilderPage() {
               </option>
             ))}
           </select>
-          <select className="rounded-lg border border-slate-200 px-3 py-2" value={projectId} onChange={(event) => setProjectId(event.target.value)} disabled={!clientId}>
+          <select className="w-full" value={projectId} onChange={(event) => setProjectId(event.target.value)} disabled={!clientId}>
             <option value="">Select project</option>
             {clientProjects.map((project) => (
               <option key={project._id} value={project._id}>{project.name}</option>
@@ -183,45 +183,46 @@ export default function QuotationBuilderPage() {
 
         <div className="space-y-3">
           {items.map((item, index) => (
-            <div key={`quotation-item-${index}`} className="grid grid-cols-12 gap-2 items-center">
-              <input className="col-span-5 rounded-lg border border-slate-200 px-3 py-2" value={item.description} onChange={(event) => updateItem(index, "description", event.target.value)} placeholder="Item description" />
-              <input type="number" min="0" className="col-span-2 rounded-lg border border-slate-200 px-3 py-2" value={item.quantity} onChange={(event) => updateItem(index, "quantity", event.target.value)} placeholder="Qty" />
-              <input type="number" min="0" className="col-span-2 rounded-lg border border-slate-200 px-3 py-2" value={item.unitPrice} onChange={(event) => updateItem(index, "unitPrice", event.target.value)} placeholder="Unit price" />
-              <p className="col-span-2 text-xs font-medium text-[#0a2540]">
+            <div key={`quotation-item-${index}`} className="grid grid-cols-12 gap-3 items-center">
+              <input className="col-span-5 w-full min-w-0" value={item.description} onChange={(event) => updateItem(index, "description", event.target.value)} placeholder="Item description" />
+              <input type="number" min="0" className="col-span-2 w-full min-w-0" value={item.quantity} onChange={(event) => updateItem(index, "quantity", event.target.value)} placeholder="Qty" />
+              <input type="number" min="0" className="col-span-2 w-full min-w-0" value={item.unitPrice} onChange={(event) => updateItem(index, "unitPrice", event.target.value)} placeholder="Unit price" />
+              <p className="col-span-2 text-sm font-medium text-[#0a2540] currency-col">
                 <span className="currency">{formatMoney(calculatedItems[index]?.total)}</span>
               </p>
-              <button type="button" className="col-span-1 text-slate-500 hover:text-rose-600 flex justify-center" onClick={() => removeItem(index)}>
+              <button type="button" className="col-span-1 text-slate-500 hover:text-rose-600 flex justify-center p-1" onClick={() => removeItem(index)} aria-label="Remove line">
                 <Trash2 size={16} />
               </button>
             </div>
           ))}
-          <button type="button" className="rounded-md border border-dashed border-slate-300 px-3 py-1.5 text-sm text-[#425466] hover:bg-slate-50 transition flex items-center gap-2" onClick={() => setItems((previous) => [...previous, { ...BLANK_ITEM }])}>
+          <button type="button" className="btn-secondary btn-compact !border-dashed flex items-center gap-2" onClick={() => setItems((previous) => [...previous, { ...BLANK_ITEM }])}>
             <CirclePlus size={14} /> Add Item
           </button>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <select className="rounded-lg border border-slate-200 px-3 py-2" value={discountType} onChange={(event) => setDiscountType(event.target.value)}>
+          <select className="w-full" value={discountType} onChange={(event) => setDiscountType(event.target.value)}>
             <option value="fixed">Fixed Discount</option>
             <option value="percentage">Percentage Discount</option>
           </select>
-          <input type="number" min="0" className="rounded-lg border border-slate-200 px-3 py-2" value={discountValue} onChange={(event) => setDiscountValue(event.target.value)} placeholder={discountType === "percentage" ? "Discount %" : "Discount amount"} />
-          <input type="number" min="0" className="rounded-lg border border-slate-200 px-3 py-2" value={tax} onChange={(event) => setTax(event.target.value)} placeholder="Tax amount" />
+          <input type="number" min="0" className="w-full" value={discountValue} onChange={(event) => setDiscountValue(event.target.value)} placeholder={discountType === "percentage" ? "Discount %" : "Discount amount"} />
+          <input type="number" min="0" className="w-full" value={tax} onChange={(event) => setTax(event.target.value)} placeholder="Tax amount" />
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 ml-auto w-full max-w-sm text-xs space-y-2">
+        <div className="totals-box ml-auto w-full max-w-sm space-y-2 text-sm">
           <Row label="Subtotal" value={<span className="currency">{formatMoney(subtotal)}</span>} />
           <Row label="Discount" value={<span className="currency">- SDG {formatCurrency(discountAmount)}</span>} />
           <Row label="Tax" value={<span className="currency">{formatMoney(tax)}</span>} />
-          <div className="pt-2 border-t border-slate-200">
-            <Row label="Grand Total" value={<span className="currency">{formatMoney(grandTotal)}</span>} strong />
+          <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between gap-3">
+            <span className="text-[#64748b] font-semibold">Grand Total</span>
+            <span className="enterprise-doc-grand-total currency">{formatMoney(grandTotal)}</span>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-3">
           <button
             type="button"
-            className="rounded-md bg-[#635bff] text-white px-3 py-1.5 text-sm font-medium hover:opacity-90 transition flex items-center gap-2 disabled:opacity-60"
+            className="btn-primary flex items-center gap-2"
             disabled={
               saveQuotation.isPending ||
               !name ||
@@ -241,11 +242,11 @@ export default function QuotationBuilderPage() {
   );
 }
 
-function Row({ label, value, strong = false }) {
+function Row({ label, value }) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between gap-3">
       <span className="text-[#6b7c93]">{label}</span>
-      <span className={strong ? "font-semibold text-[#0a2540]" : "font-medium text-[#0a2540]"}>{value}</span>
+      <span className="font-medium text-[#0a2540] tabular-nums">{value}</span>
     </div>
   );
 }

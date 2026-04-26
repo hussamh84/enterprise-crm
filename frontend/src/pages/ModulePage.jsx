@@ -115,22 +115,19 @@ export default function ModulePage({ title, endpoint }) {
 
   if (isClients) {
     return (
-      <div className="p-4 space-y-3">
-        <div className="flex justify-between items-center">
+      <div className="space-y-5">
+        <div className="flex justify-between items-center gap-3">
           <div>
-            <h1 className="text-lg font-semibold text-[#0a2540]">{title}</h1>
-            <p className="text-xs text-gray-500">Manage all your {title.toLowerCase()}</p>
+            <h1 className="page-title">{title}</h1>
+            <p className="page-subtitle">Manage all your {title.toLowerCase()}</p>
           </div>
-          <Link
-            to={`${endpoint}/new`}
-            className="bg-[#635bff] text-white px-3 py-1.5 text-sm rounded-md hover:opacity-90 transition"
-          >
+          <Link to={`${endpoint}/new`} className="btn-primary">
             + Add
           </Link>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="grid grid-cols-12 py-3 text-xs font-semibold text-gray-500 uppercase border-b border-slate-100">
+        <div className="saas-table-shell">
+          <div className="saas-grid-head grid grid-cols-12">
             <div className="col-span-2">ID</div>
             <div className="col-span-4">Client</div>
             <div className="col-span-2">Date</div>
@@ -146,7 +143,7 @@ export default function ModulePage({ title, endpoint }) {
             return (
               <div
                 key={item._id}
-                className="grid grid-cols-12 py-3 border-b border-slate-100 last:border-b-0 items-center"
+                className="saas-grid-row grid grid-cols-12 items-center"
               >
                 <div className="col-span-2 text-sm font-semibold text-[#425466]">
                   {clientNumberOnly(item)}
@@ -174,17 +171,11 @@ export default function ModulePage({ title, endpoint }) {
                 </div>
 
                 <div className="col-span-2">
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to={`${endpoint}/${item._id}`}
-                      className="h-7 px-2 text-xs rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-slate-50 transition inline-flex items-center justify-center"
-                    >
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link to={`${endpoint}/${item._id}`} className="btn-secondary btn-compact">
                       View
                     </Link>
-                    <Link
-                      to={`/clients/${item._id}/edit`}
-                      className="h-7 px-2 text-xs rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-slate-50 transition inline-flex items-center justify-center"
-                    >
+                    <Link to={`/clients/${item._id}/edit`} className="btn-secondary btn-compact">
                       Edit
                     </Link>
                   </div>
@@ -199,30 +190,28 @@ export default function ModulePage({ title, endpoint }) {
 
   if (isProjects) {
     return (
-      <div className="p-4 space-y-3">
-        <div className="flex justify-between items-center">
+      <div className="space-y-5">
+        <div className="flex justify-between items-center gap-3">
           <div>
-            <h1 className="text-lg font-semibold text-[#0a2540]">{title}</h1>
-            <p className="text-xs text-gray-500">Manage all your {title.toLowerCase()}</p>
+            <h1 className="page-title">{title}</h1>
+            <p className="page-subtitle">Manage all your {title.toLowerCase()}</p>
           </div>
-          <Link
-            to={`${endpoint}/new`}
-            className="bg-[#635bff] text-white px-3 py-1.5 text-sm rounded-md hover:opacity-90 transition"
-          >
+          <Link to={`${endpoint}/new`} className="btn-primary">
             + Add
           </Link>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-4 overflow-x-auto">
-          <div className="grid grid-cols-12 py-3 text-xs font-semibold text-gray-500 uppercase border-b border-slate-100">
-            <div className="col-span-3">Client</div>
-            <div className="col-span-3">Project Name</div>
-            <div className="col-span-2">Start Date</div>
-            <div className="col-span-2">Status</div>
-            <div className="col-span-2">Actions</div>
-          </div>
+        <div className="overflow-x-auto">
+          <div className="saas-table-shell min-w-[720px]">
+            <div className="saas-grid-head grid grid-cols-12">
+              <div className="col-span-3">Client</div>
+              <div className="col-span-3">Project Name</div>
+              <div className="col-span-2">Start Date</div>
+              <div className="col-span-2">Status</div>
+              <div className="col-span-2">Actions</div>
+            </div>
 
-          {data.map((item) => {
+            {data.map((item) => {
             const clientName = item?.clientId?.name || "Client";
             const clientEmail = item?.clientId?.email || item?.email || "no-email@client.com";
             const subtitle = item?.type || item?.projectType || item?.description || "Project";
@@ -230,7 +219,7 @@ export default function ModulePage({ title, endpoint }) {
             return (
               <div
                 key={item._id}
-                className="grid grid-cols-12 py-3 border-b border-slate-100 last:border-b-0 items-center align-middle"
+                className="saas-grid-row grid grid-cols-12 items-center"
               >
                 <div className="col-span-3 flex items-center gap-2 min-w-0">
                   <div className="h-8 w-8 rounded-full bg-[#eef2ff] text-[#4f46e5] text-xs font-semibold flex items-center justify-center shrink-0">
@@ -262,17 +251,11 @@ export default function ModulePage({ title, endpoint }) {
                 </div>
 
                 <div className="col-span-2">
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to={`${endpoint}/${item._id}`}
-                      className="h-8 px-3 text-sm rounded-md border border-slate-200 text-[#425466] hover:bg-slate-50 transition inline-flex items-center"
-                    >
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link to={`${endpoint}/${item._id}`} className="btn-secondary btn-compact">
                       View
                     </Link>
-                    <button
-                      onClick={() => handlePdf(item._id)}
-                      className="h-8 px-3 text-sm rounded-md bg-[#635bff] text-white hover:opacity-90 transition inline-flex items-center"
-                    >
+                    <button type="button" onClick={() => handlePdf(item._id)} className="btn-primary btn-compact">
                       PDF
                     </button>
                   </div>
@@ -280,6 +263,7 @@ export default function ModulePage({ title, endpoint }) {
               </div>
             );
           })}
+          </div>
         </div>
       </div>
     );
@@ -287,30 +271,28 @@ export default function ModulePage({ title, endpoint }) {
 
   if (isQuotations) {
     return (
-      <div className="p-4 space-y-3">
-        <div className="flex justify-between items-center">
+      <div className="space-y-5">
+        <div className="flex justify-between items-center gap-3">
           <div>
-            <h1 className="text-lg font-semibold text-[#0a2540]">{title}</h1>
-            <p className="text-xs text-gray-500">Manage all your {title.toLowerCase()}</p>
+            <h1 className="page-title">{title}</h1>
+            <p className="page-subtitle">Manage all your {title.toLowerCase()}</p>
           </div>
-          <Link
-            to={`${endpoint}/new`}
-            className="bg-[#635bff] text-white px-3 py-1.5 text-sm rounded-md hover:opacity-90 transition"
-          >
+          <Link to={`${endpoint}/new`} className="btn-primary">
             + Add
           </Link>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="grid grid-cols-12 py-3 text-xs font-semibold text-gray-500 uppercase border-b border-slate-100">
-            <div className="col-span-3">Client</div>
-            <div className="col-span-3">Quotation</div>
-            <div className="col-span-2">Date</div>
-            <div className="col-span-2">Status</div>
-            <div className="col-span-2">Actions</div>
-          </div>
+        <div className="overflow-x-auto">
+          <div className="saas-table-shell min-w-[720px]">
+            <div className="saas-grid-head grid grid-cols-12">
+              <div className="col-span-3">Client</div>
+              <div className="col-span-3">Quotation</div>
+              <div className="col-span-2">Date</div>
+              <div className="col-span-2">Status</div>
+              <div className="col-span-2">Actions</div>
+            </div>
 
-          {data.map((item) => {
+            {data.map((item) => {
             const clientName = item?.clientId?.name || "No Client";
             const clientEmail = item?.clientId?.email || "no-email@client.com";
             const subtitle = item?.description || `${Array.isArray(item?.items) ? item.items.length : 0} items`;
@@ -318,7 +300,7 @@ export default function ModulePage({ title, endpoint }) {
             return (
               <div
                 key={item._id}
-                className="grid grid-cols-12 py-3 border-b border-slate-100 last:border-b-0 items-center"
+                className="saas-grid-row grid grid-cols-12 items-center"
               >
                 <div className="col-span-3 flex items-center gap-2 min-w-0">
                   <div className="h-8 w-8 rounded-full bg-[#eef2ff] text-[#4f46e5] text-xs font-semibold flex items-center justify-center shrink-0">
@@ -349,25 +331,16 @@ export default function ModulePage({ title, endpoint }) {
                   </span>
                 </div>
 
-                <div className="col-span-2 align-middle min-w-[200px] overflow-hidden">
-                  <div className="flex items-center gap-1 whitespace-nowrap">
-                    <Link
-                      to={`${endpoint}/${item._id}`}
-                      className="h-7 px-2 text-xs rounded-md whitespace-nowrap border border-gray-300 text-gray-700 bg-white hover:bg-slate-50 transition inline-flex items-center justify-center"
-                    >
+                <div className="col-span-2 min-w-[200px]">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link to={`${endpoint}/${item._id}`} className="btn-secondary btn-compact whitespace-nowrap">
                       View
                     </Link>
-                    <button
-                      onClick={() => handlePdf(item._id)}
-                      className="h-7 px-2 text-xs rounded-md whitespace-nowrap bg-purple-600 text-white hover:opacity-90 transition inline-flex items-center justify-center"
-                    >
+                    <button type="button" onClick={() => handlePdf(item._id)} className="btn-primary btn-compact whitespace-nowrap">
                       PDF
                     </button>
                     {item?.status !== "approved" ? (
-                      <button
-                        onClick={() => handleApprove(item)}
-                        className="h-7 px-2 text-xs rounded-md whitespace-nowrap bg-indigo-600 text-white hover:opacity-90 transition inline-flex items-center justify-center"
-                      >
+                      <button type="button" onClick={() => handleApprove(item)} className="btn-primary btn-compact whitespace-nowrap">
                         Approve
                       </button>
                     ) : null}
@@ -376,6 +349,7 @@ export default function ModulePage({ title, endpoint }) {
               </div>
             );
           })}
+          </div>
         </div>
       </div>
     );
@@ -383,39 +357,34 @@ export default function ModulePage({ title, endpoint }) {
 
   if (isInvoices) {
     return (
-      <div className="p-4 space-y-3">
-        <div className="flex justify-between items-center">
+      <div className="space-y-5">
+        <div className="flex justify-between items-center gap-3">
           <div>
-            <h1 className="text-lg font-semibold text-[#0a2540]">{title}</h1>
-            <p className="text-xs text-gray-500">Manage all your {title.toLowerCase()}</p>
+            <h1 className="page-title">{title}</h1>
+            <p className="page-subtitle">Manage all your {title.toLowerCase()}</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="grid grid-cols-12 py-3 text-xs font-semibold text-gray-500 uppercase border-b border-slate-100">
-            <div className="col-span-3">Client</div>
-            <div className="col-span-3">Invoice</div>
-            <div className="col-span-2">Date</div>
-            <div className="col-span-2">Status</div>
-            <div className="col-span-2">Actions</div>
-          </div>
+        <div className="overflow-x-auto">
+          <div className="saas-table-shell min-w-[720px]">
+            <div className="saas-grid-head grid grid-cols-12">
+              <div className="col-span-3">Client</div>
+              <div className="col-span-3">Invoice</div>
+              <div className="col-span-2">Date</div>
+              <div className="col-span-2">Status</div>
+              <div className="col-span-2">Actions</div>
+            </div>
 
-          {data.map((item) => {
+            {data.map((item) => {
             const clientName = item?.clientId?.name || item?.clientName || "No Client";
             const clientEmail = item?.clientId?.email || "no-email@client.com";
             const invoiceName = item?.name || `Invoice ${String(item?._id || "").slice(-6)}`;
-            const subtitle = (
-              <>
-                Total: <span className="currency inline-block">{formatMoney(item?.total || 0)}</span>
-              </>
-            );
             const statusLabel = getInvoiceStatusLabel(item);
-            const remainingAmount = Number(item?.remainingAmount ?? Math.max(Number(item?.total || 0) - Number(item?.paidAmount || 0), 0));
 
             return (
               <div
                 key={item._id}
-                className="grid grid-cols-12 py-3 border-b border-slate-100 last:border-b-0 items-center"
+                className="saas-grid-row grid grid-cols-12 items-center"
               >
                 <div className="col-span-3 flex items-center gap-2 min-w-0">
                   <div className="h-8 w-8 rounded-full bg-[#eef2ff] text-[#4f46e5] text-xs font-semibold flex items-center justify-center shrink-0">
@@ -429,7 +398,12 @@ export default function ModulePage({ title, endpoint }) {
 
                 <div className="col-span-3 min-w-0">
                   <p className="text-sm font-semibold text-[#0a2540] truncate">{invoiceName}</p>
-                  <p className="text-xs text-gray-500 truncate">{subtitle}</p>
+                  <p className="text-xs text-gray-500">
+                    Total:{" "}
+                    <span className="font-medium whitespace-nowrap tabular-nums text-[#374151]">
+                      {formatMoney(item?.total || 0)}
+                    </span>
+                  </p>
                 </div>
 
                 <div className="col-span-2 text-sm text-[#425466]">
@@ -444,24 +418,15 @@ export default function ModulePage({ title, endpoint }) {
                   </span>
                 </div>
 
-                <div className="col-span-2 align-middle min-w-[200px] overflow-hidden">
-                  <div className="flex items-center gap-2 whitespace-nowrap">
-                    <Link
-                      to={`${endpoint}/${item._id}`}
-                      className="h-7 px-2 text-xs rounded-md whitespace-nowrap border border-gray-300 text-gray-700 bg-white hover:bg-slate-50 transition inline-flex items-center justify-center"
-                    >
+                <div className="col-span-2 min-w-[200px]">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link to={`${endpoint}/${item._id}`} className="btn-secondary btn-compact whitespace-nowrap">
                       View
                     </Link>
-                    <button
-                      onClick={() => handlePdf(item._id)}
-                      className="h-7 px-2 text-xs rounded-md whitespace-nowrap bg-purple-600 text-white hover:opacity-90 transition inline-flex items-center justify-center"
-                    >
+                    <button type="button" onClick={() => handlePdf(item._id)} className="btn-primary btn-compact whitespace-nowrap">
                       PDF
                     </button>
-                    <Link
-                      to={`${endpoint}/${item._id}`}
-                      className="h-7 px-2 text-xs rounded-md whitespace-nowrap bg-indigo-600 text-white hover:opacity-90 transition inline-flex items-center justify-center"
-                    >
+                    <Link to={`${endpoint}/${item._id}`} className="btn-primary btn-compact whitespace-nowrap">
                       Pay
                     </Link>
                   </div>
@@ -469,35 +434,29 @@ export default function ModulePage({ title, endpoint }) {
               </div>
             );
           })}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 space-y-3">
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
+    <div className="space-y-5">
+      <div className="flex justify-between items-center gap-3">
         <div>
-          <h1 className="text-lg font-bold text-[#0a2540]">{title}</h1>
-          <p className="text-gray-500 text-xs">
-            Manage all your {title.toLowerCase()}
-          </p>
+          <h1 className="page-title">{title}</h1>
+          <p className="page-subtitle">Manage all your {title.toLowerCase()}</p>
         </div>
 
         {!isInvoices ? (
-          <Link
-            to={`${endpoint}/new`}
-            className="bg-[#635bff] text-white px-3 py-1.5 text-sm rounded-md hover:opacity-90 transition"
-          >
+          <Link to={`${endpoint}/new`} className="btn-primary">
             + Add
           </Link>
         ) : null}
       </div>
 
-      {/* TABLE */}
-      <div className="bg-white rounded-xl shadow overflow-hidden">
-        <div className="grid grid-cols-12 px-5 py-3 bg-gray-50 text-xs font-semibold text-gray-500 uppercase">
+      <div className="saas-table-shell">
+        <div className="saas-grid-head grid grid-cols-12">
           {isClients ? <div className="col-span-2">Client ID</div> : null}
           <div className="col-span-4">Name</div>
           <div className={isClients ? "col-span-2" : "col-span-3"}>Date</div>
@@ -508,7 +467,7 @@ export default function ModulePage({ title, endpoint }) {
         {data.map((item) => (
           <div
             key={item._id}
-            className="grid grid-cols-12 px-5 py-2 border-t items-center hover:bg-gray-50 transition"
+            className="saas-grid-row grid grid-cols-12 items-center hover:bg-slate-50/80 transition"
           >
             {isClients ? (
               <div className="col-span-2 text-xs font-medium text-[#425466]">{formatClientNumber(item)}</div>
@@ -535,38 +494,22 @@ export default function ModulePage({ title, endpoint }) {
               </span>
             </div>
 
-            <div className={`${isClients ? "col-span-2" : "col-span-3"} flex flex-wrap gap-2 text-xs`}>
-              {/* VIEW */}
-              <Link
-                to={`${endpoint}/${item._id}`}
-                className="text-[#635bff] hover:underline"
-              >
+            <div className={`${isClients ? "col-span-2" : "col-span-3"} flex flex-wrap gap-2`}>
+              <Link to={`${endpoint}/${item._id}`} className="btn-secondary btn-compact">
                 View
               </Link>
-
-              {/* EDIT (clients only) */}
               {isClients && (
-                <Link to={`/clients/${item._id}/edit`} className="text-blue-600 hover:underline">
+                <Link to={`/clients/${item._id}/edit`} className="btn-secondary btn-compact">
                   Edit
                 </Link>
               )}
-
-              {/* APPROVE (quotations only) */}
               {isQuotations && item.status !== "approved" && (
-                <button
-                  onClick={() => handleApprove(item)}
-                  className="bg-[#635bff] text-white px-3 py-1.5 text-sm rounded-md hover:opacity-90 transition"
-                >
+                <button type="button" onClick={() => handleApprove(item)} className="btn-primary btn-compact">
                   Approve
                 </button>
               )}
-
-              {/* PDF (not shown for clients) */}
               {endpoint !== "/clients" && (
-                <button
-                  onClick={() => handlePdf(item._id)}
-                  className="bg-[#635bff] text-white px-3 py-1.5 text-sm rounded-md hover:opacity-90 transition"
-                >
+                <button type="button" onClick={() => handlePdf(item._id)} className="btn-primary btn-compact">
                   PDF
                 </button>
               )}
