@@ -27,7 +27,7 @@ const sendResetPasswordEmail = async ({ to, resetToken }) => {
     },
   });
 
-  const resetLink = `${env.clientOrigin || "http://localhost:5173"}/reset-password/${encodeURIComponent(
+  const resetLink = `https://enterprise-crm-omega.vercel.app/reset-password/${encodeURIComponent(
     resetToken
   )}`;
 
