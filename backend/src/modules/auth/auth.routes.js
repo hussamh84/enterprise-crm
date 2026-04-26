@@ -46,15 +46,10 @@ const ensureDefaultAdmin = async () => {
   const adminPassword = "12345678";
   const existingAdmin = await User.findOne({ email: adminEmail });
   if (existingAdmin) {
-    const hasPasswordHash = typeof existingAdmin.passwordHash === "string";
-    const isPasswordValid = hasPasswordHash
-      ? await bcrypt.compare(adminPassword, existingAdmin.passwordHash)
-      : false;
-
-    if (!isPasswordValid) {
+    if (!existingAdmin.passwordHash) {
       existingAdmin.passwordHash = await bcrypt.hash(adminPassword, 10);
       await existingAdmin.save();
-      console.log("Admin created");
+      console.log("Admin password hash initialized");
     }
 
     return existingAdmin;

@@ -41,8 +41,8 @@ export default function UsersPage() {
   });
 
   const changePassword = useMutation({
-    mutationFn: async ({ id, oldPassword, newPassword }) =>
-      api.post(`/users/${id}/change-password`, { oldPassword, newPassword }),
+    mutationFn: async ({ email, oldPassword, newPassword }) =>
+      api.put("/auth/change-password", { email, oldPassword, newPassword }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/users"] }),
   });
 
@@ -114,7 +114,7 @@ export default function UsersPage() {
                   if (oldPassword == null || !oldPassword) return;
                   const newPassword = window.prompt("New password");
                   if (newPassword == null || !newPassword) return;
-                  changePassword.mutate({ id: user._id || user.id, oldPassword, newPassword });
+                  changePassword.mutate({ email: user.email, oldPassword, newPassword });
                 }}
               >
                 Change Password

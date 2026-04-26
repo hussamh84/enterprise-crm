@@ -60,16 +60,17 @@ const changePassword = async (req, res) => {
       return res.status(401).json({ message: "Current password is incorrect" });
     }
 
+    console.log("OLD HASH:", user.passwordHash);
+
     const hashed = await bcrypt.hash(newPassword, 10);
 
+    console.log("NEW HASH:", hashed);
+
     user.passwordHash = hashed;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpiresAt = null;
 
     await user.save();
-
-    console.log("NEW HASH SAVED:", hashed);
-
-    const updated = await User.findOne({ email: user.email });
-    console.log("UPDATED USER:", updated.passwordHash);
 
     return res.json({ message: "Password changed successfully" });
   } catch (err) {

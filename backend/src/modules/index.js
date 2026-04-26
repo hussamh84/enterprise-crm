@@ -1378,40 +1378,6 @@ router.put("/users/me", async (req, res, next) => {
   }
 });
 
-router.post("/users/me/change-password", async (req, res, next) => {
-  try {
-    const oldPassword = String(req.body?.oldPassword || "");
-    const newPassword = String(req.body?.newPassword || "");
-    const confirmPassword = String(req.body?.confirmPassword || "");
-    if (!oldPassword || !newPassword || !confirmPassword) {
-      return res.status(400).json({ message: "oldPassword, newPassword, and confirmPassword are required" });
-    }
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({ message: "New password and confirmation do not match" });
-    }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: "newPassword must be at least 6 characters" });
-    }
-
-    const user = await User.findOne({ _id: req.user.id, tenantId: req.tenantId });
-    if (!user) return res.status(404).json({ message: "User not found" });
-    if (!user.passwordHash) return res.status(400).json({ message: "Password hash missing" });
-
-    const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
-    if (!isMatch) return res.status(401).json({ message: "Old password is incorrect" });
-
-    const hashed = await bcrypt.hash(newPassword, 10);
-    user.passwordHash = hashed;
-    user.resetPasswordToken = null;
-    user.resetPasswordExpiresAt = null;
-    await user.save();
-
-    res.json({ message: "Password changed successfully" });
-  } catch (error) {
-    next(error);
-  }
-});
-
 router.post("/users", async (req, res, next) => {
   try {
     const fullName = String(req.body?.fullName || "").trim();
@@ -1485,36 +1451,6 @@ router.post("/users/:id/reset-password", async (req, res, next) => {
     );
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json({ message: "Password reset successful" });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post("/users/:id/change-password", async (req, res, next) => {
-  try {
-    const oldPassword = String(req.body?.oldPassword || "");
-    const newPassword = String(req.body?.newPassword || "");
-    if (!oldPassword || !newPassword) {
-      return res.status(400).json({ message: "oldPassword and newPassword are required" });
-    }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: "newPassword must be at least 6 characters" });
-    }
-
-    const user = await User.findOne({ _id: req.params.id, tenantId: req.tenantId });
-    if (!user) return res.status(404).json({ message: "User not found" });
-    if (!user.passwordHash) return res.status(400).json({ message: "Password hash missing" });
-
-    const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
-    if (!isMatch) return res.status(401).json({ message: "Old password is incorrect" });
-
-    const hashed = await bcrypt.hash(newPassword, 10);
-    user.passwordHash = hashed;
-    user.resetPasswordToken = null;
-    user.resetPasswordExpiresAt = null;
-    await user.save();
-
-    res.json({ message: "Password changed successfully" });
   } catch (error) {
     next(error);
   }
