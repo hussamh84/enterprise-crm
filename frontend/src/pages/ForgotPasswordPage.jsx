@@ -25,24 +25,22 @@ try {
 };
 
 return (
-<div style={{ padding: 40 }}> <h2>Forgot Password</h2>
-
-  <form onSubmit={handleSubmit}>
-    <input
-      type="email"
-      placeholder="Enter your email"
-      value={email}
-      onChange={(e) => setEmail(e.target.value)}
-    />
-
-    <button
-      type="submit"
-      onClick={() => console.log("BUTTON CLICKED")}
-    >
-      Send Reset Link
-    </button>
-  </form>
-</div>
+  <div style={{
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100vw",
+    height: "100vh",
+    background: "red",
+    color: "white",
+    zIndex: 999999,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "40px"
+  }}>
+    REAL PAGE LOADED
+  </div>
 
 );
 }
