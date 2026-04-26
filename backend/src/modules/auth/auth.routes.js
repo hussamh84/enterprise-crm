@@ -14,30 +14,31 @@ const router = express.Router();
 /* ===================== LOAD USER MODEL ===================== */
 const User = require("../users/user.model");
 
-const mailTransporter =
-  env.smtpHost && env.smtpUser && env.smtpPass
-    ? nodemailer.createTransport({
-        host: env.smtpHost,
-        port: env.smtpPort,
-        secure: env.smtpSecure,
-        auth: {
-          user: env.smtpUser,
-          pass: env.smtpPass,
-        },
-      })
-    : nodemailer.createTransport({ jsonTransport: true });
-
 const sendResetPasswordEmail = async ({ to, resetToken }) => {
+  const testAccount = await nodemailer.createTestAccount();
+
+  const transporter = nodemailer.createTransport({
+    host: "smtp.ethereal.email",
+    port: 587,
+    secure: false,
+    auth: {
+      user: testAccount.user,
+      pass: testAccount.pass,
+    },
+  });
+
   const resetLink = `${env.clientOrigin || "http://localhost:5173"}/reset-password/${encodeURIComponent(
     resetToken
   )}`;
-  await mailTransporter.sendMail({
-    from: env.mailFrom,
+
+  const info = await transporter.sendMail({
+    from: '"CRM System" <no-reply@crm.com>',
     to,
     subject: "Reset Password",
-    text: `Click link:\n${resetLink}`,
-    html: `<p>Click link:</p><p><a href="${resetLink}">${resetLink}</a></p>`,
+    text: `Reset your password: ${resetLink}`,
   });
+
+  console.log("Preview URL:", nodemailer.getTestMessageUrl(info));
 };
 
 /* ===================== CREATE DEFAULT ADMIN ===================== */
