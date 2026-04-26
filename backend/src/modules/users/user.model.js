@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.pre("save", function syncNameFields(next) {
+userSchema.pre("save", function (next) {
   if (!this.fullName && this.name) this.fullName = this.name;
   if (!this.name && this.fullName) this.name = this.fullName;
   next();
