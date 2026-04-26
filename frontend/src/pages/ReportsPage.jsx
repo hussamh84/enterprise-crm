@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../lib/api";
-import { formatCurrency } from "../utils/formatCurrency";
+import { formatMoney } from "../utils/formatCurrency";
 
 export default function ReportsPage() {
   const [tab, setTab] = useState("project");
@@ -54,9 +54,9 @@ export default function ReportsPage() {
         <div className="bg-white rounded-xl shadow-sm p-4 overflow-x-auto">
           <div className="grid grid-cols-12 py-2 border-b border-slate-100 text-xs font-semibold text-gray-500 uppercase">
             <div className="col-span-5">Project</div>
-            <div className="col-span-2">Revenue</div>
-            <div className="col-span-2">Expenses</div>
-            <div className="col-span-3">Profit</div>
+            <div className="col-span-2 currency-col">Revenue</div>
+            <div className="col-span-2 currency-col">Expenses</div>
+            <div className="col-span-3 currency-col">Profit</div>
           </div>
           {projects.map((project) => {
             const revenue = Number(project?.totalRevenue || 0);
@@ -68,10 +68,14 @@ export default function ReportsPage() {
                 <div className="col-span-5 text-[#0a2540] font-medium truncate">
                   {clientName} - {project?.name || "Project"}
                 </div>
-                <div className="col-span-2 text-[#0a2540]">{formatCurrency(revenue)}</div>
-                <div className="col-span-2 text-[#0a2540]">{formatCurrency(expenses)}</div>
-                <div className={`col-span-3 font-medium ${profit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
-                  {formatCurrency(profit)}
+                <div className="col-span-2 text-[#0a2540] currency-col">
+                  <span className="currency">{formatMoney(revenue)}</span>
+                </div>
+                <div className="col-span-2 text-[#0a2540] currency-col">
+                  <span className="currency">{formatMoney(expenses)}</span>
+                </div>
+                <div className={`col-span-3 font-medium currency-col ${profit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                  <span className="currency">{formatMoney(profit)}</span>
                 </div>
               </div>
             );
@@ -86,17 +90,23 @@ export default function ReportsPage() {
         <div className="bg-white rounded-xl shadow-sm p-4">
           <div className="grid grid-cols-12 py-2 border-b border-slate-100 text-xs font-semibold text-gray-500 uppercase">
             <div className="col-span-3">Month</div>
-            <div className="col-span-3">Revenue</div>
-            <div className="col-span-3">Expenses</div>
-            <div className="col-span-3">Profit</div>
+            <div className="col-span-3 currency-col">Revenue</div>
+            <div className="col-span-3 currency-col">Expenses</div>
+            <div className="col-span-3 currency-col">Profit</div>
           </div>
           {(monthlyReport?.breakdown || []).map((row) => (
             <div key={row.month} className="grid grid-cols-12 py-2 border-b border-slate-100 last:border-b-0 text-sm">
               <div className="col-span-3 text-[#425466]">{row.month}</div>
-              <div className="col-span-3 text-[#0a2540]">{formatCurrency(row.revenue)}</div>
-              <div className="col-span-3 text-[#0a2540]">{formatCurrency(row.expenses)}</div>
-              <div className={`col-span-3 font-medium ${Number(row.profit || 0) >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
-                {formatCurrency(row.profit)}
+              <div className="col-span-3 text-[#0a2540] currency-col">
+                <span className="currency">{formatMoney(row.revenue)}</span>
+              </div>
+              <div className="col-span-3 text-[#0a2540] currency-col">
+                <span className="currency">{formatMoney(row.expenses)}</span>
+              </div>
+              <div
+                className={`col-span-3 font-medium currency-col ${Number(row.profit || 0) >= 0 ? "text-emerald-600" : "text-rose-600"}`}
+              >
+                <span className="currency">{formatMoney(row.profit)}</span>
               </div>
             </div>
           ))}
@@ -107,17 +117,23 @@ export default function ReportsPage() {
         <div className="bg-white rounded-xl shadow-sm p-4">
           <div className="grid grid-cols-12 py-2 border-b border-slate-100 text-xs font-semibold text-gray-500 uppercase">
             <div className="col-span-3">Year</div>
-            <div className="col-span-3">Revenue</div>
-            <div className="col-span-3">Expenses</div>
-            <div className="col-span-3">Profit</div>
+            <div className="col-span-3 currency-col">Revenue</div>
+            <div className="col-span-3 currency-col">Expenses</div>
+            <div className="col-span-3 currency-col">Profit</div>
           </div>
           {(yearlyReport?.breakdown || []).map((row) => (
             <div key={row.year} className="grid grid-cols-12 py-2 border-b border-slate-100 last:border-b-0 text-sm">
               <div className="col-span-3 text-[#425466]">{row.year}</div>
-              <div className="col-span-3 text-[#0a2540]">{formatCurrency(row.revenue)}</div>
-              <div className="col-span-3 text-[#0a2540]">{formatCurrency(row.expenses)}</div>
-              <div className={`col-span-3 font-medium ${Number(row.profit || 0) >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
-                {formatCurrency(row.profit)}
+              <div className="col-span-3 text-[#0a2540] currency-col">
+                <span className="currency">{formatMoney(row.revenue)}</span>
+              </div>
+              <div className="col-span-3 text-[#0a2540] currency-col">
+                <span className="currency">{formatMoney(row.expenses)}</span>
+              </div>
+              <div
+                className={`col-span-3 font-medium currency-col ${Number(row.profit || 0) >= 0 ? "text-emerald-600" : "text-rose-600"}`}
+              >
+                <span className="currency">{formatMoney(row.profit)}</span>
               </div>
             </div>
           ))}

@@ -46,12 +46,11 @@ const resolveBranding = async (tenantId) => {
 
 const formatSdgMoney = (value = 0) => {
   const amount = Number(value || 0);
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "SDG",
+  const formatted = new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
+  return `SDG ${formatted}`;
 };
 
 const addWatermark = (doc, branding) => {
@@ -170,8 +169,8 @@ const addItemsTable = (doc, rows, top = 356) => {
       .fillColor("#0a2540")
       .text(item.description || item.name || "Line Item", 50, y, { width: 240 })
       .text(String(qty), 320, y)
-      .text(formatSdgMoney(rate), 390, y)
-      .text(formatSdgMoney(amount), 480, y);
+      .text(formatSdgMoney(rate), 380, y, { width: 110, align: "right" })
+      .text(formatSdgMoney(amount), 470, y, { width: 110, align: "right" });
     doc.moveTo(50, y + 18).lineTo(550, y + 18).strokeColor("#eef2f7").stroke();
     y += 26;
   });
@@ -203,7 +202,7 @@ const addTotals = (doc, { subtotal, discount = {}, tax = 0, grandTotal, total },
       .font(bold ? "Helvetica-Bold" : "Helvetica")
       .fillColor(bold ? "#1d4ed8" : "#0f172a")
       .text(label, 380, y, { width: 90, align: "right" })
-      .text(formatSdgMoney(amount), 470, y, { width: 80, align: "right" });
+      .text(formatSdgMoney(amount), 470, y, { width: 110, align: "right" });
     y += bold ? 24 : 18;
   });
 };

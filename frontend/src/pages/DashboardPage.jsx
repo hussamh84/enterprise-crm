@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Activity, BriefcaseBusiness, Headset, Search, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
-import { formatCurrency } from "../utils/formatCurrency";
+import { formatMoney } from "../utils/formatCurrency";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -97,16 +97,20 @@ export default function DashboardPage() {
       <div className="grid md:grid-cols-3 gap-5">
         <div className="premium-card p-5">
           <p className="text-[#6b7c93] text-sm">Total Revenue</p>
-          <p className="text-2xl font-semibold mt-2 text-[#0a2540]">{formatCurrency(totalRevenue)}</p>
+          <p className="text-2xl font-semibold mt-2 text-[#0a2540]">
+            <span className="currency">{formatMoney(totalRevenue)}</span>
+          </p>
         </div>
         <div className="premium-card p-5">
           <p className="text-[#6b7c93] text-sm">Total Expenses</p>
-          <p className="text-2xl font-semibold mt-2 text-[#0a2540]">{formatCurrency(totalExpenses)}</p>
+          <p className="text-2xl font-semibold mt-2 text-[#0a2540]">
+            <span className="currency">{formatMoney(totalExpenses)}</span>
+          </p>
         </div>
         <div className="premium-card p-5">
           <p className="text-[#6b7c93] text-sm">Total Profit</p>
           <p className={`text-2xl font-semibold mt-2 ${totalProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
-            {formatCurrency(totalProfit)}
+            <span className="currency">{formatMoney(totalProfit)}</span>
           </p>
         </div>
       </div>
@@ -118,18 +122,18 @@ export default function DashboardPage() {
             {now.toLocaleString("default", { month: "long" })} {now.getFullYear()}
           </p>
           <div className="mt-3 space-y-1.5 text-sm">
-            <p className="flex items-center justify-between"><span className="text-[#6b7c93]">Total Revenue</span><span className="font-medium text-[#0a2540]">{formatCurrency(monthlyReport?.totals?.totalRevenue)}</span></p>
-            <p className="flex items-center justify-between"><span className="text-[#6b7c93]">Total Expenses</span><span className="font-medium text-[#0a2540]">{formatCurrency(monthlyReport?.totals?.totalExpenses)}</span></p>
-            <p className="flex items-center justify-between"><span className="text-[#6b7c93]">Total Profit</span><span className="font-semibold text-[#0a2540]">{formatCurrency(monthlyReport?.totals?.totalProfit)}</span></p>
+            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Revenue</span><span className="font-medium text-[#0a2540] shrink-0"><span className="currency">{formatMoney(monthlyReport?.totals?.totalRevenue)}</span></span></p>
+            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Expenses</span><span className="font-medium text-[#0a2540] shrink-0"><span className="currency">{formatMoney(monthlyReport?.totals?.totalExpenses)}</span></span></p>
+            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Profit</span><span className="font-semibold text-[#0a2540] shrink-0"><span className="currency">{formatMoney(monthlyReport?.totals?.totalProfit)}</span></span></p>
           </div>
         </div>
         <div className="premium-card p-5">
           <p className="text-[#6b7c93] text-sm">Yearly Report</p>
           <p className="text-xs text-[#94a3b8] mt-1">{now.getFullYear()}</p>
           <div className="mt-3 space-y-1.5 text-sm">
-            <p className="flex items-center justify-between"><span className="text-[#6b7c93]">Total Revenue</span><span className="font-medium text-[#0a2540]">{formatCurrency(yearlyReport?.totals?.totalRevenue)}</span></p>
-            <p className="flex items-center justify-between"><span className="text-[#6b7c93]">Total Expenses</span><span className="font-medium text-[#0a2540]">{formatCurrency(yearlyReport?.totals?.totalExpenses)}</span></p>
-            <p className="flex items-center justify-between"><span className="text-[#6b7c93]">Total Profit</span><span className="font-semibold text-[#0a2540]">{formatCurrency(yearlyReport?.totals?.totalProfit)}</span></p>
+            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Revenue</span><span className="font-medium text-[#0a2540] shrink-0"><span className="currency">{formatMoney(yearlyReport?.totals?.totalRevenue)}</span></span></p>
+            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Expenses</span><span className="font-medium text-[#0a2540] shrink-0"><span className="currency">{formatMoney(yearlyReport?.totals?.totalExpenses)}</span></span></p>
+            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Profit</span><span className="font-semibold text-[#0a2540] shrink-0"><span className="currency">{formatMoney(yearlyReport?.totals?.totalProfit)}</span></span></p>
           </div>
         </div>
       </div>

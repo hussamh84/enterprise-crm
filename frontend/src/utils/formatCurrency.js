@@ -1,10 +1,10 @@
-import { currencyConfig } from "../config/currency";
-
 export const formatCurrency = (value = 0) => {
-  const amount = Number(value || 0);
-  const formatted = new Intl.NumberFormat(currencyConfig.locale, {
+  const n = Number(value || 0);
+  return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount);
-  return `${currencyConfig.currencySymbol} ${formatted}`;
+  }).format(n);
 };
+
+/** Full display string: SDG + formatted amount (keeps amount on one line via `.currency` in UI). */
+export const formatMoney = (value = 0) => `SDG ${formatCurrency(value)}`;

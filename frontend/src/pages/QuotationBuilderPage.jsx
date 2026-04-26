@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CirclePlus, FileText, Trash2 } from "lucide-react";
 import api from "../lib/api";
-import { formatCurrency } from "../utils/formatCurrency";
+import { formatCurrency, formatMoney } from "../utils/formatCurrency";
 import { formatClientNumber } from "../utils/formatClientNumber";
 
 const BLANK_ITEM = { description: "", quantity: 1, unitPrice: 0 };
@@ -187,7 +187,9 @@ export default function QuotationBuilderPage() {
               <input className="col-span-5 rounded-lg border border-slate-200 px-3 py-2" value={item.description} onChange={(event) => updateItem(index, "description", event.target.value)} placeholder="Item description" />
               <input type="number" min="0" className="col-span-2 rounded-lg border border-slate-200 px-3 py-2" value={item.quantity} onChange={(event) => updateItem(index, "quantity", event.target.value)} placeholder="Qty" />
               <input type="number" min="0" className="col-span-2 rounded-lg border border-slate-200 px-3 py-2" value={item.unitPrice} onChange={(event) => updateItem(index, "unitPrice", event.target.value)} placeholder="Unit price" />
-              <p className="col-span-2 text-xs font-medium text-[#0a2540]">{formatCurrency(calculatedItems[index]?.total)}</p>
+              <p className="col-span-2 text-xs font-medium text-[#0a2540]">
+                <span className="currency">{formatMoney(calculatedItems[index]?.total)}</span>
+              </p>
               <button type="button" className="col-span-1 text-slate-500 hover:text-rose-600 flex justify-center" onClick={() => removeItem(index)}>
                 <Trash2 size={16} />
               </button>
@@ -208,11 +210,11 @@ export default function QuotationBuilderPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 ml-auto w-full max-w-sm text-xs space-y-2">
-          <Row label="Subtotal" value={formatCurrency(subtotal)} />
-          <Row label="Discount" value={`- ${formatCurrency(discountAmount)}`} />
-          <Row label="Tax" value={formatCurrency(tax)} />
+          <Row label="Subtotal" value={<span className="currency">{formatMoney(subtotal)}</span>} />
+          <Row label="Discount" value={<span className="currency">- SDG {formatCurrency(discountAmount)}</span>} />
+          <Row label="Tax" value={<span className="currency">{formatMoney(tax)}</span>} />
           <div className="pt-2 border-t border-slate-200">
-            <Row label="Grand Total" value={formatCurrency(grandTotal)} strong />
+            <Row label="Grand Total" value={<span className="currency">{formatMoney(grandTotal)}</span>} strong />
           </div>
         </div>
 

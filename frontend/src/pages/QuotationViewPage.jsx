@@ -1,7 +1,8 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
-import { formatCurrency } from "../utils/formatCurrency";
+import { formatMoney } from "../utils/formatCurrency";
+import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");
 
@@ -22,6 +23,11 @@ export default function QuotationViewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const { data: settings } = useQuery({
+    queryKey: ["workspace-settings"],
+    queryFn: async () => (await api.get("/settings")).data,
+  });
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["quotation-view", id],
@@ -67,107 +73,126 @@ export default function QuotationViewPage() {
   if (!id) return null;
 
   if (isLoading) {
-    return <div className="premium-card p-8 text-center text-slate-500">Loading quotation...</div>;
+    return <div className="enterprise-doc-card p-8 text-center text-slate-500 mx-6 mt-6">Loading quotation...</div>;
   }
 
   if (isError || !quotation) {
-    return <div className="premium-card p-8 text-center text-rose-600">Unable to load quotation details.</div>;
+    return <div className="enterprise-doc-card p-8 text-center text-rose-600 mx-6 mt-6">Unable to load quotation details.</div>;
   }
 
+  const docTitle = quotation.name || "Quotation";
+  const refId = String(quotation._id || id).slice(-8).toUpperCase();
+
   return (
-    <div className="space-y-6 p-6">
-      <div className="premium-card p-5 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.08em] text-[#6b7c93]">Quotation</p>
-          <h1 className="section-title mt-1">{quotation.name || quotation._id || id}</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-[#d6e4ff] bg-[#eef4ff] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#1f3d7a]">
-            {status}
-          </span>
-          {isApproved ? (
-            <span className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-400">Edit</span>
-          ) : (
-            <Link to={`/quotations/${id}/edit`} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-[#425466] hover:bg-slate-50">
-              Edit
-            </Link>
-          )}
+    <div className="enterprise-doc p-6 pb-10 max-w-5xl mx-auto">
+      <div className="flex flex-wrap items-center justify-end gap-2 enterprise-doc-section">
+        <span className="rounded-full border border-[#e2e8f0] bg-[#f8fafc] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#475569]">
+          {status}
+        </span>
+        {isApproved ? (
+          <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">Edit</span>
+        ) : (
+          <Link
+            to={`/quotations/${id}/edit`}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-[#425466] hover:bg-slate-50 shadow-sm"
+          >
+            Edit
+          </Link>
+        )}
+        <button
+          type="button"
+          onClick={() => printPdf()}
+          className="rounded-lg bg-[#4f46e5] text-white px-3 py-2 text-sm font-medium hover:bg-[#4338ca] shadow-sm"
+        >
+          Print PDF
+        </button>
+        {!isApproved ? (
           <button
             type="button"
-            onClick={() => printPdf()}
-            className="rounded-lg bg-[#635bff] text-white px-3 py-2 text-sm font-medium hover:bg-[#5849ff]"
+            disabled={approveMutation.isPending}
+            onClick={() => approveMutation.mutate()}
+            className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
           >
-            Print
+            {approveMutation.isPending ? "Approving…" : "Approve"}
           </button>
-          {!isApproved ? (
-            <button
-              type="button"
-              disabled={approveMutation.isPending}
-              onClick={() => approveMutation.mutate()}
-              className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
-            >
-              {approveMutation.isPending ? "Approving…" : "Approve"}
-            </button>
-          ) : null}
-          <Link to="/quotations" className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-[#425466] hover:bg-slate-50">
-            Back
-          </Link>
-        </div>
+        ) : null}
+        <Link to="/quotations" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-[#425466] hover:bg-slate-50 shadow-sm">
+          Back
+        </Link>
       </div>
 
-      {approveMutation.isError ? (
-        <p className="text-sm text-rose-600 px-1">Could not approve quotation. Try again.</p>
-      ) : null}
+      {approveMutation.isError ? <p className="text-sm text-rose-600 mb-4">Could not approve quotation. Try again.</p> : null}
 
-      <div className="premium-card p-5">
-        <h2 className="font-semibold text-[#0a2540] mb-4">Client &amp; project</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-          <InfoField label="Client" value={clientName || "-"} />
-          <InfoField label="Project" value={projectName || "-"} />
-          <InfoField label="Created" value={dateValue(quotation.createdAt)} />
-          <InfoField label="Status" value={status} />
-        </div>
+      <div className="enterprise-doc-card">
+        <EnterpriseDocHeader
+          documentLabel="Quotation"
+          title={docTitle}
+          reference={refId}
+          dateStr={dateValue(quotation.createdAt)}
+          settings={settings}
+        />
       </div>
 
-      <div className="premium-card p-5">
-        <h2 className="font-semibold text-[#0a2540] mb-4">Items</h2>
-        {items.length === 0 ? (
-          <p className="text-sm text-[#6b7c93]">No quotation items found.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-[0.08em] text-[#6b7c93]">
-                  <th className="px-3 py-2">Item</th>
-                  <th className="px-3 py-2">Qty</th>
-                  <th className="px-3 py-2">Unit price</th>
-                  <th className="px-3 py-2 text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, index) => {
-                  const qty = Number(item.qty ?? item.quantity ?? 0);
-                  const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
-                  const rowTotal = calculateItemTotal(item);
-                  return (
-                    <tr key={item._id || `${item.name || "item"}-${index}`} className="border-b border-slate-100 last:border-0">
-                      <td className="px-3 py-3 font-medium text-[#0a2540]">{item.name || item.description || "Item"}</td>
-                      <td className="px-3 py-3 text-[#425466]">{qty}</td>
-                      <td className="px-3 py-3 text-[#425466]">{formatCurrency(unitPrice)}</td>
-                      <td className="px-3 py-3 text-right font-semibold text-[#0a2540]">{formatCurrency(rowTotal)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      <div className="enterprise-doc-card">
+        <div className="p-8">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.1em] text-[#64748b] mb-4">Client &amp; project</h3>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            <InfoField label="Client" value={clientName || "—"} />
+            <InfoField label="Project" value={projectName || "—"} />
+            <InfoField label="Created" value={dateValue(quotation.createdAt)} />
+            <InfoField label="Status" value={status} />
           </div>
-        )}
+        </div>
       </div>
 
-      <div className="premium-card p-5">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-[#6b7c93] uppercase tracking-[0.08em]">Total</p>
-          <p className="text-2xl font-semibold text-[#0a2540]">{formatCurrency(total)}</p>
+      <div className="enterprise-doc-card">
+        <div className="p-8">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.1em] text-[#64748b] mb-4">Line items</h3>
+          {items.length === 0 ? (
+            <p className="text-sm text-[#64748b]">No quotation items found.</p>
+          ) : (
+            <>
+              <div className="overflow-x-auto rounded-lg border border-[#eee]">
+                <table className="enterprise-doc-table">
+                  <thead>
+                    <tr>
+                      <th className="text-left">Description</th>
+                      <th className="text-center w-24">Qty</th>
+                      <th className="text-right currency-col">Unit price</th>
+                      <th className="text-right currency-col">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item, index) => {
+                      const qty = Number(item.qty ?? item.quantity ?? 0);
+                      const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
+                      const rowTotal = calculateItemTotal(item);
+                      return (
+                        <tr key={item._id || `${item.name || "item"}-${index}`}>
+                          <td className="text-left font-medium">{item.name || item.description || "Item"}</td>
+                          <td className="text-center text-[#475569]">{qty}</td>
+                          <td className="text-right text-[#475569]">
+                            <span className="currency">{formatMoney(unitPrice)}</span>
+                          </td>
+                          <td className="text-right font-semibold text-[#0f172a]">
+                            <span className="currency">{formatMoney(rowTotal)}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex justify-end pt-8 mt-2 border-t border-[#eee]">
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-[#64748b] mb-1">Grand Total</p>
+                  <p className="enterprise-doc-grand-total">
+                    <span className="currency enterprise-doc-grand-total-inner">{formatMoney(total)}</span>
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -176,9 +201,9 @@ export default function QuotationViewPage() {
 
 function InfoField({ label, value }) {
   return (
-    <div className="rounded-lg border border-slate-100 p-3">
-      <p className="text-xs text-[#6b7c93] uppercase tracking-[0.08em]">{label}</p>
-      <p className="text-sm font-medium text-[#0a2540] mt-1">{value}</p>
+    <div className="rounded-lg bg-[#f8fafc] border border-[#eee] p-3">
+      <p className="text-xs text-[#64748b] uppercase tracking-[0.08em] font-medium">{label}</p>
+      <p className="text-sm font-medium text-[#0f172a] mt-1">{value}</p>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import api from "../lib/api";
-import { formatCurrency } from "../utils/formatCurrency";
+import { formatMoney } from "../utils/formatCurrency";
 import { formatClientNumber } from "../utils/formatClientNumber";
 
 const TABS = [
@@ -101,7 +101,7 @@ export default function ClientDetailsPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <Metric label="Total Projects" value={String(stats?.totalProjects || 0)} />
               <Metric label="Total Quotations" value={String(stats?.totalQuotations ?? quotations.length)} />
-              <Metric label="Total Quoted" value={formatCurrency(stats?.totalQuoted)} />
+              <Metric label="Total Quoted" value={<span className="currency">{formatMoney(stats?.totalQuoted)}</span>} />
             </div>
           </div>
         </div>
@@ -157,7 +157,9 @@ export default function ClientDetailsPage() {
                     <p className="text-xs text-[#6b7c93] mt-1">{dateValue(q.createdAt)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-[#0a2540]">{formatCurrency(q.grandTotal)}</p>
+                    <p className="font-semibold text-[#0a2540]">
+                      <span className="currency">{formatMoney(q.grandTotal)}</span>
+                    </p>
                     <p className="text-xs text-[#6b7c93]">{q.status || "draft"}</p>
                   </div>
                 </div>

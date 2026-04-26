@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import api from "../lib/api";
 import { formatClientNumber } from "../utils/formatClientNumber";
+import { formatMoney } from "../utils/formatCurrency";
 
 export default function ModulePage({ title, endpoint }) {
   const queryClient = useQueryClient();
@@ -403,7 +404,11 @@ export default function ModulePage({ title, endpoint }) {
             const clientName = item?.clientId?.name || item?.clientName || "No Client";
             const clientEmail = item?.clientId?.email || "no-email@client.com";
             const invoiceName = item?.name || `Invoice ${String(item?._id || "").slice(-6)}`;
-            const subtitle = `Total: ${Number(item?.total || 0).toLocaleString()}`;
+            const subtitle = (
+              <>
+                Total: <span className="currency inline-block">{formatMoney(item?.total || 0)}</span>
+              </>
+            );
             const statusLabel = getInvoiceStatusLabel(item);
             const remainingAmount = Number(item?.remainingAmount ?? Math.max(Number(item?.total || 0) - Number(item?.paidAmount || 0), 0));
 
