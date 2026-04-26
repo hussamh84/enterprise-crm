@@ -5,12 +5,16 @@ import api from "../lib/api";
 export default function ResetPasswordPage() {
 const { token } = useParams();
 const [password, setPassword] = useState("");
+const [confirm, setConfirm] = useState("");
 const [loading, setLoading] = useState(false);
 
 const handleSubmit = async (e) => {
 e.preventDefault();
 
-console.log("RESET SUBMITTED");
+if (password !== confirm) {
+  alert("Passwords do not match");
+  return;
+}
 
 try {
   setLoading(true);
@@ -50,9 +54,23 @@ boxShadow: "0 10px 30px rgba(0,0,0,0.1)"
     <form onSubmit={handleSubmit}>
       <input
         type="password"
-        placeholder="Enter new password"
+        placeholder="New password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+        style={{
+          width: "100%",
+          padding: "12px",
+          marginBottom: "15px",
+          borderRadius: "8px",
+          border: "1px solid #ccc"
+        }}
+      />
+
+      <input
+        type="password"
+        placeholder="Confirm password"
+        value={confirm}
+        onChange={(e) => setConfirm(e.target.value)}
         style={{
           width: "100%",
           padding: "12px",

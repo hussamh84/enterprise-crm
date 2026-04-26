@@ -211,33 +211,35 @@ router.post("/forgot-password", body("email").isEmail(), async (req, res, next) 
 /* ===================== RESET PASSWORD ===================== */
 router.post(
   "/reset-password/:token",
-  body("newPassword").isLength({ min: 6 }),
+  body("password").isLength({ min: 6 }),
   async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const token = String(req.params.token || "").trim();
-    const newPassword = String(req.body.newPassword || "");
+    const { token } = req.params;
+    const { password } = req.body;
 
     const user = await User.findOne({
       resetToken: token,
-      resetTokenExpiry: { $gt: new Date() },
+      resetTokenExpiry: { $gt: Date.now() },
     });
 
-    if (!user)
-      return res
-        .status(400)
-        .json({ message: "Invalid or expired reset token" });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
 
-    user.passwordHash = await bcrypt.hash(newPassword, 10);
-    user.resetToken = null;
-    user.resetTokenExpiry = null;
+    const bcrypt = require("bcrypt");
+    const hashed = await bcrypt.hash(password, 10);
+
+    user.passwordHash = hashed;
+    user.resetToken = undefined;
+    user.resetTokenExpiry = undefined;
 
     await user.save();
 
-    res.json({ message: "Password reset successful" });
+    res.json({ message: "Password updated" });
   } catch (error) {
     next(error);
   }
