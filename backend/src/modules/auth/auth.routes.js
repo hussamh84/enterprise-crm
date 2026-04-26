@@ -2,7 +2,7 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
+const sgMail = require("@sendgrid/mail");
 const { body, validationResult } = require("express-validator");
 
 const env = require("../../config/env");
@@ -10,36 +10,20 @@ const { ROLES } = require("../../constants/roles");
 const { changePassword } = require("./auth.controller");
 
 const router = express.Router();
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 /* ===================== LOAD USER MODEL ===================== */
 const User = require("../users/user.model");
 
-const sendResetPasswordEmail = async ({ to, resetToken }) => {
-  const testAccount = await nodemailer.createTestAccount();
-
-  const transporter = nodemailer.createTransport({
-    host: "smtp.ethereal.email",
-    port: 587,
-    secure: false,
-    auth: {
-      user: testAccount.user,
-      pass: testAccount.pass,
-    },
-  });
-
-  const resetLink = `https://enterprise-crm-omega.vercel.app/reset-password/${encodeURIComponent(
-    resetToken
-  )}`;
-
+const sendResetPasswordEmail = async ({ to, token }) => {
   try {
-    const info = await transporter.sendMail({
-      from: '"CRM System" <no-reply@crm.com>',
+    await sgMail.send({
       to,
+      from: "your_verified_email@gmail.com",
       subject: "Reset Password",
-      text: `Reset your password: ${resetLink}`,
+      html: `<h2>Reset your password</h2><p>Click the link below:</p><a href="https://enterprise-crm-omega.vercel.app/reset-password/${token}">Reset Password</a>`,
     });
     console.log("EMAIL SENT");
-    console.log("Preview URL:", nodemailer.getTestMessageUrl(info));
   } catch (err) {
     console.error("EMAIL ERROR:", err);
   }
@@ -213,7 +197,7 @@ router.post("/forgot-password", body("email").isEmail(), async (req, res, next) 
 
     await user.save();
     console.log("SENDING EMAIL TO:", email);
-    await sendResetPasswordEmail({ to: user.email, resetToken: token });
+    await sendResetPasswordEmail({ to: user.email, token });
 
     res.json({
       message: "If this account exists, reset instructions were sent by email.",
