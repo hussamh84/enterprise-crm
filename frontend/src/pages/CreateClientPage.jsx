@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../lib/api";
+import api from "../lib/api";
 import { useAuthStore } from "../store/authStore";
 
 export default function CreateClientPage() {

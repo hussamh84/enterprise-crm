@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { api } from "../lib/api";
+import api from "../lib/api";
 import { formatCurrency } from "../utils/formatCurrency";
 
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");

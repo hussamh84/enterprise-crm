@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CirclePlus, FileText, Trash2 } from "lucide-react";
-import { api } from "../lib/api";
+import api from "../lib/api";
 import { formatCurrency } from "../utils/formatCurrency";
 import { formatClientNumber } from "../utils/formatClientNumber";
 

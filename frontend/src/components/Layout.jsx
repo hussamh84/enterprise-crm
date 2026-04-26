@@ -2,7 +2,7 @@ import { Bell, Briefcase, LayoutDashboard, LogOut, Search, Settings, ShieldCheck
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet } from "react-router-dom";
-import { api } from "../lib/api";
+import api from "../lib/api";
 import { syncCurrencyConfig } from "../config/currency";
 import { useAuthStore } from "../store/authStore";
 

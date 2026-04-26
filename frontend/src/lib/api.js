@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const api = axios.create({
+const api = axios.create({
   baseURL: "https://enterprise-crm-backend-hyb0.onrender.com/api/v1",
 });
 
@@ -35,3 +35,5 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export default api;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../lib/api";
+import api from "../lib/api";
 import { formatCurrency } from "../utils/formatCurrency";
 
 export default function ReportsPage() {

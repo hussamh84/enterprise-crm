@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { api } from "../lib/api";
+import api from "../lib/api";
 
 const PROJECT_TYPE_CHOICES = [
   { value: "CCTV", label: "CCTV" },

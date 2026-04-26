@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { api } from "../lib/api";
+import api from "../lib/api";
 import { formatCurrency } from "../utils/formatCurrency";
 import { formatClientNumber } from "../utils/formatClientNumber";
 

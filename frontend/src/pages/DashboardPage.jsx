@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, BriefcaseBusiness, Headset, Search, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../lib/api";
+import api from "../lib/api";
 import { formatCurrency } from "../utils/formatCurrency";
 
 export default function DashboardPage() {

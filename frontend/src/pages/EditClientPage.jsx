@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api } from "../lib/api";
+import api from "../lib/api";
 import { formatClientNumber } from "../utils/formatClientNumber";
 
 export default function EditClientPage() {
