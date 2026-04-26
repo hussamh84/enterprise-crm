@@ -17,9 +17,10 @@ const User = require("../users/user.model");
 
 const sendResetPasswordEmail = async ({ to, token }) => {
   try {
+    console.log("SENDING FROM:", "hussamh84@hotmail.com");
     await sgMail.send({
       to,
-      from: "your_verified_email@gmail.com",
+      from: "hussamh84@hotmail.com",
       subject: "Reset Password",
       html: `<h2>Reset your password</h2><p>Click the link below:</p><a href="https://enterprise-crm-omega.vercel.app/reset-password/${token}">Reset Password</a>`,
     });
