@@ -218,13 +218,14 @@ router.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
+    console.log("TOKEN FROM PARAMS:", req.params.token);
     const { token } = req.params;
     const { password } = req.body;
 
     const user = await User.findOne({
       resetToken: token,
-      resetTokenExpiry: { $gt: Date.now() },
     });
+    console.log("USER FOUND:", user);
 
     if (!user) {
       return res.status(400).json({ message: "Invalid or expired token" });
