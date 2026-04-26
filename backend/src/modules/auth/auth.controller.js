@@ -63,7 +63,6 @@ const changePassword = async (req, res) => {
     console.log("OLD HASH:", user.passwordHash);
 
     const hashed = await bcrypt.hash(newPassword, 10);
-
     console.log("NEW HASH:", hashed);
 
     user.passwordHash = hashed;
