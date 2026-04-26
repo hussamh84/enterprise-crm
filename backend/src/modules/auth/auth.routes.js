@@ -31,14 +31,18 @@ const sendResetPasswordEmail = async ({ to, resetToken }) => {
     resetToken
   )}`;
 
-  const info = await transporter.sendMail({
-    from: '"CRM System" <no-reply@crm.com>',
-    to,
-    subject: "Reset Password",
-    text: `Reset your password: ${resetLink}`,
-  });
-
-  console.log("Preview URL:", nodemailer.getTestMessageUrl(info));
+  try {
+    const info = await transporter.sendMail({
+      from: '"CRM System" <no-reply@crm.com>',
+      to,
+      subject: "Reset Password",
+      text: `Reset your password: ${resetLink}`,
+    });
+    console.log("EMAIL SENT");
+    console.log("Preview URL:", nodemailer.getTestMessageUrl(info));
+  } catch (err) {
+    console.error("EMAIL ERROR:", err);
+  }
 };
 
 /* ===================== CREATE DEFAULT ADMIN ===================== */
@@ -188,6 +192,7 @@ router.post(
 /* ===================== FORGOT PASSWORD ===================== */
 router.post("/forgot-password", body("email").isEmail(), async (req, res, next) => {
   try {
+    console.log("FORGOT PASSWORD API HIT");
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -202,10 +207,12 @@ router.post("/forgot-password", body("email").isEmail(), async (req, res, next) 
       });
 
     const token = crypto.randomBytes(32).toString("hex");
+    console.log("TOKEN:", token);
     user.resetToken = token;
     user.resetTokenExpiry = new Date(Date.now() + 1000 * 60 * 15);
 
     await user.save();
+    console.log("SENDING EMAIL TO:", email);
     await sendResetPasswordEmail({ to: user.email, resetToken: token });
 
     res.json({
