@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../lib/api";
+import axios from "axios";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -8,16 +8,15 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = async (event) => {
-    event.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setMessage("");
     setError("");
     if (!email.trim()) return;
     setIsSubmitting(true);
     try {
-      const { data } = await api.post("/auth/forgot-password", {
-        email: email.trim().toLowerCase(),
-      });
+      console.log("FORGOT PASSWORD CLICKED");
+      const { data } = await axios.post("/api/v1/auth/forgot-password", { email: email.trim().toLowerCase() });
       setMessage(data?.message || "If this account exists, reset instructions were sent.");
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to send reset email.");
@@ -28,7 +27,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-slate-100">
-      <form onSubmit={onSubmit} className="premium-card w-full max-w-sm p-5 space-y-3">
+      <form onSubmit={handleSubmit} className="premium-card w-full max-w-sm p-5 space-y-3">
         <h1 className="text-lg font-semibold text-[#0a2540]">Forgot password</h1>
         <p className="text-xs text-gray-500">Enter your email and we will send you a reset link.</p>
         <input
