@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 
 export default function ForgotPasswordPage() {
+console.log("PAGE LOADED");
 const [email, setEmail] = useState("");
 
 const handleSubmit = async (e) => {

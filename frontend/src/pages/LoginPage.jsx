@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { api } from "../lib/api";
 import { useAuthStore } from "../store/authStore";
@@ -109,9 +109,9 @@ export default function LoginPage() {
                 />
                 <span>Remember me</span>
               </label>
-              <Link to="/forgot-password" className="hover:underline">
-                Forgot password?
-              </Link>
+              <a href="/forgot-password" className="hover:underline">
+                Forgot Password?
+              </a>
             </div>
 
             {error && <p className="w-full text-sm text-red-500 text-center">{error}</p>}
