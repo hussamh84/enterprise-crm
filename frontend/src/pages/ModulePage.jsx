@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import api from "../lib/api";
 import { formatClientNumber } from "../utils/formatClientNumber";
-import { formatMoney } from "../utils/formatCurrency";
+import { formatCurrency, formatMoney } from "../utils/formatCurrency";
 
 const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
@@ -318,7 +318,7 @@ export default function ModulePage({ title, endpoint }) {
                 </div>
 
                 <div className="col-span-3 min-w-0">
-                  <p className="text-sm font-semibold text-[#0a2540] truncate">{item?.name || "Quotation"}</p>
+                  <p className="text-sm font-semibold text-[#0a2540] truncate">{item?.quotationNo || item?.name || "Quotation"}</p>
                   <p className="text-xs text-gray-500 truncate">{subtitle}</p>
                 </div>
 
@@ -385,7 +385,7 @@ export default function ModulePage({ title, endpoint }) {
             {data.map((item) => {
             const clientName = item?.clientId?.name || item?.clientName || "No Client";
             const clientEmail = item?.clientId?.email || "no-email@client.com";
-            const invoiceName = item?.name || `Invoice ${String(item?._id || "").slice(-6)}`;
+            const invoiceName = item?.invoiceNo || item?.name || "Invoice";
             const statusLabel = getInvoiceStatusLabel(item);
 
             return (
@@ -408,7 +408,7 @@ export default function ModulePage({ title, endpoint }) {
                   <p className="text-xs text-gray-500">
                     Total:{" "}
                     <span className="font-medium whitespace-nowrap text-[#374151] numeric">
-                      {formatMoney(item?.total || 0)}
+                      {formatCurrency(item?.total || 0)}
                     </span>
                   </p>
                 </div>

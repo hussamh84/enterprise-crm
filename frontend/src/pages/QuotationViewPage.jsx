@@ -22,11 +22,6 @@ const calculateItemTotal = (item) => {
   return qty * unitPrice;
 };
 
-const formatInvoiceNumber = (id = "") => {
-  const short = String(id).slice(-6).toUpperCase();
-  return `QTN-2026-${short}`;
-};
-
 export default function QuotationViewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -89,7 +84,7 @@ export default function QuotationViewPage() {
   }
 
   const docTitle = quotation.name || "Quotation";
-  const refId = formatInvoiceNumber(quotation._id || id);
+  const refId = quotation?.quotationNo || "QTN";
 
   return (
     <div className="enterprise-doc p-6 pb-10 max-w-5xl mx-auto">
@@ -201,7 +196,10 @@ export default function QuotationViewPage() {
                 <div className="totals-box text-right min-w-[200px]">
                   <div className="grand-total">
                     <span>Grand Total</span>
-                    <span className="numeric">{formatCurrency(total)} SDG</span>
+                    <span className="amount">
+                      <span className="numeric">{formatCurrency(total)}</span>
+                      <span className="currency">SDG</span>
+                    </span>
                   </div>
                 </div>
               </div>

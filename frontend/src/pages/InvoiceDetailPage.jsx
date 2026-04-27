@@ -71,7 +71,7 @@ export default function InvoiceDetailPage() {
   }
 
   const docTitle = data.name || "Invoice";
-  const refId = String(data._id || invoiceId).slice(-8).toUpperCase();
+  const refId = data.invoiceNo || "INV";
   const total = Number(data.total || 0);
   const paid = Number(data.paidAmount || 0);
 
@@ -135,19 +135,19 @@ export default function InvoiceDetailPage() {
                 <tr>
                   <td className="text-left text-[#475569]">Invoice total</td>
                   <td className="numeric text-right currency-col total">
-                    <span className="currency numeric">{formatMoney(total)}</span>
+                    <span className="numeric">{formatCurrency(total)}</span>
                   </td>
                 </tr>
                 <tr>
                   <td className="text-left text-[#475569]">Paid to date</td>
                   <td className="numeric text-right currency-col total">
-                    <span className="currency numeric">{formatMoney(paid)}</span>
+                    <span className="numeric">{formatCurrency(paid)}</span>
                   </td>
                 </tr>
                 <tr>
                   <td className="text-left font-medium text-[#0f172a]">Balance due</td>
                   <td className="numeric text-right font-semibold currency-col total">
-                    <span className="currency numeric">{formatMoney(remainingAmount)}</span>
+                    <span className="numeric">{formatCurrency(remainingAmount)}</span>
                   </td>
                 </tr>
               </tbody>
@@ -157,7 +157,10 @@ export default function InvoiceDetailPage() {
             <div className="totals-box text-right min-w-[200px]">
               <div className="grand-total">
                 <span>Grand Total</span>
-                <span className="numeric">{formatCurrency(total)} SDG</span>
+                <span className="amount">
+                  <span className="numeric">{formatCurrency(total)}</span>
+                  <span className="currency">SDG</span>
+                </span>
               </div>
             </div>
           </div>

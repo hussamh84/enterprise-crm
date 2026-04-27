@@ -555,7 +555,7 @@ a.btn-approve {
 }
 
 .enterprise-doc-table td {
-  padding: 10px;
+  padding: 10px 14px;
   border-bottom: 1px solid #f1f1f1;
   color: #0f172a;
   vertical-align: middle;
@@ -584,10 +584,23 @@ a.btn-approve {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 10px;
-  font-size: 18px;
+  margin-top: 12px;
+  font-size: 16px;
   font-weight: 600;
   color: #0f172a;
+}
+
+.amount {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.grand-total .currency {
+  font-size: 13px;
+  opacity: 0.7;
+  width: auto;
+  display: inline;
 }
 
 .premium-card {

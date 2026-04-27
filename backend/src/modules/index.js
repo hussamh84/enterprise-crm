@@ -166,20 +166,16 @@ const Settings = mongoose.models.Settings || mongoose.model("Settings", Settings
 
 const getTenantId = (req) => req.user?.tenantId || req.tenantId;
 
-const getYearRange = (year) => ({
-  $gte: new Date(`${year}-01-01T00:00:00.000Z`),
-  $lt: new Date(`${year + 1}-01-01T00:00:00.000Z`),
-});
-
-const generateDocumentNo = async ({ model, prefix, tenantId }) => {
+const generateDocumentNo = async ({ model, prefix }) => {
   const year = new Date().getFullYear();
   const count = await model.countDocuments({
-    tenantId,
-    deletedAt: null,
-    createdAt: getYearRange(year),
+    createdAt: {
+      $gte: new Date(`${year}-01-01`),
+      $lt: new Date(`${year + 1}-01-01`),
+    },
   });
-  const sequence = String(count + 1).padStart(5, "0");
-  return `${prefix}-${year}-${sequence}`;
+  const seq = String(count + 1).padStart(5, "0");
+  return `${prefix}-${year}-${seq}`;
 };
 
 const ensureClientProjectLink = async ({ tenantId, clientId, projectId }) => {
@@ -205,7 +201,7 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
     deletedAt: null,
   });
   if (existing) return existing;
-  const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV", tenantId });
+  const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV" });
 
   return Invoice.create({
     tenantId,
@@ -639,15 +635,7 @@ router.post("/quotations", async (req, res, next) => {
     if (!clientId) return res.status(400).json({ message: "clientId is required" });
     if (!projectId) return res.status(400).json({ message: "projectId is required" });
     await ensureClientProjectLink({ tenantId, clientId, projectId });
-    const year = new Date().getFullYear();
-    const count = await Quotation.countDocuments({
-      createdAt: {
-        $gte: new Date(`${year}-01-01`),
-        $lt: new Date(`${year + 1}-01-01`),
-      },
-    });
-    const sequence = String(count + 1).padStart(5, "0");
-    const quotationNo = `QTN-${year}-${sequence}`;
+    const quotationNo = await generateDocumentNo({ model: Quotation, prefix: "QTN" });
 
     const calculated = computeQuotationTotals(req.body);
     const payload = {
@@ -983,7 +971,7 @@ router.post("/invoices", async (req, res, next) => {
     const safePaidAmount = Number.isFinite(paidAmount) && paidAmount >= 0 ? Math.min(paidAmount, total) : 0;
     const remainingAmount = Math.max(total - safePaidAmount, 0);
     const status = safePaidAmount >= total ? "paid" : "unpaid";
-    const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV", tenantId });
+    const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV" });
 
     const doc = await Invoice.create({
       ...req.body,
