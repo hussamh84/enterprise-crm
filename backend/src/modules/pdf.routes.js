@@ -46,14 +46,13 @@ const resolveBranding = async (tenantId) => {
   };
 };
 
-const formatSdgMoney = (value = 0) => {
-  const amount = Number(value || 0);
-  const formatted = new Intl.NumberFormat("en-US", {
+const formatCurrency = (value = 0) =>
+  new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount);
-  return `SDG ${formatted}`;
-};
+  }).format(Number(value || 0));
+
+const formatSdgMoney = (value = 0) => `SDG ${formatCurrency(value)}`;
 
 const formatInvoiceNumber = (id = "") => {
   const short = String(id).slice(-6).toUpperCase();
@@ -152,42 +151,43 @@ const addItemsTable = (doc, rows, top = 356) => {
   const items = rows?.length ? rows : [{ description: "Service", quantity: 1, unitPrice: 0, total: 0 }];
   const x = 50;
   const tableWidth = 500;
-  const rowHeight = 24;
-  const descriptionWidth = 260;
+  const rowHeight = 30; // equivalent to 8px vertical spacing
+  const cellPaddingX = 12; // equivalent to 12px horizontal spacing
+  const descriptionWidth = 236;
   const qtyWidth = 70;
-  const unitWidth = 85;
-  const totalWidth = 85;
+  const unitWidth = 97;
+  const totalWidth = 97;
   const col1 = x;
   const col2 = col1 + descriptionWidth;
   const col3 = col2 + qtyWidth;
   const col4 = col3 + unitWidth;
-  doc.roundedRect(x, top - 4, tableWidth, 22, 4).fillAndStroke("#f8fafc", "#e2e8f0");
+  doc.roundedRect(x, top - 4, tableWidth, rowHeight, 4).fillAndStroke("#f8fafc", "#e2e8f0");
   doc
     .font("Helvetica-Bold")
     .fontSize(10)
     .fillColor("#475569")
-    .text("Description", col1 + 10, top + 3, { width: descriptionWidth - 20, align: "left" })
+    .text("Description", col1 + cellPaddingX, top + 8, { width: descriptionWidth - cellPaddingX * 2, align: "left" })
     .text("Qty", col2, top + 3, { width: qtyWidth, align: "center" })
-    .text("Unit Price", col3, top + 3, { width: unitWidth, align: "right" })
-    .text("Total", col4, top + 3, { width: totalWidth, align: "right" });
+    .text("Unit Price", col3, top + 8, { width: unitWidth - cellPaddingX, align: "right" })
+    .text("Total", col4, top + 8, { width: totalWidth - cellPaddingX, align: "right" });
 
-  let y = top + 28;
+  let y = top + rowHeight + 6;
   let subtotal = 0;
   items.forEach((item, index) => {
     const qty = Number(item.quantity || item.qty || 1);
     const rate = Number(item.unitPrice || item.rate || 0);
     const amount = Number(item.total != null ? item.total : qty * rate);
     subtotal += amount;
-    if (index % 2 === 0) doc.rect(x, y - 4, tableWidth, 22).fill("#fcfdff");
+    if (index % 2 === 0) doc.rect(x, y - 4, tableWidth, rowHeight).fill("#fcfdff");
     doc
       .font("Helvetica")
       .fontSize(10)
       .fillColor("#0a2540")
-      .text(item.description || item.name || "Line Item", col1 + 10, y, { width: descriptionWidth - 20, align: "left" })
-      .text(String(qty), col2, y, { width: qtyWidth, align: "center" })
-      .text(formatSdgMoney(rate), col3, y, { width: unitWidth, align: "right" })
-      .text(formatSdgMoney(amount), col4, y, { width: totalWidth, align: "right" });
-    doc.moveTo(x, y + 18).lineTo(x + tableWidth, y + 18).strokeColor("#eef2f7").stroke();
+      .text(item.description || item.name || "Line Item", col1 + cellPaddingX, y + 8, { width: descriptionWidth - cellPaddingX * 2, align: "left" })
+      .text(String(qty), col2, y + 8, { width: qtyWidth, align: "center" })
+      .text(formatSdgMoney(rate), col3, y + 8, { width: unitWidth - cellPaddingX, align: "right" })
+      .text(formatSdgMoney(amount), col4, y + 8, { width: totalWidth - cellPaddingX, align: "right" });
+    doc.moveTo(x, y + rowHeight - 4).lineTo(x + tableWidth, y + rowHeight - 4).strokeColor("#eef2f7").stroke();
     y += rowHeight + 2;
   });
 

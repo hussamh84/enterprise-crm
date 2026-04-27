@@ -186,7 +186,7 @@ export default function QuotationViewPage() {
                           </td>
                           <td className="text-right font-semibold text-[#0f172a] currency-col total">
                             <input
-                              className="input-field total-field"
+                              className="input-field total-field numeric"
                               value={`SDG ${formatCurrency(rowTotal)}`}
                               readOnly
                             />

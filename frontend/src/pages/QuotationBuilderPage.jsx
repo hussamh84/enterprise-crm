@@ -201,9 +201,9 @@ export default function QuotationBuilderPage() {
             <div key={`quotation-item-${index}`} className="quotation-item-row">
               <input className="input-field" value={item.description} onChange={(event) => updateItem(index, "description", event.target.value)} placeholder="Item description" />
               <input type="number" min="0" className="input-field text-center" value={item.quantity} onChange={(event) => updateItem(index, "quantity", event.target.value)} placeholder="Qty" />
-              <input type="number" min="0" className="input-field text-right" value={item.unitPrice} onChange={(event) => updateItem(index, "unitPrice", event.target.value)} placeholder="Unit price" />
+              <input type="number" min="0" className="input-field text-right numeric" value={item.unitPrice} onChange={(event) => updateItem(index, "unitPrice", event.target.value)} placeholder="Unit price" />
               <input
-                className="input-field total-field"
+                className="input-field total-field numeric"
                 value={`SDG ${formatCurrency(calculatedItems[index]?.total)}`}
                 readOnly
               />

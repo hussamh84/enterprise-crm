@@ -68,6 +68,7 @@ const SiteVisit = makeEntityModel("SiteVisit", { visitDate: Date, assignedTechni
 const Quotation = makeEntityModel("Quotation", {
   clientId: { type: String, required: true },
   projectId: { type: String, required: true },
+  quotationNo: { type: String, trim: true },
   status: { type: String, default: "draft" },
   items: [
     {
@@ -113,6 +114,7 @@ const Invoice = makeEntityModel("Invoice", {
   clientId: { type: String, required: true },
   projectId: { type: String, required: true },
   quotationId: { type: String },
+  invoiceNo: { type: String, trim: true },
   total: { type: Number, default: 0 },
   paidAmount: { type: Number, default: 0 },
   remainingAmount: { type: Number, default: 0 },
@@ -164,6 +166,22 @@ const Settings = mongoose.models.Settings || mongoose.model("Settings", Settings
 
 const getTenantId = (req) => req.user?.tenantId || req.tenantId;
 
+const getYearRange = (year) => ({
+  $gte: new Date(`${year}-01-01T00:00:00.000Z`),
+  $lt: new Date(`${year + 1}-01-01T00:00:00.000Z`),
+});
+
+const generateDocumentNo = async ({ model, prefix, tenantId }) => {
+  const year = new Date().getFullYear();
+  const count = await model.countDocuments({
+    tenantId,
+    deletedAt: null,
+    createdAt: getYearRange(year),
+  });
+  const sequence = String(count + 1).padStart(5, "0");
+  return `${prefix}-${year}-${sequence}`;
+};
+
 const ensureClientProjectLink = async ({ tenantId, clientId, projectId }) => {
   const [client, project] = await Promise.all([
     Client.findOne({ _id: clientId, tenantId, deletedAt: null, isDeleted: { $ne: true } }),
@@ -187,10 +205,12 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
     deletedAt: null,
   });
   if (existing) return existing;
+  const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV", tenantId });
 
   return Invoice.create({
     tenantId,
-    name: quotation.name || `Invoice ${String(quotation._id).slice(-6)}`,
+    invoiceNo,
+    name: quotation.name || invoiceNo,
     clientId: String(quotation.clientId),
     projectId: String(quotation.projectId),
     quotationId: String(quotation._id),
@@ -619,10 +639,13 @@ router.post("/quotations", async (req, res, next) => {
     if (!clientId) return res.status(400).json({ message: "clientId is required" });
     if (!projectId) return res.status(400).json({ message: "projectId is required" });
     await ensureClientProjectLink({ tenantId, clientId, projectId });
+    const quotationNo = await generateDocumentNo({ model: Quotation, prefix: "QTN", tenantId });
 
     const calculated = computeQuotationTotals(req.body);
     const payload = {
       ...req.body,
+      quotationNo,
+      name: String(req.body?.name || "").trim() || quotationNo,
       clientId,
       projectId,
       ...calculated,
@@ -952,9 +975,12 @@ router.post("/invoices", async (req, res, next) => {
     const safePaidAmount = Number.isFinite(paidAmount) && paidAmount >= 0 ? Math.min(paidAmount, total) : 0;
     const remainingAmount = Math.max(total - safePaidAmount, 0);
     const status = safePaidAmount >= total ? "paid" : "unpaid";
+    const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV", tenantId });
 
     const doc = await Invoice.create({
       ...req.body,
+      invoiceNo,
+      name: String(req.body?.name || "").trim() || invoiceNo,
       clientId,
       projectId,
       total,
