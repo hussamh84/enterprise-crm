@@ -159,7 +159,6 @@ textarea::placeholder {
 .numeric {
   text-align: right;
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum";
   font-family: "Inter", monospace;
 }
 
@@ -581,13 +580,28 @@ a.btn-approve {
 }
 
 .grand-total {
+  width: 320px;
+  margin-left: auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
   font-size: 16px;
   font-weight: 600;
   color: #0f172a;
+}
+
+.summary {
+  width: 320px;
+  margin-left: auto;
+}
+
+.summary .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
 }
 
 .amount {

@@ -2,7 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import api from "../lib/api";
-import { formatCurrency, formatMoney } from "../utils/formatCurrency";
+import { formatCurrency } from "../utils/formatCurrency";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 
 const __filename = import.meta.url;
@@ -115,7 +115,7 @@ export default function InvoiceDetailPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             <Field label="Client" value={clientName} />
             <Field label="Project" value={projectName} />
-            <Field label="Quotation" value={data.quotationId ? String(data.quotationId) : "—"} />
+            <Field label="Quotation" value={data.quotationNo || "—"} />
           </div>
         </div>
       </div>
@@ -153,16 +153,26 @@ export default function InvoiceDetailPage() {
               </tbody>
             </table>
           </div>
-          <div className="flex justify-end pt-6 mt-4 border-t border-[#eee]">
-            <div className="totals-box text-right min-w-[200px]">
-              <div className="grand-total">
-                <span>Grand Total</span>
-                <span className="amount">
-                  <span className="numeric">{formatCurrency(total)}</span>
-                  <span className="currency">SDG</span>
-                </span>
-              </div>
+          <div className="summary">
+            <div className="row">
+              <span>Subtotal</span>
+              <span className="numeric">{formatCurrency(total)}</span>
             </div>
+            <div className="row">
+              <span>Discount</span>
+              <span className="numeric">{formatCurrency(0)}</span>
+            </div>
+            <div className="row">
+              <span>Tax</span>
+              <span className="numeric">{formatCurrency(0)}</span>
+            </div>
+          </div>
+          <div className="grand-total">
+            <span>Grand Total</span>
+            <span className="amount">
+              <span className="numeric">{formatCurrency(total)}</span>
+              <span className="currency">SDG</span>
+            </span>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
-import { formatCurrency, formatMoney } from "../utils/formatCurrency";
+import { formatCurrency } from "../utils/formatCurrency";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 
 const __filename = import.meta.url;
@@ -194,6 +194,20 @@ export default function QuotationViewPage() {
               </div>
               <div className="flex justify-end pt-6 mt-4 border-t border-[#eee]">
                 <div className="totals-box text-right min-w-[200px]">
+                  <div className="summary">
+                    <div className="row">
+                      <span>Subtotal</span>
+                      <span className="numeric">{formatCurrency(quotation?.subtotal ?? totalFromItems)}</span>
+                    </div>
+                    <div className="row">
+                      <span>Discount</span>
+                      <span className="numeric">{formatCurrency(quotation?.discount?.amount ?? 0)}</span>
+                    </div>
+                    <div className="row">
+                      <span>Tax</span>
+                      <span className="numeric">{formatCurrency(quotation?.tax ?? 0)}</span>
+                    </div>
+                  </div>
                   <div className="grand-total">
                     <span>Grand Total</span>
                     <span className="amount">

@@ -909,8 +909,9 @@ router.get("/invoices", async (req, res, next) => {
 
     const clientIds = [...new Set(invoiceObjects.map((doc) => String(doc.clientId || "")).filter(Boolean))];
     const projectIds = [...new Set(invoiceObjects.map((doc) => String(doc.projectId || "")).filter(Boolean))];
+    const quotationIds = [...new Set(invoiceObjects.map((doc) => String(doc.quotationId || "")).filter(Boolean))];
 
-    const [clients, projects] = await Promise.all([
+    const [clients, projects, quotations] = await Promise.all([
       clientIds.length
         ? Client.find({ _id: { $in: clientIds }, tenantId: req.tenantId, deletedAt: null, isDeleted: { $ne: true } })
             .select("_id name")
@@ -921,20 +922,29 @@ router.get("/invoices", async (req, res, next) => {
             .select("_id name")
             .lean()
         : [],
+      quotationIds.length
+        ? Quotation.find({ _id: { $in: quotationIds }, tenantId: req.tenantId, deletedAt: null })
+            .select("_id quotationNo")
+            .lean()
+        : [],
     ]);
 
     const clientMap = Object.fromEntries(clients.map((client) => [String(client._id), client]));
     const projectMap = Object.fromEntries(projects.map((project) => [String(project._id), project]));
+    const quotationMap = Object.fromEntries(quotations.map((quotation) => [String(quotation._id), quotation]));
 
     const enriched = invoiceObjects.map((invoice) => {
       const rawClientId = String(invoice.clientId || "");
       const rawProjectId = String(invoice.projectId || "");
+      const rawQuotationId = String(invoice.quotationId || "");
       const client = clientMap[rawClientId] || null;
       const project = projectMap[rawProjectId] || null;
+      const quotation = quotationMap[rawQuotationId] || null;
       return {
         ...invoice,
         clientId: client ? { _id: client._id, name: client.name } : { _id: invoice.clientId, name: "" },
         projectId: project ? { _id: project._id, name: project.name } : { _id: invoice.projectId, name: "" },
+        quotationNo: quotation?.quotationNo || "",
         clientName: client?.name || "",
         projectName: project?.name || "",
       };
@@ -949,7 +959,16 @@ router.get("/invoices/:id", async (req, res, next) => {
   try {
     const doc = await Invoice.findOne({ _id: req.params.id, tenantId: req.tenantId, deletedAt: null });
     if (!doc) return res.status(404).json({ message: "Invoice not found" });
-    res.json(doc);
+    const invoice = typeof doc.toObject === "function" ? doc.toObject() : doc;
+    const quotation = invoice.quotationId
+      ? await Quotation.findOne({ _id: String(invoice.quotationId), tenantId: req.tenantId, deletedAt: null })
+          .select("quotationNo")
+          .lean()
+      : null;
+    res.json({
+      ...invoice,
+      quotationNo: quotation?.quotationNo || "",
+    });
   } catch (error) {
     next(error);
   }

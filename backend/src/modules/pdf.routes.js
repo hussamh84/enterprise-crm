@@ -52,13 +52,6 @@ const formatCurrency = (value = 0) =>
     maximumFractionDigits: 2,
   }).format(Number(value || 0));
 
-const formatSdgMoney = (value = 0) => `SDG ${formatCurrency(value)}`;
-
-const formatInvoiceNumber = (id = "") => {
-  const short = String(id).slice(-6).toUpperCase();
-  return `QTN-2026-${short}`;
-};
-
 const addWatermark = (doc, branding) => {
   if (!branding.companyLogoPath) return;
   doc.save();
@@ -185,8 +178,8 @@ const addItemsTable = (doc, rows, top = 356) => {
       .fillColor("#0a2540")
       .text(item.description || item.name || "Line Item", col1 + cellPaddingX, y + 8, { width: descriptionWidth - cellPaddingX * 2, align: "left" })
       .text(String(qty), col2, y + 8, { width: qtyWidth, align: "center" })
-      .text(formatSdgMoney(rate), col3, y + 8, { width: unitWidth - cellPaddingX, align: "right" })
-      .text(formatSdgMoney(amount), col4, y + 8, { width: totalWidth - cellPaddingX, align: "right" });
+      .text(formatCurrency(rate), col3, y + 8, { width: unitWidth - cellPaddingX, align: "right" })
+      .text(formatCurrency(amount), col4, y + 8, { width: totalWidth - cellPaddingX, align: "right" });
     doc.moveTo(x, y + rowHeight - 4).lineTo(x + tableWidth, y + rowHeight - 4).strokeColor("#eef2f7").stroke();
     y += rowHeight + 2;
   });
@@ -205,22 +198,37 @@ const addTotals = (doc, { subtotal, discount = {}, tax = 0, grandTotal, total },
       ? Number(total)
       : subtotal - discountAmount + Number(tax);
   let y = startY + 18;
-  doc.moveTo(350, y - 8).lineTo(550, y - 8).strokeColor("#cbd5e1").stroke();
+  const summaryX = 330;
+  const summaryWidth = 220;
 
   [
     ["Subtotal", subtotal],
-    [discountLabel, -discountAmount],
+    [discountLabel, discountAmount],
     ["Tax", Number(tax || 0)],
-    ["Grand Total", calculatedTotal, true],
-  ].forEach(([label, amount, bold]) => {
+  ].forEach(([label, amount]) => {
     doc
-      .fontSize(bold ? 13 : 10)
-      .font(bold ? "Helvetica-Bold" : "Helvetica")
-      .fillColor(bold ? "#1d4ed8" : "#0f172a")
-      .text(label, 380, y, { width: 90, align: "right" })
-      .text(formatSdgMoney(amount), 470, y, { width: 110, align: "right" });
-    y += bold ? 24 : 18;
+      .fontSize(10)
+      .font("Helvetica")
+      .fillColor("#0f172a")
+      .text(label, summaryX, y, { width: 90, align: "left" })
+      .text(formatCurrency(amount), summaryX + 90, y, { width: 130, align: "right" });
+    y += 18;
   });
+
+  y += 2;
+  doc.moveTo(summaryX, y).lineTo(summaryX + summaryWidth, y).strokeColor("#e5e7eb").stroke();
+  y += 10;
+  doc
+    .fontSize(16)
+    .font("Helvetica-Bold")
+    .fillColor("#0f172a")
+    .text("Grand Total", summaryX, y, { width: 100, align: "left" })
+    .text(formatCurrency(calculatedTotal), summaryX + 100, y, { width: 90, align: "right" })
+    .fontSize(13)
+    .font("Helvetica")
+    .fillColor("#64748b")
+    .text("SDG", summaryX + 194, y + 2, { width: 26, align: "right" });
+  y += 24;
   return y;
 };
 
@@ -283,7 +291,7 @@ router.get("/quotations/:id/pdf", async (req, res, next) => {
       addWatermark(doc, branding);
       addHeader(doc, {
         title: "Quotation",
-        docNo: formatInvoiceNumber(quotation._id),
+        docNo: quotation.quotationNo || String(quotation._id || ""),
         branding,
         issueDate: new Date(quotation.createdAt || Date.now()).toLocaleDateString(),
         dueDate: "-",

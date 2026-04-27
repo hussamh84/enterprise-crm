@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CirclePlus, FileText, Trash2 } from "lucide-react";
 import api from "../lib/api";
-import { formatCurrency, formatMoney } from "../utils/formatCurrency";
+import { formatCurrency } from "../utils/formatCurrency";
 import { formatClientNumber } from "../utils/formatClientNumber";
 
 const BLANK_ITEM = { description: "", quantity: 1, unitPrice: 0 };
@@ -227,17 +227,26 @@ export default function QuotationBuilderPage() {
         </div>
 
         <div className="totals-box ml-auto w-full max-w-sm space-y-2 text-sm">
-          <Row label="Subtotal" value={<span className="currency numeric">{formatMoney(subtotal)}</span>} />
-          <Row label="Discount" value={<span className="currency numeric">- SDG {formatCurrency(discountAmount)}</span>} />
-          <Row label="Tax" value={<span className="currency numeric">{formatMoney(tax)}</span>} />
-          <div className="pt-2 border-t border-slate-200/80">
-            <div className="grand-total">
-              <span>Grand Total</span>
-              <span className="amount">
-                <span className="numeric">{formatCurrency(grandTotal)}</span>
-                <span className="currency">SDG</span>
-              </span>
+          <div className="summary">
+            <div className="row">
+              <span>Subtotal</span>
+              <span className="numeric">{formatCurrency(subtotal)}</span>
             </div>
+            <div className="row">
+              <span>Discount</span>
+              <span className="numeric">{formatCurrency(discountAmount)}</span>
+            </div>
+            <div className="row">
+              <span>Tax</span>
+              <span className="numeric">{formatCurrency(tax)}</span>
+            </div>
+          </div>
+          <div className="grand-total">
+            <span>Grand Total</span>
+            <span className="amount">
+              <span className="numeric">{formatCurrency(grandTotal)}</span>
+              <span className="currency">SDG</span>
+            </span>
           </div>
         </div>
 
@@ -275,15 +284,6 @@ export default function QuotationBuilderPage() {
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Row({ label, value }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-[#6b7c93]">{label}</span>
-      <span className="font-medium text-[#0a2540] numeric">{value}</span>
     </div>
   );
 }

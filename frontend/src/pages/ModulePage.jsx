@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import api from "../lib/api";
 import { formatClientNumber } from "../utils/formatClientNumber";
-import { formatCurrency, formatMoney } from "../utils/formatCurrency";
+import { formatCurrency } from "../utils/formatCurrency";
 
 const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
