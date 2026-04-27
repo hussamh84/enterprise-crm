@@ -53,6 +53,11 @@ const formatSdgMoney = (value = 0) => {
   return `SDG ${formatted}`;
 };
 
+const formatInvoiceNumber = (id = "") => {
+  const short = String(id).slice(-6).toUpperCase();
+  return `QTN-2026-${short}`;
+};
+
 const addWatermark = (doc, branding) => {
   if (!branding.companyLogoPath) return;
   doc.save();
@@ -205,6 +210,33 @@ const addTotals = (doc, { subtotal, discount = {}, tax = 0, grandTotal, total },
       .text(formatSdgMoney(amount), 470, y, { width: 110, align: "right" });
     y += bold ? 24 : 18;
   });
+  return y;
+};
+
+const addQuotationNotes = (doc, startY) => {
+  const y = Math.min(startY + 8, 690);
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(11)
+    .fillColor("#374151")
+    .text("Notes", 50, y);
+
+  const notes = [
+    "This quotation is valid for 15 days only.",
+    "30% advance payment is required, 70% after completion.",
+    "Warranty is 1 year.",
+  ];
+
+  let lineY = y + 16;
+  doc
+    .font("Helvetica")
+    .fontSize(10)
+    .fillColor("#555");
+  notes.forEach((item) => {
+    doc.text(`• ${item}`, 58, lineY, { width: 492 });
+    lineY += 16;
+  });
+  return lineY;
 };
 
 const streamPdf = (res, filename, painter) => {
@@ -240,7 +272,7 @@ router.get("/quotations/:id/pdf", async (req, res, next) => {
       addWatermark(doc, branding);
       addHeader(doc, {
         title: "Quotation",
-        docNo: quotation._id,
+        docNo: formatInvoiceNumber(quotation._id),
         branding,
         issueDate: new Date(quotation.createdAt || Date.now()).toLocaleDateString(),
         dueDate: "-",
@@ -248,16 +280,17 @@ router.get("/quotations/:id/pdf", async (req, res, next) => {
       addStatusBadge(doc, "QUOTATION");
       const tableTop = addPartyBlock(doc, printableQuotation, project);
       const { y, subtotal } = addItemsTable(doc, printableQuotation.items, tableTop + 8);
-      addTotals(doc, {
+      const totalsEndY = addTotals(doc, {
         subtotal: printableQuotation.subtotal ?? subtotal,
         discount: printableQuotation.discount,
         tax: printableQuotation.tax,
         grandTotal: printableQuotation.grandTotal,
       }, y);
+      const notesEndY = addQuotationNotes(doc, totalsEndY);
       doc
         .fontSize(9)
         .fillColor("#6b7c93")
-        .text("Thank you for your business", 50, 742);
+        .text("Thank you for your business", 50, Math.min(notesEndY + 12, 760));
     });
   } catch (error) {
     next(error);

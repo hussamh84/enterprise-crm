@@ -152,6 +152,8 @@ textarea::placeholder {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
   font-family: Inter, monospace;
+  width: 140px;
+  display: inline-block;
 }
 
 .currency-col,
@@ -325,6 +327,26 @@ a.btn-secondary {
 
 .notes li {
   margin-bottom: 6px;
+}
+
+.actions-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+}
+
+.actions-row button,
+.actions-row a {
+  height: 36px;
+  padding: 0 14px;
+  font-size: 14px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 /* Enterprise invoice / quotation document layout */
