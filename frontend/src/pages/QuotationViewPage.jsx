@@ -187,7 +187,7 @@ export default function QuotationViewPage() {
                 </table>
               </div>
               <div className="flex justify-end pt-6 mt-4 border-t border-[#eee]">
-                <div className="totals-box text-right min-w-[200px]">
+                <div className="totals-box text-right min-w-[440px]">
                   <div className="summary">
                     <div className="row">
                       <span>Subtotal</span>
@@ -203,10 +203,11 @@ export default function QuotationViewPage() {
                     </div>
                   </div>
                   <div className="grand-total">
-                    <span className="label">Grand Total</span>
-                    <span className="amount">
-                      {formatCurrency(total)} <span className="currency">SDG</span>
-                    </span>
+                    <div className="label">Grand Total</div>
+                    <div className="amount">
+                      <span className="value">{formatCurrency(total)}</span>
+                      <span className="currency">SDG</span>
+                    </div>
                   </div>
                 </div>
               </div>

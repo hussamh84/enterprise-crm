@@ -524,7 +524,7 @@ a.btn-approve {
   box-shadow: var(--saas-shadow-card);
   border: 1px solid #f1f5f9;
   margin-bottom: var(--saas-space-section);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .enterprise-doc-section {
@@ -583,34 +583,39 @@ a.btn-approve {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 360px;
+  width: 420px !important;
   margin-left: auto;
   margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #ddd;
   font-weight: 600;
   color: #0f172a;
   white-space: nowrap;
 }
 
 .grand-total .label {
-  font-size: 15px;
-}
-
-.grand-total .amount {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-  font-size: 15px;
-  font-variant-numeric: tabular-nums;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
+.grand-total .amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap !important;
+  flex-shrink: 0;
+}
+
+.grand-total .value {
+  font-size: 14px !important;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 .grand-total .currency {
-  font-size: 13px;
+  font-size: 12px;
   opacity: 0.7;
-  width: auto;
+  width: auto !important;
   min-width: 0;
   display: inline;
   text-align: inherit;
@@ -618,7 +623,7 @@ a.btn-approve {
 }
 
 .summary {
-  width: 360px;
+  width: 420px;
   margin-left: auto;
 }
 

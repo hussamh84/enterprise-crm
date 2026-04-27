@@ -179,10 +179,11 @@ export default function InvoiceDetailPage() {
             </div>
           </div>
           <div className="grand-total">
-            <span className="label">Grand Total</span>
-            <span className="amount">
-              {formatCurrency(total)} <span className="currency">SDG</span>
-            </span>
+            <div className="label">Grand Total</div>
+            <div className="amount">
+              <span className="value">{formatCurrency(total)}</span>
+              <span className="currency">SDG</span>
+            </div>
           </div>
         </div>
       </div>

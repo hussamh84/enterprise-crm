@@ -226,7 +226,7 @@ export default function QuotationBuilderPage() {
           <input type="number" min="0" className="w-full" value={tax} onChange={(event) => setTax(event.target.value)} placeholder="Tax amount" />
         </div>
 
-        <div className="totals-box ml-auto w-full max-w-sm space-y-2 text-sm">
+        <div className="totals-box ml-auto w-full min-w-[440px] max-w-full space-y-2 text-sm">
           <div className="summary">
             <div className="row">
               <span>Subtotal</span>
@@ -242,10 +242,11 @@ export default function QuotationBuilderPage() {
             </div>
           </div>
           <div className="grand-total">
-            <span className="label">Grand Total</span>
-            <span className="amount">
-              {formatCurrency(grandTotal)} <span className="currency">SDG</span>
-            </span>
+            <div className="label">Grand Total</div>
+            <div className="amount">
+              <span className="value">{formatCurrency(grandTotal)}</span>
+              <span className="currency">SDG</span>
+            </div>
           </div>
         </div>
 
