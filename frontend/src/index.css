@@ -156,6 +156,12 @@ textarea::placeholder {
   display: inline-block;
 }
 
+.numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-family: Inter, monospace;
+}
+
 .currency-col,
 th.currency-col,
 td.currency-col {
@@ -335,6 +341,9 @@ a.btn-secondary {
   align-items: center;
   justify-content: flex-end;
   flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
 }
 
 .actions-row button,

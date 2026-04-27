@@ -68,7 +68,7 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[#6b7c93] text-sm">{card.label}</p>
-                <p className="text-2xl font-semibold mt-2 text-[#0a2540] tabular-nums">{card.value}</p>
+                <p className="text-2xl font-semibold mt-2 text-[#0a2540] numeric">{card.value}</p>
               </div>
               <div className="h-10 w-10 rounded-lg border border-slate-200 text-[#0a2540] flex items-center justify-center bg-slate-50">
                 <card.icon size={18} />
@@ -90,19 +90,19 @@ export default function DashboardPage() {
         <div className="premium-card p-5">
           <p className="text-[#6b7c93] text-sm">Total Revenue</p>
           <p className="text-xl font-semibold mt-2 text-[#0a2540]">
-            <span className="currency">{formatMoney(totalRevenue)}</span>
+            <span className="currency numeric">{formatMoney(totalRevenue)}</span>
           </p>
         </div>
         <div className="premium-card p-5">
           <p className="text-[#6b7c93] text-sm">Total Expenses</p>
           <p className="text-xl font-semibold mt-2 text-[#0a2540]">
-            <span className="currency">{formatMoney(totalExpenses)}</span>
+            <span className="currency numeric">{formatMoney(totalExpenses)}</span>
           </p>
         </div>
         <div className="premium-card p-5">
           <p className="text-[#6b7c93] text-sm">Total Profit</p>
           <p className={`text-xl font-semibold mt-2 ${totalProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
-            <span className="currency">{formatMoney(totalProfit)}</span>
+            <span className="currency numeric">{formatMoney(totalProfit)}</span>
           </p>
         </div>
       </div>
@@ -114,18 +114,18 @@ export default function DashboardPage() {
             {now.toLocaleString("default", { month: "long" })} {now.getFullYear()}
           </p>
           <div className="mt-3 space-y-1.5 text-sm">
-            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Revenue</span><span className="font-medium text-[#0a2540] shrink-0"><span className="currency">{formatMoney(monthlyReport?.totals?.totalRevenue)}</span></span></p>
-            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Expenses</span><span className="font-medium text-[#0a2540] shrink-0"><span className="currency">{formatMoney(monthlyReport?.totals?.totalExpenses)}</span></span></p>
-            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Profit</span><span className="font-semibold text-[#0a2540] shrink-0"><span className="currency">{formatMoney(monthlyReport?.totals?.totalProfit)}</span></span></p>
+            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Revenue</span><span className="font-medium text-[#0a2540] shrink-0"><span className="currency numeric">{formatMoney(monthlyReport?.totals?.totalRevenue)}</span></span></p>
+            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Expenses</span><span className="font-medium text-[#0a2540] shrink-0"><span className="currency numeric">{formatMoney(monthlyReport?.totals?.totalExpenses)}</span></span></p>
+            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Profit</span><span className="font-semibold text-[#0a2540] shrink-0"><span className="currency numeric">{formatMoney(monthlyReport?.totals?.totalProfit)}</span></span></p>
           </div>
         </div>
         <div className="premium-card p-5">
           <p className="text-[#6b7c93] text-sm">Yearly Report</p>
           <p className="text-xs text-[#94a3b8] mt-1">{now.getFullYear()}</p>
           <div className="mt-3 space-y-1.5 text-sm">
-            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Revenue</span><span className="font-medium text-[#0a2540] shrink-0"><span className="currency">{formatMoney(yearlyReport?.totals?.totalRevenue)}</span></span></p>
-            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Expenses</span><span className="font-medium text-[#0a2540] shrink-0"><span className="currency">{formatMoney(yearlyReport?.totals?.totalExpenses)}</span></span></p>
-            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Profit</span><span className="font-semibold text-[#0a2540] shrink-0"><span className="currency">{formatMoney(yearlyReport?.totals?.totalProfit)}</span></span></p>
+            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Revenue</span><span className="font-medium text-[#0a2540] shrink-0"><span className="currency numeric">{formatMoney(yearlyReport?.totals?.totalRevenue)}</span></span></p>
+            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Expenses</span><span className="font-medium text-[#0a2540] shrink-0"><span className="currency numeric">{formatMoney(yearlyReport?.totals?.totalExpenses)}</span></span></p>
+            <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Profit</span><span className="font-semibold text-[#0a2540] shrink-0"><span className="currency numeric">{formatMoney(yearlyReport?.totals?.totalProfit)}</span></span></p>
           </div>
         </div>
       </div>
@@ -138,7 +138,7 @@ export default function DashboardPage() {
             {["Lead Conversion", "Project Completion", "Quotation Approval"].map((kpi, idx) => (
               <div key={kpi} className="rounded-lg border border-slate-200 p-4">
                 <p className="text-xs text-[#6b7c93]">{kpi}</p>
-                <p className="text-2xl font-semibold mt-2 text-[#0a2540]">{[38, 74, 81][idx]}%</p>
+                <p className="text-2xl font-semibold mt-2 text-[#0a2540] numeric">{[38, 74, 81][idx]}%</p>
               </div>
             ))}
           </div>

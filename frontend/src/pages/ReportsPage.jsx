@@ -70,13 +70,13 @@ export default function ReportsPage() {
                   {clientName} - {project?.name || "Project"}
                 </div>
                 <div className="col-span-2 text-[#0a2540] currency-col">
-                  <span className="currency">{formatMoney(revenue)}</span>
+                  <span className="currency numeric">{formatMoney(revenue)}</span>
                 </div>
                 <div className="col-span-2 text-[#0a2540] currency-col">
-                  <span className="currency">{formatMoney(expenses)}</span>
+                  <span className="currency numeric">{formatMoney(expenses)}</span>
                 </div>
                 <div className={`col-span-3 font-medium currency-col ${profit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
-                  <span className="currency">{formatMoney(profit)}</span>
+                  <span className="currency numeric">{formatMoney(profit)}</span>
                 </div>
               </div>
             );
@@ -100,15 +100,15 @@ export default function ReportsPage() {
             <div key={row.month} className="saas-grid-row grid grid-cols-12 text-sm">
               <div className="col-span-3 text-[#425466]">{row.month}</div>
               <div className="col-span-3 text-[#0a2540] currency-col">
-                <span className="currency">{formatMoney(row.revenue)}</span>
+                <span className="currency numeric">{formatMoney(row.revenue)}</span>
               </div>
               <div className="col-span-3 text-[#0a2540] currency-col">
-                <span className="currency">{formatMoney(row.expenses)}</span>
+                <span className="currency numeric">{formatMoney(row.expenses)}</span>
               </div>
               <div
                 className={`col-span-3 font-medium currency-col ${Number(row.profit || 0) >= 0 ? "text-emerald-600" : "text-rose-600"}`}
               >
-                <span className="currency">{formatMoney(row.profit)}</span>
+                <span className="currency numeric">{formatMoney(row.profit)}</span>
               </div>
             </div>
           ))}
@@ -127,15 +127,15 @@ export default function ReportsPage() {
             <div key={row.year} className="saas-grid-row grid grid-cols-12 text-sm">
               <div className="col-span-3 text-[#425466]">{row.year}</div>
               <div className="col-span-3 text-[#0a2540] currency-col">
-                <span className="currency">{formatMoney(row.revenue)}</span>
+                <span className="currency numeric">{formatMoney(row.revenue)}</span>
               </div>
               <div className="col-span-3 text-[#0a2540] currency-col">
-                <span className="currency">{formatMoney(row.expenses)}</span>
+                <span className="currency numeric">{formatMoney(row.expenses)}</span>
               </div>
               <div
                 className={`col-span-3 font-medium currency-col ${Number(row.profit || 0) >= 0 ? "text-emerald-600" : "text-rose-600"}`}
               >
-                <span className="currency">{formatMoney(row.profit)}</span>
+                <span className="currency numeric">{formatMoney(row.profit)}</span>
               </div>
             </div>
           ))}

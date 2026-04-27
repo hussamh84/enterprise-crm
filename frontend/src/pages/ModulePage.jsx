@@ -400,7 +400,7 @@ export default function ModulePage({ title, endpoint }) {
                   <p className="text-sm font-semibold text-[#0a2540] truncate">{invoiceName}</p>
                   <p className="text-xs text-gray-500">
                     Total:{" "}
-                    <span className="font-medium whitespace-nowrap tabular-nums text-[#374151]">
+                    <span className="font-medium whitespace-nowrap text-[#374151] numeric">
                       {formatMoney(item?.total || 0)}
                     </span>
                   </p>

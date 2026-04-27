@@ -212,12 +212,12 @@ export default function QuotationBuilderPage() {
         </div>
 
         <div className="totals-box ml-auto w-full max-w-sm space-y-2 text-sm">
-          <Row label="Subtotal" value={<span className="currency">{formatMoney(subtotal)}</span>} />
-          <Row label="Discount" value={<span className="currency">- SDG {formatCurrency(discountAmount)}</span>} />
-          <Row label="Tax" value={<span className="currency">{formatMoney(tax)}</span>} />
+          <Row label="Subtotal" value={<span className="currency numeric">{formatMoney(subtotal)}</span>} />
+          <Row label="Discount" value={<span className="currency numeric">- SDG {formatCurrency(discountAmount)}</span>} />
+          <Row label="Tax" value={<span className="currency numeric">{formatMoney(tax)}</span>} />
           <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between gap-3">
             <span className="text-[#64748b] font-semibold">Grand Total</span>
-            <span className="enterprise-doc-grand-total currency">{formatMoney(grandTotal)}</span>
+            <span className="enterprise-doc-grand-total currency numeric">{formatMoney(grandTotal)}</span>
           </div>
         </div>
 
@@ -248,7 +248,7 @@ function Row({ label, value }) {
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="text-[#6b7c93]">{label}</span>
-      <span className="font-medium text-[#0a2540] tabular-nums">{value}</span>
+      <span className="font-medium text-[#0a2540] numeric">{value}</span>
     </div>
   );
 }

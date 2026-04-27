@@ -132,19 +132,19 @@ export default function InvoiceDetailPage() {
                 <tr>
                   <td className="text-left text-[#475569]">Invoice total</td>
                   <td className="text-right currency-col total">
-                    <span className="currency">{formatMoney(total)}</span>
+                    <span className="currency numeric">{formatMoney(total)}</span>
                   </td>
                 </tr>
                 <tr>
                   <td className="text-left text-[#475569]">Paid to date</td>
                   <td className="text-right currency-col total">
-                    <span className="currency">{formatMoney(paid)}</span>
+                    <span className="currency numeric">{formatMoney(paid)}</span>
                   </td>
                 </tr>
                 <tr>
                   <td className="text-left font-medium text-[#0f172a]">Balance due</td>
                   <td className="text-right font-semibold currency-col total">
-                    <span className="currency">{formatMoney(remainingAmount)}</span>
+                    <span className="currency numeric">{formatMoney(remainingAmount)}</span>
                   </td>
                 </tr>
               </tbody>
@@ -154,7 +154,7 @@ export default function InvoiceDetailPage() {
             <div className="totals-box text-right min-w-[200px]">
               <p className="text-sm font-semibold text-[#64748b] mb-1">Grand Total</p>
               <p className="enterprise-doc-grand-total">
-                <span className="currency enterprise-doc-grand-total-inner">{formatMoney(total)}</span>
+                <span className="currency numeric enterprise-doc-grand-total-inner">{formatMoney(total)}</span>
               </p>
             </div>
           </div>

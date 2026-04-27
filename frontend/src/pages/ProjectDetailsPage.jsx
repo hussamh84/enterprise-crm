@@ -142,13 +142,13 @@ export default function ProjectDetailsPage() {
                   )
                 }
               />
-              <Field label="Budget" value={<span className="currency">{formatMoney(project.budget)}</span>} />
-              <Field label="Total Revenue" value={<span className="currency">{formatMoney(totalRevenue)}</span>} />
-              <Field label="Total Expenses" value={<span className="currency">{formatMoney(totalExpenses)}</span>} />
+              <Field label="Budget" value={<span className="currency numeric">{formatMoney(project.budget)}</span>} />
+              <Field label="Total Revenue" value={<span className="currency numeric">{formatMoney(totalRevenue)}</span>} />
+              <Field label="Total Expenses" value={<span className="currency numeric">{formatMoney(totalExpenses)}</span>} />
               <Field
                 label="Net Profit"
                 value={
-                  <span className={`currency ${netProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{formatMoney(netProfit)}</span>
+                  <span className={`currency numeric ${netProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{formatMoney(netProfit)}</span>
                 }
               />
               <Field label="Start Date" value={dateValue(project.startDate)} />
@@ -233,7 +233,7 @@ export default function ProjectDetailsPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-[#0a2540]">Expenses List</h3>
               <span className="text-sm text-[#6b7c93]">
-                Total expenses: <span className="currency inline-block">{formatMoney(totalExpenses)}</span>
+                Total expenses: <span className="currency numeric inline-block">{formatMoney(totalExpenses)}</span>
               </span>
             </div>
             {expenses.length === 0 ? (
@@ -248,7 +248,7 @@ export default function ProjectDetailsPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <p className="font-semibold text-[#0a2540]">
-                        <span className="currency">{formatMoney(expense.amount)}</span>
+                        <span className="currency numeric">{formatMoney(expense.amount)}</span>
                       </p>
                       <button
                         type="button"
@@ -301,7 +301,7 @@ export default function ProjectDetailsPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-[#0a2540]">
-                      <span className="currency">{formatMoney(quotation.grandTotal ?? quotation.subtotal)}</span>
+                      <span className="currency numeric">{formatMoney(quotation.grandTotal ?? quotation.subtotal)}</span>
                     </p>
                     <p className="text-xs text-[#6b7c93]">{quotation.status || "draft"}</p>
                   </div>
@@ -315,14 +315,14 @@ export default function ProjectDetailsPage() {
           <div className="premium-card p-5">
             <h2 className="font-semibold text-[#0a2540] mb-4">Quotation Summary</h2>
             <div className="space-y-2 text-sm">
-              <SummaryRow label="Total Revenue" value={<span className="currency">{formatMoney(totalRevenue)}</span>} />
-              <SummaryRow label="Total Expenses" value={<span className="currency">{formatMoney(totalExpenses)}</span>} />
+              <SummaryRow label="Total Revenue" value={<span className="currency numeric">{formatMoney(totalRevenue)}</span>} />
+              <SummaryRow label="Total Expenses" value={<span className="currency numeric">{formatMoney(totalExpenses)}</span>} />
               <SummaryRow
                 label="Net Profit"
-                value={<span className={`currency ${netProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{formatMoney(netProfit)}</span>}
+                value={<span className={`currency numeric ${netProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{formatMoney(netProfit)}</span>}
               />
-              <SummaryRow label="Total Quoted" value={<span className="currency">{formatMoney(quotationSummary?.totalQuoted)}</span>} />
-              <SummaryRow label="Quotation Count" value={String(quotationSummary?.quotationCount || 0)} />
+              <SummaryRow label="Total Quoted" value={<span className="currency numeric">{formatMoney(quotationSummary?.totalQuoted)}</span>} />
+              <SummaryRow label="Quotation Count" value={<span className="numeric">{String(quotationSummary?.quotationCount || 0)}</span>} />
             </div>
           </div>
 
@@ -330,7 +330,7 @@ export default function ProjectDetailsPage() {
             <h2 className="font-semibold text-[#0a2540] mb-4">Project Progress</h2>
             <div className="flex items-center justify-between text-sm mb-2">
               <span className="text-[#6b7c93]">Completion</span>
-              <span className="font-semibold text-[#0a2540]">{progressClamped}%</span>
+              <span className="font-semibold text-[#0a2540] numeric">{progressClamped}%</span>
             </div>
             <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
               <div className="h-full bg-[#635bff]" style={{ width: `${progressClamped}%` }} />

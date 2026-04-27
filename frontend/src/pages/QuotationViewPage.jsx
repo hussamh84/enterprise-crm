@@ -90,40 +90,42 @@ export default function QuotationViewPage() {
 
   return (
     <div className="enterprise-doc p-6 pb-10 max-w-5xl mx-auto">
-      <div className="actions-row enterprise-doc-section">
+      <div className="enterprise-doc-section flex items-center justify-between gap-3">
         <span className="rounded-full border border-[#e2e8f0] bg-[#f8fafc] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#475569]">
           {status}
         </span>
-        {isApproved ? (
-          <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">Edit</span>
-        ) : (
-          <Link
-            to={`/quotations/${id}/edit`}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-[#425466] hover:bg-slate-50 shadow-sm"
-          >
-            Edit
-          </Link>
-        )}
-        <button
-          type="button"
-          onClick={() => printPdf()}
-          className="rounded-lg bg-[#4f46e5] text-white px-3 py-2 text-sm font-medium hover:bg-[#4338ca] shadow-sm"
-        >
-          Print PDF
-        </button>
-        {!isApproved ? (
+        <div className="actions-row">
+          {isApproved ? (
+            <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">Edit</span>
+          ) : (
+            <Link
+              to={`/quotations/${id}/edit`}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-[#425466] hover:bg-slate-50 shadow-sm"
+            >
+              Edit
+            </Link>
+          )}
           <button
             type="button"
-            disabled={approveMutation.isPending}
-            onClick={() => approveMutation.mutate()}
-            className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+            onClick={() => printPdf()}
+            className="rounded-lg bg-[#4f46e5] text-white px-3 py-2 text-sm font-medium hover:bg-[#4338ca] shadow-sm"
           >
-            {approveMutation.isPending ? "Approving…" : "Approve"}
+            Print PDF
           </button>
-        ) : null}
-        <Link to="/quotations" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-[#425466] hover:bg-slate-50 shadow-sm">
-          Back
-        </Link>
+          {!isApproved ? (
+            <button
+              type="button"
+              disabled={approveMutation.isPending}
+              onClick={() => approveMutation.mutate()}
+              className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+            >
+              {approveMutation.isPending ? "Approving…" : "Approve"}
+            </button>
+          ) : null}
+          <Link to="/quotations" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-[#425466] hover:bg-slate-50 shadow-sm">
+            Back
+          </Link>
+        </div>
       </div>
 
       {approveMutation.isError ? <p className="text-sm text-rose-600 mb-4">Could not approve quotation. Try again.</p> : null}
@@ -177,10 +179,10 @@ export default function QuotationViewPage() {
                           <td className="text-left font-medium">{item.name || item.description || "Item"}</td>
                           <td className="text-center text-[#475569]">{qty}</td>
                           <td className="text-right text-[#475569] currency-col unit-price">
-                            <span className="currency">{formatMoney(unitPrice)}</span>
+                            <span className="currency numeric">{formatMoney(unitPrice)}</span>
                           </td>
                           <td className="text-right font-semibold text-[#0f172a] currency-col total">
-                            <span className="currency">{formatMoney(rowTotal)}</span>
+                            <span className="currency numeric">{formatMoney(rowTotal)}</span>
                           </td>
                         </tr>
                       );
@@ -192,7 +194,7 @@ export default function QuotationViewPage() {
                 <div className="totals-box text-right min-w-[200px]">
                   <p className="text-sm font-semibold text-[#64748b] mb-1">Grand Total</p>
                   <p className="enterprise-doc-grand-total">
-                    <span className="currency enterprise-doc-grand-total-inner">{formatMoney(total)}</span>
+                    <span className="currency numeric enterprise-doc-grand-total-inner">{formatMoney(total)}</span>
                   </p>
                 </div>
               </div>

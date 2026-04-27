@@ -99,9 +99,9 @@ export default function ClientDetailsPage() {
           <div className="premium-card p-5">
             <h2 className="font-semibold text-[#0a2540] mb-4">Summary</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-              <Metric label="Total Projects" value={String(stats?.totalProjects || 0)} />
-              <Metric label="Total Quotations" value={String(stats?.totalQuotations ?? quotations.length)} />
-              <Metric label="Total Quoted" value={<span className="currency">{formatMoney(stats?.totalQuoted)}</span>} />
+              <Metric label="Total Projects" value={<span className="numeric">{String(stats?.totalProjects || 0)}</span>} />
+              <Metric label="Total Quotations" value={<span className="numeric">{String(stats?.totalQuotations ?? quotations.length)}</span>} />
+              <Metric label="Total Quoted" value={<span className="currency numeric">{formatMoney(stats?.totalQuoted)}</span>} />
             </div>
           </div>
         </div>
@@ -158,7 +158,7 @@ export default function ClientDetailsPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-[#0a2540]">
-                      <span className="currency">{formatMoney(q.grandTotal)}</span>
+                      <span className="currency numeric">{formatMoney(q.grandTotal)}</span>
                     </p>
                     <p className="text-xs text-[#6b7c93]">{q.status || "draft"}</p>
                   </div>
