@@ -358,6 +358,37 @@ a.btn-secondary {
   white-space: nowrap;
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  min-width: 220px;
+  overflow-x: auto;
+}
+
+.header-actions button,
+.header-actions a,
+.header-actions span {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  height: 36px;
+  padding: 0 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
 .input-field {
   height: 36px;
   padding: 8px 12px;

@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
-import { formatMoney } from "../utils/formatCurrency";
+import { formatCurrency, formatMoney } from "../utils/formatCurrency";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");
@@ -90,11 +90,11 @@ export default function QuotationViewPage() {
 
   return (
     <div className="enterprise-doc p-6 pb-10 max-w-5xl mx-auto">
-      <div className="enterprise-doc-section flex items-center justify-between gap-3">
+      <div className="enterprise-doc-section page-header">
         <span className="rounded-full border border-[#e2e8f0] bg-[#f8fafc] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#475569]">
           {status}
         </span>
-        <div className="actions-row">
+        <div className="header-actions">
           {isApproved ? (
             <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">Edit</span>
           ) : (
@@ -182,7 +182,11 @@ export default function QuotationViewPage() {
                             <span className="currency numeric">{formatMoney(unitPrice)}</span>
                           </td>
                           <td className="text-right font-semibold text-[#0f172a] currency-col total">
-                            <span className="currency numeric">{formatMoney(rowTotal)}</span>
+                            <input
+                              className="input-field total-field"
+                              value={`SDG ${formatCurrency(rowTotal)}`}
+                              readOnly
+                            />
                           </td>
                         </tr>
                       );
