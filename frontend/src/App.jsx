@@ -29,9 +29,6 @@ function App() {
   if (!token) {
     return (
       <div className="relative z-[1]">
-        <div style={{ background: "red", color: "white", padding: "20px" }}>
-          WORKING NOW
-        </div>
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -45,9 +42,6 @@ function App() {
 
   return (
     <div className="relative z-[1]">
-      <div style={{ background: "red", color: "white", padding: "20px" }}>
-        WORKING NOW
-      </div>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<DashboardPage />} />

@@ -292,7 +292,7 @@ export default function ModulePage({ title, endpoint }) {
               <div className="col-span-3">Quotation</div>
               <div className="col-span-2">Date</div>
               <div className="col-span-2">Status</div>
-              <div className="col-span-2">Actions</div>
+              <div className="col-span-2" style={{ width: "180px" }}>Actions</div>
             </div>
 
             {data.map((item) => {
@@ -334,41 +334,20 @@ export default function ModulePage({ title, endpoint }) {
                   </span>
                 </div>
 
-                <div className="col-span-2" style={{ minWidth: "240px" }}>
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    <Link
-                      to={`${endpoint}/${item._id}`}
-                      className="btn-outline"
-                      style={{ whiteSpace: "nowrap", display: "inline-block" }}
-                    >
+                <div className="col-span-2">
+                  <div className="actions-cell">
+                    <Link to={`${endpoint}/${item._id}`} className="btn-view">
                       View
                     </Link>
-                    <button
-                      type="button"
-                      onClick={() => handlePdf(item._id)}
-                      className="btn-primary"
-                      style={{ whiteSpace: "nowrap", display: "inline-block" }}
-                    >
+                    <button type="button" onClick={() => handlePdf(item._id)} className="btn-pdf">
                       PDF
                     </button>
                     {item?.status !== "approved" ? (
-                      <button
-                        type="button"
-                        onClick={() => handleApprove(item)}
-                        className="btn-success"
-                        style={{ whiteSpace: "nowrap", display: "inline-block" }}
-                      >
+                      <button type="button" onClick={() => handleApprove(item)} className="btn-approve">
                         Approve
                       </button>
                     ) : null}
-                  </span>
+                  </div>
                 </div>
               </div>
             );
