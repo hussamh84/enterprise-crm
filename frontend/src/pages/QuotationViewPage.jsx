@@ -158,8 +158,8 @@ export default function QuotationViewPage() {
                     <tr>
                       <th className="text-left">Description</th>
                       <th className="text-center w-24">Qty</th>
-                      <th className="text-right currency-col">Unit price</th>
-                      <th className="text-right currency-col">Total</th>
+                      <th className="text-right currency-col unit-price">Unit price</th>
+                      <th className="text-right currency-col total">Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -171,10 +171,10 @@ export default function QuotationViewPage() {
                         <tr key={item._id || `${item.name || "item"}-${index}`}>
                           <td className="text-left font-medium">{item.name || item.description || "Item"}</td>
                           <td className="text-center text-[#475569]">{qty}</td>
-                          <td className="text-right text-[#475569]">
+                          <td className="text-right text-[#475569] currency-col unit-price">
                             <span className="currency">{formatMoney(unitPrice)}</span>
                           </td>
-                          <td className="text-right font-semibold text-[#0f172a]">
+                          <td className="text-right font-semibold text-[#0f172a] currency-col total">
                             <span className="currency">{formatMoney(rowTotal)}</span>
                           </td>
                         </tr>
@@ -190,6 +190,14 @@ export default function QuotationViewPage() {
                     <span className="currency enterprise-doc-grand-total-inner">{formatMoney(total)}</span>
                   </p>
                 </div>
+              </div>
+              <div className="notes">
+                <h4>Notes</h4>
+                <ul>
+                  <li>This quotation is valid for 15 days only.</li>
+                  <li>30% advance payment is required, 70% after completion.</li>
+                  <li>Warranty is 1 year.</li>
+                </ul>
               </div>
             </>
           )}

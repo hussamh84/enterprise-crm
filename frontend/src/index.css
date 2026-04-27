@@ -150,13 +150,25 @@ textarea::placeholder {
   font-weight: 500;
   font-size: 14px;
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-family: Inter, monospace;
 }
 
 .currency-col,
 th.currency-col,
 td.currency-col {
-  min-width: 7.5rem;
+  min-width: 140px;
   text-align: right;
+}
+
+.unit-price,
+.total,
+th.unit-price,
+th.total,
+td.unit-price,
+td.total {
+  width: 140px;
+  min-width: 140px;
 }
 
 /* Primary / secondary buttons */
@@ -291,6 +303,28 @@ a.btn-secondary {
   background: #f9fafb;
   padding: 16px;
   border-radius: 10px;
+}
+
+.notes {
+  margin-top: 30px;
+  font-size: 13px;
+  color: #555;
+}
+
+.notes h4 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.notes ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.notes li {
+  margin-bottom: 6px;
 }
 
 /* Enterprise invoice / quotation document layout */

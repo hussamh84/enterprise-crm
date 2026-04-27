@@ -125,25 +125,25 @@ export default function InvoiceDetailPage() {
               <thead>
                 <tr>
                   <th className="text-left">Description</th>
-                  <th className="text-right currency-col">Amount</th>
+                  <th className="text-right currency-col total">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td className="text-left text-[#475569]">Invoice total</td>
-                  <td className="text-right">
+                  <td className="text-right currency-col total">
                     <span className="currency">{formatMoney(total)}</span>
                   </td>
                 </tr>
                 <tr>
                   <td className="text-left text-[#475569]">Paid to date</td>
-                  <td className="text-right">
+                  <td className="text-right currency-col total">
                     <span className="currency">{formatMoney(paid)}</span>
                   </td>
                 </tr>
                 <tr>
                   <td className="text-left font-medium text-[#0f172a]">Balance due</td>
-                  <td className="text-right font-semibold">
+                  <td className="text-right font-semibold currency-col total">
                     <span className="currency">{formatMoney(remainingAmount)}</span>
                   </td>
                 </tr>
