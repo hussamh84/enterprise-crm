@@ -157,6 +157,7 @@ textarea::placeholder {
 }
 
 .numeric {
+  text-align: right;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
   font-family: "Inter", monospace;
@@ -577,6 +578,16 @@ a.btn-approve {
   font-weight: 700 !important;
   color: #4f46e5;
   font-size: 18px;
+}
+
+.grand-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
 }
 
 .premium-card {

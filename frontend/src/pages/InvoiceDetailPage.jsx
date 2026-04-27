@@ -2,7 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import api from "../lib/api";
-import { formatMoney } from "../utils/formatCurrency";
+import { formatCurrency, formatMoney } from "../utils/formatCurrency";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 
 const __filename = import.meta.url;
@@ -134,19 +134,19 @@ export default function InvoiceDetailPage() {
               <tbody>
                 <tr>
                   <td className="text-left text-[#475569]">Invoice total</td>
-                  <td className="text-right currency-col total">
+                  <td className="numeric text-right currency-col total">
                     <span className="currency numeric">{formatMoney(total)}</span>
                   </td>
                 </tr>
                 <tr>
                   <td className="text-left text-[#475569]">Paid to date</td>
-                  <td className="text-right currency-col total">
+                  <td className="numeric text-right currency-col total">
                     <span className="currency numeric">{formatMoney(paid)}</span>
                   </td>
                 </tr>
                 <tr>
                   <td className="text-left font-medium text-[#0f172a]">Balance due</td>
-                  <td className="text-right font-semibold currency-col total">
+                  <td className="numeric text-right font-semibold currency-col total">
                     <span className="currency numeric">{formatMoney(remainingAmount)}</span>
                   </td>
                 </tr>
@@ -155,10 +155,10 @@ export default function InvoiceDetailPage() {
           </div>
           <div className="flex justify-end pt-6 mt-4 border-t border-[#eee]">
             <div className="totals-box text-right min-w-[200px]">
-              <p className="text-sm font-semibold text-[#64748b] mb-1">Grand Total</p>
-              <p className="enterprise-doc-grand-total">
-                <span className="currency numeric enterprise-doc-grand-total-inner">{formatMoney(total)}</span>
-              </p>
+              <div className="grand-total">
+                <span>Grand Total</span>
+                <span className="numeric">{formatCurrency(total)} SDG</span>
+              </div>
             </div>
           </div>
         </div>

@@ -181,13 +181,13 @@ export default function QuotationViewPage() {
                         <tr key={item._id || `${item.name || "item"}-${index}`}>
                           <td className="text-left font-medium">{item.name || item.description || "Item"}</td>
                           <td className="text-center text-[#475569]">{qty}</td>
-                          <td className="text-right text-[#475569] currency-col unit-price">
-                            <span className="currency numeric">{formatMoney(unitPrice)}</span>
+                          <td className="numeric text-right text-[#475569] currency-col unit-price">
+                            <span className="numeric">{formatCurrency(unitPrice)}</span>
                           </td>
-                          <td className="text-right font-semibold text-[#0f172a] currency-col total">
+                          <td className="numeric text-right font-semibold text-[#0f172a] currency-col total">
                             <input
                               className="input-field total-field numeric"
-                              value={`SDG ${formatCurrency(rowTotal)}`}
+                              value={formatCurrency(rowTotal)}
                               readOnly
                             />
                           </td>
@@ -199,10 +199,10 @@ export default function QuotationViewPage() {
               </div>
               <div className="flex justify-end pt-6 mt-4 border-t border-[#eee]">
                 <div className="totals-box text-right min-w-[200px]">
-                  <p className="text-sm font-semibold text-[#64748b] mb-1">Grand Total</p>
-                  <p className="enterprise-doc-grand-total">
-                    <span className="currency numeric enterprise-doc-grand-total-inner">{formatMoney(total)}</span>
-                  </p>
+                  <div className="grand-total">
+                    <span>Grand Total</span>
+                    <span className="numeric">{formatCurrency(total)} SDG</span>
+                  </div>
                 </div>
               </div>
               <div className="notes">

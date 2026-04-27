@@ -204,7 +204,7 @@ export default function QuotationBuilderPage() {
               <input type="number" min="0" className="input-field text-right numeric" value={item.unitPrice} onChange={(event) => updateItem(index, "unitPrice", event.target.value)} placeholder="Unit price" />
               <input
                 className="input-field total-field numeric"
-                value={`SDG ${formatCurrency(calculatedItems[index]?.total)}`}
+                value={formatCurrency(calculatedItems[index]?.total)}
                 readOnly
               />
               <button type="button" className="text-slate-500 hover:text-rose-600 flex justify-center p-1" onClick={() => removeItem(index)} aria-label="Remove line">
@@ -230,9 +230,11 @@ export default function QuotationBuilderPage() {
           <Row label="Subtotal" value={<span className="currency numeric">{formatMoney(subtotal)}</span>} />
           <Row label="Discount" value={<span className="currency numeric">- SDG {formatCurrency(discountAmount)}</span>} />
           <Row label="Tax" value={<span className="currency numeric">{formatMoney(tax)}</span>} />
-          <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between gap-3">
-            <span className="text-[#64748b] font-semibold">Grand Total</span>
-            <span className="enterprise-doc-grand-total currency numeric">{formatMoney(grandTotal)}</span>
+          <div className="pt-2 border-t border-slate-200/80">
+            <div className="grand-total">
+              <span>Grand Total</span>
+              <span className="numeric">{formatCurrency(grandTotal)} SDG</span>
+            </div>
           </div>
         </div>
 

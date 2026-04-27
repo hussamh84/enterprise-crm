@@ -639,7 +639,15 @@ router.post("/quotations", async (req, res, next) => {
     if (!clientId) return res.status(400).json({ message: "clientId is required" });
     if (!projectId) return res.status(400).json({ message: "projectId is required" });
     await ensureClientProjectLink({ tenantId, clientId, projectId });
-    const quotationNo = await generateDocumentNo({ model: Quotation, prefix: "QTN", tenantId });
+    const year = new Date().getFullYear();
+    const count = await Quotation.countDocuments({
+      createdAt: {
+        $gte: new Date(`${year}-01-01`),
+        $lt: new Date(`${year + 1}-01-01`),
+      },
+    });
+    const sequence = String(count + 1).padStart(5, "0");
+    const quotationNo = `QTN-${year}-${sequence}`;
 
     const calculated = computeQuotationTotals(req.body);
     const payload = {
