@@ -205,7 +205,7 @@ export default function ModulePage({ title, endpoint }) {
         </div>
 
         <div className="overflow-x-auto">
-          <div className="saas-table-shell min-w-[720px]">
+          <div className="saas-table-shell min-w-[720px]" style={{ overflow: "visible" }}>
             <div className="saas-grid-head grid grid-cols-12">
               <div className="col-span-3">Client</div>
               <div className="col-span-3">Project Name</div>
@@ -292,7 +292,9 @@ export default function ModulePage({ title, endpoint }) {
               <div className="col-span-3">Quotation</div>
               <div className="col-span-2">Date</div>
               <div className="col-span-2">Status</div>
-              <div className="col-span-2" style={{ width: "180px" }}>Actions</div>
+              <div className="col-span-2" style={{ width: "260px", textAlign: "right" }}>
+                Actions
+              </div>
             </div>
 
             {data.map((item) => {
@@ -334,7 +336,7 @@ export default function ModulePage({ title, endpoint }) {
                   </span>
                 </div>
 
-                <div className="col-span-2">
+                <div className="col-span-2" style={{ textAlign: "right", paddingRight: "12px" }}>
                   <div className="actions-cell">
                     <Link to={`${endpoint}/${item._id}`} className="btn-view">
                       View
