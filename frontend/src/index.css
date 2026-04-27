@@ -760,19 +760,18 @@ body.dark-mode .totals-box {
   color: white;
 }
 
-.login-card__logo {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  max-height: 72px;
-  margin: 0 auto 20px;
-  object-fit: contain;
-}
-
-.login-card label {
+.login-card > label {
   display: block;
   font-size: 14px;
   opacity: 0.9;
+}
+
+.login-card img {
+  width: 140px;
+  height: auto;
+  display: block;
+  margin: 0 auto 20px;
+  object-fit: contain;
 }
 
 .login-card input[type="email"],
@@ -790,6 +789,27 @@ body.dark-mode .totals-box {
   outline: none;
 }
 
+.login-card .password-wrapper {
+  position: relative;
+}
+
+.login-card .password-wrapper input[type="password"],
+.login-card .password-wrapper input[type="text"] {
+  padding-right: 40px;
+}
+
+.login-card .toggle-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 16px;
+  opacity: 0.8;
+  line-height: 1;
+  user-select: none;
+}
+
 .login-card input[type="email"]::placeholder,
 .login-card input[type="password"]::placeholder,
 .login-card input[type="text"]::placeholder {
@@ -804,21 +824,25 @@ body.dark-mode .totals-box {
   align-items: center;
 }
 
-.login-card__remember {
-  display: inline-flex;
+.login-card .remember {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  margin: 0;
-  font-size: 13px;
-  opacity: 1;
+  gap: 10px;
 }
 
-.login-card__remember input[type="checkbox"] {
+.login-card .remember input[type="checkbox"] {
   width: auto;
   height: auto;
   margin: 0;
   accent-color: rgba(255, 255, 255, 0.6);
+}
+
+.login-card .remember label {
+  display: inline;
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.9;
+  cursor: pointer;
 }
 
 .login-card__forgot {

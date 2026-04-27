@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: "admin@demo.com", password: "12345678" });
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
   const onLogin = async (e) => {
     e.preventDefault();
@@ -21,6 +22,10 @@ export default function LoginPage() {
       console.warn("Login failed", err?.response?.status || err?.message);
       setError("Invalid email or password.");
     }
+  };
+
+  const togglePassword = () => {
+    setShowPassword((prev) => !prev);
   };
 
   const handleLogoError = (event) => {
@@ -41,12 +46,7 @@ export default function LoginPage() {
     >
       <div className="login-page-inner">
         <form className="login-card" onSubmit={onLogin}>
-          <img
-            src="/logo.png"
-            onError={handleLogoError}
-            alt=""
-            className="login-card__logo"
-          />
+          <img src="/logo.png" onError={handleLogoError} alt="" />
 
           <label htmlFor="login-email">Email address</label>
           <input
@@ -57,24 +57,41 @@ export default function LoginPage() {
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
 
-          <label htmlFor="login-password">Password</label>
-          <input
-            id="login-password"
-            type="password"
-            autoComplete="current-password"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-          />
+          <label htmlFor="password">Password</label>
+          <div className="password-wrapper">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
+            <span
+              className="toggle-eye"
+              role="button"
+              tabIndex={0}
+              onClick={togglePassword}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  togglePassword();
+                }
+              }}
+            >
+              👁
+            </span>
+          </div>
 
           <div className="row">
-            <label className="login-card__remember">
+            <div className="remember">
               <input
                 type="checkbox"
+                id="remember"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
               />
-              Remember me
-            </label>
+              <label htmlFor="remember">Remember me</label>
+            </div>
             <a className="login-card__forgot" href="/forgot-password">
               Forgot Password?
             </a>
