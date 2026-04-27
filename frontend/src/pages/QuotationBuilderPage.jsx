@@ -149,7 +149,13 @@ export default function QuotationBuilderPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <div>
           <h1 className="section-title">{isEdit ? "Edit quotation" : "New quotation"}</h1>
           <p className="page-subtitle text-[#6b7c93]">Dynamic quotation builder with real-time totals.</p>
@@ -157,6 +163,12 @@ export default function QuotationBuilderPage() {
         <Link
           to={isEdit && quotationId ? `/quotations/${quotationId}` : "/quotations"}
           className="btn-secondary"
+          style={{
+            whiteSpace: "nowrap",
+            height: "36px",
+            padding: "0 12px",
+            borderRadius: "8px",
+          }}
         >
           {isEdit ? "Cancel" : "Back to Quotations"}
         </Link>
@@ -221,10 +233,25 @@ export default function QuotationBuilderPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3">
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            flexWrap: "nowrap",
+            minWidth: "260px",
+          }}
+        >
           <button
             type="button"
             className="btn-primary flex items-center gap-2"
+            style={{
+              whiteSpace: "nowrap",
+              height: "36px",
+              padding: "0 12px",
+              borderRadius: "8px",
+            }}
             disabled={
               saveQuotation.isPending ||
               !name ||
