@@ -229,6 +229,55 @@ a.btn-secondary {
   background: #f9fafb;
 }
 
+.btn-outline,
+a.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--saas-radius-input);
+  border: 1px solid var(--saas-border);
+  background: #fff;
+  color: #374151 !important;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: #f9fafb;
+}
+
+.btn-success,
+a.btn-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--saas-radius-input);
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff !important;
+  text-decoration: none;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-success:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.btn-success:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .btn-compact {
   height: 32px;
   padding: 0 12px;
@@ -356,6 +405,22 @@ a.btn-secondary {
   align-items: center;
   justify-content: center;
   white-space: nowrap;
+}
+
+.actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.actions-cell button,
+.actions-cell a {
+  white-space: nowrap;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  flex: 0 0 auto;
 }
 
 .header-actions {
@@ -578,4 +643,26 @@ body.dark-mode .saas-grid-row {
 
 body.dark-mode .totals-box {
   background: #1e293b;
+}
+
+/* FIX ACTION BUTTONS IN TABLE */
+td:last-child {
+display: flex !important;
+flex-direction: row !important;
+align-items: center !important;
+gap: 8px !important;
+flex-wrap: nowrap !important;
+}
+
+/* FORCE BUTTONS INLINE */
+td:last-child button {
+white-space: nowrap !important;
+flex: 0 0 auto !important;
+height: 34px;
+}
+
+/* PREVENT ANY CHILD WRAPPING */
+td:last-child > * {
+display: inline-flex !important;
+gap: 8px;
 }

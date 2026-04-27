@@ -3,6 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../lib/api";
 
+const __filename = import.meta.url;
+console.log("CHECK PAGE:", __filename);
+
 const PROJECT_TYPE_CHOICES = [
   { value: "CCTV", label: "CCTV" },
   { value: "NETWORKING", label: "Networking" },

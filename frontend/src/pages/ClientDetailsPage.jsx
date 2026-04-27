@@ -5,6 +5,9 @@ import api from "../lib/api";
 import { formatMoney } from "../utils/formatCurrency";
 import { formatClientNumber } from "../utils/formatClientNumber";
 
+const __filename = import.meta.url;
+console.log("CHECK PAGE:", __filename);
+
 const TABS = [
   { key: "overview", label: "Overview" },
   { key: "projects", label: "Projects" },

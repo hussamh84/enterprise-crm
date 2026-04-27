@@ -5,6 +5,9 @@ import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { formatMoney } from "../utils/formatCurrency";
 
+const __filename = import.meta.url;
+console.log("CHECK PAGE:", __filename);
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const now = new Date();

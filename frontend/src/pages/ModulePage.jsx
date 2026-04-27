@@ -4,6 +4,9 @@ import api from "../lib/api";
 import { formatClientNumber } from "../utils/formatClientNumber";
 import { formatMoney } from "../utils/formatCurrency";
 
+const __filename = import.meta.url;
+console.log("CHECK PAGE:", __filename);
+
 export default function ModulePage({ title, endpoint }) {
   const queryClient = useQueryClient();
 
@@ -208,7 +211,7 @@ export default function ModulePage({ title, endpoint }) {
               <div className="col-span-3">Project Name</div>
               <div className="col-span-2">Start Date</div>
               <div className="col-span-2">Status</div>
-              <div className="col-span-2">Actions</div>
+              <div className="col-span-2" style={{ minWidth: "240px" }}>Actions</div>
             </div>
 
             {data.map((item) => {
@@ -331,20 +334,41 @@ export default function ModulePage({ title, endpoint }) {
                   </span>
                 </div>
 
-                <div className="col-span-2 min-w-[200px]">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Link to={`${endpoint}/${item._id}`} className="btn-secondary btn-compact whitespace-nowrap">
+                <div className="col-span-2" style={{ minWidth: "240px" }}>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <Link
+                      to={`${endpoint}/${item._id}`}
+                      className="btn-outline"
+                      style={{ whiteSpace: "nowrap", display: "inline-block" }}
+                    >
                       View
                     </Link>
-                    <button type="button" onClick={() => handlePdf(item._id)} className="btn-primary btn-compact whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => handlePdf(item._id)}
+                      className="btn-primary"
+                      style={{ whiteSpace: "nowrap", display: "inline-block" }}
+                    >
                       PDF
                     </button>
                     {item?.status !== "approved" ? (
-                      <button type="button" onClick={() => handleApprove(item)} className="btn-primary btn-compact whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => handleApprove(item)}
+                        className="btn-success"
+                        style={{ whiteSpace: "nowrap", display: "inline-block" }}
+                      >
                         Approve
                       </button>
                     ) : null}
-                  </div>
+                  </span>
                 </div>
               </div>
             );

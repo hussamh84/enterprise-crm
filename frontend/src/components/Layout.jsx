@@ -6,6 +6,9 @@ import api from "../lib/api";
 import { syncCurrencyConfig } from "../config/currency";
 import { useAuthStore } from "../store/authStore";
 
+const __filename = import.meta.url;
+console.log("CHECK PAGE:", __filename);
+
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Briefcase },

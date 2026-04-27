@@ -5,6 +5,8 @@ const PDFDocument = require("pdfkit");
 const env = require("../config/env");
 const { models } = require("./index");
 
+console.log("CHECK PAGE:", __filename);
+
 const router = express.Router();
 const PDF_COMPANY = {
   name: "Config Engineering",

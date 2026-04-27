@@ -5,6 +5,9 @@ import api from "../lib/api";
 import { formatMoney } from "../utils/formatCurrency";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 
+const __filename = import.meta.url;
+console.log("CHECK PAGE:", __filename);
+
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");
 
 export default function InvoiceDetailPage() {

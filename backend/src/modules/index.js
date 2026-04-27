@@ -10,6 +10,8 @@ const { clientNumberField } = require("./clients/client.model");
 const { AppError } = require("../utils/appError");
 const { User } = require("./auth/auth.routes");
 
+console.log("CHECK PAGE:", __filename);
+
 const router = express.Router();
 const uploadsDir = path.resolve(__dirname, "../../uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
