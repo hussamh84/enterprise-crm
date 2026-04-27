@@ -1,7 +1,8 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
-import { formatCurrency } from "../utils/formatCurrency";
+import { formatCurrency } from "../utils/format";
+import { openPdf } from "../utils/pdf";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 
 const __filename = import.meta.url;
@@ -62,15 +63,8 @@ export default function QuotationViewPage() {
     },
   });
 
-  const printPdf = async () => {
-    try {
-      const res = await api.get(`/quotations/${id}/pdf`, { responseType: "blob" });
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
-      window.open(url, "_blank", "noopener,noreferrer");
-      setTimeout(() => window.URL.revokeObjectURL(url), 3000);
-    } catch {
-      /* ignore */
-    }
+  const printPdf = () => {
+    openPdf(`/quotations/${id}/pdf`);
   };
 
   if (!id) return null;

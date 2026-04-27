@@ -60,7 +60,7 @@ const addWatermark = (doc, branding) => {
   doc.restore();
 };
 
-const addHeader = (doc, { title, docNo, branding, issueDate, dueDate }) => {
+const addHeader = (doc, { title, docNoLabel = "Quotation No:", docNo, branding, issueDate }) => {
   const topY = 42;
   if (branding.companyLogoPath) {
     doc.image(branding.companyLogoPath, 50, 34, { fit: [140, 140] });
@@ -74,7 +74,7 @@ const addHeader = (doc, { title, docNo, branding, issueDate, dueDate }) => {
     .font("Helvetica")
     .fontSize(10)
     .fillColor("#475569")
-    .text(`Quotation No: ${docNo}`, 330, topY + 40, { width: 220, align: "right" })
+    .text(`${docNoLabel} ${docNo}`, 330, topY + 40, { width: 220, align: "right" })
     .text(`Issue Date: ${issueDate}`, 330, topY + 56, { width: 220, align: "right" });
 
   doc
@@ -291,10 +291,10 @@ router.get("/quotations/:id/pdf", async (req, res, next) => {
       addWatermark(doc, branding);
       addHeader(doc, {
         title: "Quotation",
+        docNoLabel: "Quotation No:",
         docNo: quotation.quotationNo || String(quotation._id || ""),
         branding,
         issueDate: new Date(quotation.createdAt || Date.now()).toLocaleDateString(),
-        dueDate: "-",
       });
       addStatusBadge(doc, "QUOTATION");
       const tableTop = addPartyBlock(doc, printableQuotation, project);
@@ -310,6 +310,79 @@ router.get("/quotations/:id/pdf", async (req, res, next) => {
         .fontSize(9)
         .fillColor("#6b7c93")
         .text("Thank you for your business", 50, Math.min(notesEndY + 12, 760));
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/invoices/:id/pdf", async (req, res, next) => {
+  try {
+    const branding = await resolveBranding(req.tenantId);
+    const invoice = await models.Invoice.findOne({ _id: req.params.id, tenantId: req.tenantId, deletedAt: null });
+    if (!invoice) return res.status(404).json({ message: "Invoice not found" });
+    const quotation = invoice.quotationId
+      ? await models.Quotation.findOne({ _id: String(invoice.quotationId), tenantId: req.tenantId, deletedAt: null })
+      : null;
+    const client = invoice.clientId
+      ? await models.Client.findOne({ _id: invoice.clientId, tenantId: req.tenantId, deletedAt: null })
+      : null;
+    const project = invoice.projectId
+      ? await models.Project.findOne({ _id: invoice.projectId, tenantId: req.tenantId, deletedAt: null })
+      : null;
+    const printableInvoice = {
+      ...invoice.toObject(),
+      clientName: client?.name || invoice.clientName,
+      projectName: project?.name || invoice.projectName,
+      clientEmail: client?.contacts?.[0]?.email || invoice.clientEmail,
+      clientPhone: client?.contacts?.[0]?.phone || client?.phone || invoice.clientPhone,
+    };
+    const total = Number(invoice.total || 0);
+    const paid = Number(invoice.paidAmount || 0);
+    const remaining = Number(invoice.remainingAmount ?? Math.max(total - paid, 0));
+    const paidLabel = remaining <= 0 || String(invoice.status || "").toLowerCase() === "paid" ? "PAID" : "UNPAID";
+    const items = quotation?.items?.length
+      ? quotation.items
+      : [{ description: "Invoice amount", quantity: 1, unitPrice: total, total }];
+    const discount = quotation?.discount && typeof quotation.discount === "object" ? quotation.discount : { amount: 0 };
+    const tax = quotation ? Number(quotation.tax ?? 0) : 0;
+    const grandTotal = total;
+
+    streamPdf(res, `invoice-${invoice.invoiceNo || invoice._id}.pdf`, (doc) => {
+      addWatermark(doc, branding);
+      addHeader(doc, {
+        title: "Invoice",
+        docNoLabel: "Invoice No:",
+        docNo: invoice.invoiceNo || String(invoice._id || ""),
+        branding,
+        issueDate: new Date(invoice.createdAt || Date.now()).toLocaleDateString(),
+      });
+      addStatusBadge(doc, paidLabel);
+      const tableTop = addPartyBlock(doc, printableInvoice, project);
+      const { y, subtotal: lineSubtotal } = addItemsTable(doc, items, tableTop + 8);
+      const summarySubtotal = quotation
+        ? Number(quotation.subtotal != null ? quotation.subtotal : lineSubtotal)
+        : lineSubtotal;
+      const totalsEndY = addTotals(
+        doc,
+        {
+          subtotal: summarySubtotal,
+          discount,
+          tax,
+          grandTotal,
+        },
+        y
+      );
+      doc
+        .fontSize(9)
+        .font("Helvetica")
+        .fillColor("#0f172a")
+        .text(`Paid to date: ${formatCurrency(paid)}`, 50, totalsEndY + 8)
+        .text(`Balance due: ${formatCurrency(remaining)}`, 50, totalsEndY + 24);
+      doc
+        .fontSize(9)
+        .fillColor("#6b7c93")
+        .text("Thank you for your business", 50, Math.min(totalsEndY + 48, 760));
     });
   } catch (error) {
     next(error);

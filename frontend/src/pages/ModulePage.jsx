@@ -2,7 +2,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import api from "../lib/api";
 import { formatClientNumber } from "../utils/formatClientNumber";
-import { formatCurrency } from "../utils/formatCurrency";
+import { formatCurrency } from "../utils/format";
+import { openPdf } from "../utils/pdf";
 
 const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
@@ -97,19 +98,27 @@ export default function ModulePage({ title, endpoint }) {
     }
   };
 
-  const handlePdf = async (id) => {
-    try {
-      const res = await api.get(`${endpoint}/${id}/pdf`, {
-        responseType: "blob",
-      });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "file.pdf";
-      a.click();
-    } catch (e) {
-      console.error(e);
+  const openDocumentPdf = (id) => {
+    if (endpoint === "/invoices") {
+      openPdf(`/invoices/${id}/pdf`);
+      return;
     }
+    if (endpoint === "/quotations") {
+      openPdf(`/quotations/${id}/pdf`);
+      return;
+    }
+    void (async () => {
+      try {
+        const res = await api.get(`${endpoint}/${id}/pdf`, { responseType: "blob" });
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "file.pdf";
+        a.click();
+      } catch (e) {
+        console.error(e);
+      }
+    })();
   };
 
   if (isLoading) {
@@ -258,7 +267,7 @@ export default function ModulePage({ title, endpoint }) {
                     <Link to={`${endpoint}/${item._id}`} className="btn-secondary btn-compact">
                       View
                     </Link>
-                    <button type="button" onClick={() => handlePdf(item._id)} className="btn-primary btn-compact">
+                    <button type="button" onClick={() => openDocumentPdf(item._id)} className="btn-primary btn-compact">
                       PDF
                     </button>
                   </div>
@@ -341,7 +350,7 @@ export default function ModulePage({ title, endpoint }) {
                     <Link to={`${endpoint}/${item._id}`} className="btn-view">
                       View
                     </Link>
-                    <button type="button" onClick={() => handlePdf(item._id)} className="btn-pdf">
+                    <button type="button" onClick={() => openDocumentPdf(item._id)} className="btn-pdf">
                       PDF
                     </button>
                     {item?.status !== "approved" ? (
@@ -430,7 +439,7 @@ export default function ModulePage({ title, endpoint }) {
                     <Link to={`${endpoint}/${item._id}`} className="btn-view">
                       View
                     </Link>
-                    <button type="button" onClick={() => handlePdf(item._id)} className="btn-pdf">
+                    <button type="button" onClick={() => openDocumentPdf(item._id)} className="btn-pdf">
                       PDF
                     </button>
                     <Link to={`${endpoint}/${item._id}`} className="btn-approve">
@@ -516,7 +525,7 @@ export default function ModulePage({ title, endpoint }) {
                 </button>
               )}
               {endpoint !== "/clients" && (
-                <button type="button" onClick={() => handlePdf(item._id)} className="btn-primary btn-compact">
+                <button type="button" onClick={() => openDocumentPdf(item._id)} className="btn-primary btn-compact">
                   PDF
                 </button>
               )}

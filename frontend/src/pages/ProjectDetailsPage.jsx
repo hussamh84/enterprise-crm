@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import api from "../lib/api";
-import { formatCurrency, formatMoney } from "../utils/formatCurrency";
+import { formatCurrency } from "../utils/format";
 
 const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
@@ -145,13 +145,13 @@ export default function ProjectDetailsPage() {
                   )
                 }
               />
-              <Field label="Budget" value={<span className="currency numeric">{formatMoney(project.budget)}</span>} />
-              <Field label="Total Revenue" value={<span className="currency numeric">{formatMoney(totalRevenue)}</span>} />
-              <Field label="Total Expenses" value={<span className="currency numeric">{formatMoney(totalExpenses)}</span>} />
+              <Field label="Budget" value={<span className="currency numeric">{formatCurrency(project.budget)}</span>} />
+              <Field label="Total Revenue" value={<span className="currency numeric">{formatCurrency(totalRevenue)}</span>} />
+              <Field label="Total Expenses" value={<span className="currency numeric">{formatCurrency(totalExpenses)}</span>} />
               <Field
                 label="Net Profit"
                 value={
-                  <span className={`currency numeric ${netProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{formatMoney(netProfit)}</span>
+                  <span className={`currency numeric ${netProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{formatCurrency(netProfit)}</span>
                 }
               />
               <Field label="Start Date" value={dateValue(project.startDate)} />
@@ -236,7 +236,7 @@ export default function ProjectDetailsPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-[#0a2540]">Expenses List</h3>
               <span className="text-sm text-[#6b7c93]">
-                Total expenses: <span className="currency numeric inline-block">{formatMoney(totalExpenses)}</span>
+                Total expenses: <span className="currency numeric inline-block">{formatCurrency(totalExpenses)}</span>
               </span>
             </div>
             {expenses.length === 0 ? (
@@ -251,7 +251,7 @@ export default function ProjectDetailsPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <p className="font-semibold text-[#0a2540]">
-                        <span className="currency numeric">{formatMoney(expense.amount)}</span>
+                        <span className="currency numeric">{formatCurrency(expense.amount)}</span>
                       </p>
                       <button
                         type="button"
@@ -298,13 +298,13 @@ export default function ProjectDetailsPage() {
                 <div key={quotation._id} className="rounded-lg border border-slate-200 px-3 py-3 text-sm flex items-center justify-between">
                   <div>
                     <Link to={`/quotations/${quotation._id}`} className="font-medium text-[#635bff] hover:underline">
-                      {quotation.name || `Quotation ${quotation._id.slice(-6)}`}
+                      {quotation.quotationNo || quotation.name || "Quotation"}
                     </Link>
                     <p className="text-xs text-[#6b7c93] mt-1">{new Date(quotation.createdAt).toLocaleDateString()}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-[#0a2540]">
-                      <span className="currency numeric">{formatMoney(quotation.grandTotal ?? quotation.subtotal)}</span>
+                      <span className="currency numeric">{formatCurrency(quotation.grandTotal ?? quotation.subtotal)}</span>
                     </p>
                     <p className="text-xs text-[#6b7c93]">{quotation.status || "draft"}</p>
                   </div>
@@ -318,13 +318,13 @@ export default function ProjectDetailsPage() {
           <div className="premium-card p-5">
             <h2 className="font-semibold text-[#0a2540] mb-4">Quotation Summary</h2>
             <div className="space-y-2 text-sm">
-              <SummaryRow label="Total Revenue" value={<span className="currency numeric">{formatMoney(totalRevenue)}</span>} />
-              <SummaryRow label="Total Expenses" value={<span className="currency numeric">{formatMoney(totalExpenses)}</span>} />
+              <SummaryRow label="Total Revenue" value={<span className="currency numeric">{formatCurrency(totalRevenue)}</span>} />
+              <SummaryRow label="Total Expenses" value={<span className="currency numeric">{formatCurrency(totalExpenses)}</span>} />
               <SummaryRow
                 label="Net Profit"
-                value={<span className={`currency numeric ${netProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{formatMoney(netProfit)}</span>}
+                value={<span className={`currency numeric ${netProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{formatCurrency(netProfit)}</span>}
               />
-              <SummaryRow label="Total Quoted" value={<span className="currency numeric">{formatMoney(quotationSummary?.totalQuoted)}</span>} />
+              <SummaryRow label="Total Quoted" value={<span className="currency numeric">{formatCurrency(quotationSummary?.totalQuoted)}</span>} />
               <SummaryRow label="Quotation Count" value={<span className="numeric">{String(quotationSummary?.quotationCount || 0)}</span>} />
             </div>
           </div>

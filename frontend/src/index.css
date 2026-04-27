@@ -587,7 +587,7 @@ a.btn-approve {
   align-items: center;
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #ddd;
   font-size: 16px;
   font-weight: 600;
   color: #0f172a;
@@ -601,6 +601,7 @@ a.btn-approve {
 .summary .row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 6px 0;
 }
 

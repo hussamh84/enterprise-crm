@@ -4,15 +4,15 @@ const env = require("../config/env");
 const authMiddleware = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || req.headers.Authorization;
-
-    // ❌ لا يوجد توكن
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Unauthorized" });
+    let token = null;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
     }
-
-    // 🔐 استخراج التوكن
-    const token = authHeader.split(" ")[1];
-
+    const isPdfGet =
+      req.method === "GET" && String(req.originalUrl || req.url || "").includes("/pdf");
+    if (!token && isPdfGet && req.query?.access_token) {
+      token = String(req.query.access_token);
+    }
     if (!token) {
       return res.status(401).json({ message: "Unauthorized" });
     }

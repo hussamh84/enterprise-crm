@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import api from "../lib/api";
-import { formatMoney } from "../utils/formatCurrency";
+import { formatCurrency } from "../utils/format";
 import { formatClientNumber } from "../utils/formatClientNumber";
 
 const __filename = import.meta.url;
@@ -104,7 +104,7 @@ export default function ClientDetailsPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <Metric label="Total Projects" value={<span className="numeric">{String(stats?.totalProjects || 0)}</span>} />
               <Metric label="Total Quotations" value={<span className="numeric">{String(stats?.totalQuotations ?? quotations.length)}</span>} />
-              <Metric label="Total Quoted" value={<span className="currency numeric">{formatMoney(stats?.totalQuoted)}</span>} />
+              <Metric label="Total Quoted" value={<span className="currency numeric">{formatCurrency(stats?.totalQuoted)}</span>} />
             </div>
           </div>
         </div>
@@ -155,13 +155,13 @@ export default function ClientDetailsPage() {
                 <div key={q._id} className="rounded-lg border border-slate-200 px-3 py-3 text-sm flex items-center justify-between">
                   <div>
                     <Link to={`/quotations/${q._id}`} className="font-medium text-[#635bff] hover:underline">
-                      {q.name || `Quotation ${String(q._id).slice(-6)}`}
+                      {q.quotationNo || q.name || "Quotation"}
                     </Link>
                     <p className="text-xs text-[#6b7c93] mt-1">{dateValue(q.createdAt)}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-[#0a2540]">
-                      <span className="currency numeric">{formatMoney(q.grandTotal)}</span>
+                      <span className="currency numeric">{formatCurrency(q.grandTotal)}</span>
                     </p>
                     <p className="text-xs text-[#6b7c93]">{q.status || "draft"}</p>
                   </div>

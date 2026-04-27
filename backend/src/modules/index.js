@@ -166,9 +166,11 @@ const Settings = mongoose.models.Settings || mongoose.model("Settings", Settings
 
 const getTenantId = (req) => req.user?.tenantId || req.tenantId;
 
-const generateDocumentNo = async ({ model, prefix }) => {
+const generateDocumentNo = async ({ model, prefix, tenantId }) => {
   const year = new Date().getFullYear();
   const count = await model.countDocuments({
+    tenantId,
+    deletedAt: null,
     createdAt: {
       $gte: new Date(`${year}-01-01`),
       $lt: new Date(`${year + 1}-01-01`),
@@ -201,7 +203,7 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
     deletedAt: null,
   });
   if (existing) return existing;
-  const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV" });
+  const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV", tenantId });
 
   return Invoice.create({
     tenantId,
@@ -635,7 +637,7 @@ router.post("/quotations", async (req, res, next) => {
     if (!clientId) return res.status(400).json({ message: "clientId is required" });
     if (!projectId) return res.status(400).json({ message: "projectId is required" });
     await ensureClientProjectLink({ tenantId, clientId, projectId });
-    const quotationNo = await generateDocumentNo({ model: Quotation, prefix: "QTN" });
+    const quotationNo = await generateDocumentNo({ model: Quotation, prefix: "QTN", tenantId });
 
     const calculated = computeQuotationTotals(req.body);
     const payload = {
@@ -962,12 +964,18 @@ router.get("/invoices/:id", async (req, res, next) => {
     const invoice = typeof doc.toObject === "function" ? doc.toObject() : doc;
     const quotation = invoice.quotationId
       ? await Quotation.findOne({ _id: String(invoice.quotationId), tenantId: req.tenantId, deletedAt: null })
-          .select("quotationNo")
+          .select("quotationNo subtotal discount tax grandTotal")
           .lean()
       : null;
+    const subtotal = quotation ? Number(quotation.subtotal ?? 0) : Number(invoice.total || 0);
+    const discountAmount = quotation ? Number(quotation.discount?.amount ?? 0) : 0;
+    const taxAmount = quotation ? Number(quotation.tax ?? 0) : 0;
     res.json({
       ...invoice,
       quotationNo: quotation?.quotationNo || "",
+      summarySubtotal: subtotal,
+      summaryDiscount: discountAmount,
+      summaryTax: taxAmount,
     });
   } catch (error) {
     next(error);
@@ -990,7 +998,7 @@ router.post("/invoices", async (req, res, next) => {
     const safePaidAmount = Number.isFinite(paidAmount) && paidAmount >= 0 ? Math.min(paidAmount, total) : 0;
     const remainingAmount = Math.max(total - safePaidAmount, 0);
     const status = safePaidAmount >= total ? "paid" : "unpaid";
-    const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV" });
+    const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV", tenantId });
 
     const doc = await Invoice.create({
       ...req.body,

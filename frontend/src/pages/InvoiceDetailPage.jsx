@@ -2,7 +2,8 @@ import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import api from "../lib/api";
-import { formatCurrency } from "../utils/formatCurrency";
+import { formatCurrency } from "../utils/format";
+import { openPdf } from "../utils/pdf";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 
 const __filename = import.meta.url;
@@ -74,10 +75,20 @@ export default function InvoiceDetailPage() {
   const refId = data.invoiceNo || "INV";
   const total = Number(data.total || 0);
   const paid = Number(data.paidAmount || 0);
+  const summarySubtotal = Number(data.summarySubtotal ?? total);
+  const summaryDiscount = Number(data.summaryDiscount ?? 0);
+  const summaryTax = Number(data.summaryTax ?? 0);
 
   return (
     <div className="enterprise-doc p-6 pb-10 max-w-5xl mx-auto">
-      <div className="flex justify-end enterprise-doc-section">
+      <div className="flex justify-end gap-2 flex-wrap enterprise-doc-section">
+        <button
+          type="button"
+          onClick={() => openPdf(`/invoices/${invoiceId}/pdf`)}
+          className="rounded-lg bg-[#4f46e5] text-white px-3 py-2 text-sm font-medium hover:bg-[#4338ca] shadow-sm"
+        >
+          Print PDF
+        </button>
         <Link
           to="/invoices"
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-[#425466] hover:bg-slate-50 shadow-sm"
@@ -156,15 +167,15 @@ export default function InvoiceDetailPage() {
           <div className="summary">
             <div className="row">
               <span>Subtotal</span>
-              <span className="numeric">{formatCurrency(total)}</span>
+              <span className="numeric">{formatCurrency(summarySubtotal)}</span>
             </div>
             <div className="row">
               <span>Discount</span>
-              <span className="numeric">{formatCurrency(0)}</span>
+              <span className="numeric">{formatCurrency(summaryDiscount)}</span>
             </div>
             <div className="row">
               <span>Tax</span>
-              <span className="numeric">{formatCurrency(0)}</span>
+              <span className="numeric">{formatCurrency(summaryTax)}</span>
             </div>
           </div>
           <div className="grand-total">

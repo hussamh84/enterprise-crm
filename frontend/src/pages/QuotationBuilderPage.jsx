@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CirclePlus, FileText, Trash2 } from "lucide-react";
 import api from "../lib/api";
-import { formatCurrency } from "../utils/formatCurrency";
+import { formatCurrency } from "../utils/format";
 import { formatClientNumber } from "../utils/formatClientNumber";
 
 const BLANK_ITEM = { description: "", quantity: 1, unitPrice: 0 };
