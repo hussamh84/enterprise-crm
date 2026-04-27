@@ -205,7 +205,7 @@ export default function QuotationViewPage() {
                   <div className="grand-total">
                     <span>Grand Total</span>
                     <span className="amount">
-                      <span className="numeric">{formatCurrency(total)}</span>
+                      <span className="value numeric">{formatCurrency(total)}</span>
                       <span className="currency">SDG</span>
                     </span>
                   </div>

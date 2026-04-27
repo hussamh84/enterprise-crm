@@ -591,6 +591,7 @@ a.btn-approve {
   font-size: 16px;
   font-weight: 600;
   color: #0f172a;
+  white-space: nowrap;
 }
 
 .summary {
@@ -605,17 +606,26 @@ a.btn-approve {
   padding: 6px 0;
 }
 
-.amount {
+.grand-total .amount {
   display: flex;
-  gap: 6px;
   align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.grand-total .value {
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .grand-total .currency {
-  font-size: 13px;
+  font-size: 12px;
   opacity: 0.7;
   width: auto;
+  min-width: 0;
   display: inline;
+  white-space: nowrap;
 }
 
 .premium-card {

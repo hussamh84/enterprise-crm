@@ -21,6 +21,11 @@ export default function ProjectDetailsPage() {
     queryFn: async () => (await api.get(`/projects/${projectId}/details`)).data,
     enabled: Boolean(projectId),
   });
+  const { data: invoices = [] } = useQuery({
+    queryKey: ["/invoices", "project-page", projectId],
+    queryFn: async () => (await api.get("/invoices")).data,
+    enabled: Boolean(projectId),
+  });
 
   const project = data?.project;
   const client = data?.client;
@@ -35,6 +40,20 @@ export default function ProjectDetailsPage() {
   const totalRevenue = Number(profitability?.totalRevenue ?? quotationSummary?.totalQuoted ?? 0);
   const totalExpenses = Number(profitability?.totalExpenses ?? 0);
   const netProfit = Number(profitability?.calculatedProfit ?? totalRevenue - totalExpenses);
+  const projectInvoices = useMemo(
+    () =>
+      invoices.filter((invoice) => {
+        const invoiceProjectId =
+          typeof invoice?.projectId === "object" ? String(invoice.projectId?._id || "") : String(invoice?.projectId || "");
+        return invoiceProjectId === String(projectId);
+      }),
+    [invoices, projectId]
+  );
+
+  const openInvoicePdf = (invoice) => {
+    console.log("PDF ID:", invoice._id);
+    window.open(`/api/v1/invoices/${invoice._id}/pdf`, "_blank");
+  };
 
   const expenseMutation = useMutation({
     mutationFn: async () => {
@@ -315,6 +334,35 @@ export default function ProjectDetailsPage() {
         </div>
 
         <div className="space-y-5">
+          <div className="premium-card p-5">
+            <h2 className="font-semibold text-[#0a2540] mb-4">Related Invoices</h2>
+            {projectInvoices.length === 0 ? (
+              <p className="text-sm text-[#6b7c93]">No invoices linked to this project yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {projectInvoices.map((invoice) => (
+                  <div key={invoice._id} className="rounded-lg border border-slate-200 px-3 py-3 text-sm flex items-center justify-between">
+                    <div>
+                      <Link to={`/invoices/${invoice._id}`} className="font-medium text-[#635bff] hover:underline">
+                        {invoice.invoiceNo || invoice.name || "Invoice"}
+                      </Link>
+                      <p className="text-xs text-[#6b7c93] mt-1">{new Date(invoice.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-[#0a2540] currency numeric">{formatCurrency(invoice.total || 0)}</span>
+                      <button
+                        type="button"
+                        onClick={() => openInvoicePdf(invoice)}
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-[#425466] hover:bg-slate-50"
+                      >
+                        PDF
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="premium-card p-5">
             <h2 className="font-semibold text-[#0a2540] mb-4">Quotation Summary</h2>
             <div className="space-y-2 text-sm">
