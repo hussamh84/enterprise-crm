@@ -219,21 +219,38 @@ const addTotals = (doc, { subtotal, discount = {}, tax = 0, grandTotal, total },
   doc.moveTo(summaryX, y).lineTo(summaryX + summaryWidth, y).strokeColor("#e5e7eb").stroke();
   y += 10;
 
-  /* Grand total: fixed row width, 14pt, amount + SDG one line (no wrap). */
-  const grandTotalWidth = 300;
+  /* Grand total: tight cluster, flex-end style (no space-between, no wide split). */
   const pageContentRight = 545;
-  const grandTotalLeft = pageContentRight - grandTotalWidth;
-  const grandTotalAmount = `${formatCurrency(calculatedTotal)} SDG`;
+  const gapLabelToAmount = 10;
+  const gapAmountToSdg = 5;
 
-  const labelColW = 130;
-  const amountColW = grandTotalWidth - labelColW;
+  const labelText = "Grand Total";
+  doc.font("Helvetica-Bold").fontSize(14);
+  const labelW = doc.widthOfString(labelText);
+
+  const amountText = formatCurrency(calculatedTotal);
+  doc.font("Helvetica-Bold").fontSize(14);
+  const amountW = doc.widthOfString(amountText);
+
+  doc.font("Helvetica").fontSize(12);
+  const sdgText = "SDG";
+  const sdgW = doc.widthOfString(sdgText);
+
+  const clusterW = labelW + gapLabelToAmount + amountW + gapAmountToSdg + sdgW;
+  let x = pageContentRight - clusterW;
+
   doc.font("Helvetica-Bold").fontSize(14).fillColor("#0f172a");
-  doc.text("Grand Total", grandTotalLeft, y, { width: labelColW, align: "left", lineBreak: false });
-  doc.text(grandTotalAmount, grandTotalLeft + labelColW, y, {
-    width: amountColW,
-    align: "right",
-    lineBreak: false,
-  });
+  doc.text(labelText, x, y, { lineBreak: false });
+  x += labelW + gapLabelToAmount;
+  doc.text(amountText, x, y, { lineBreak: false });
+  x += amountW + gapAmountToSdg;
+
+  doc.save();
+  doc.opacity(0.7);
+  doc.font("Helvetica").fontSize(12).fillColor("#64748b");
+  doc.text(sdgText, x, y + 1, { lineBreak: false });
+  doc.restore();
+
   y += 22;
   return y;
 };
