@@ -218,17 +218,23 @@ const addTotals = (doc, { subtotal, discount = {}, tax = 0, grandTotal, total },
   y += 2;
   doc.moveTo(summaryX, y).lineTo(summaryX + summaryWidth, y).strokeColor("#e5e7eb").stroke();
   y += 10;
-  doc
-    .fontSize(16)
-    .font("Helvetica-Bold")
-    .fillColor("#0f172a")
-    .text("Grand Total", summaryX, y, { width: 100, align: "left" })
-    .text(formatCurrency(calculatedTotal), summaryX + 100, y, { width: 90, align: "right" })
-    .fontSize(13)
-    .font("Helvetica")
-    .fillColor("#64748b")
-    .text("SDG", summaryX + 194, y + 2, { width: 26, align: "right" });
-  y += 24;
+
+  /* Grand total: fixed row width, 14pt, amount + SDG one line (no wrap). */
+  const grandTotalWidth = 300;
+  const pageContentRight = 545;
+  const grandTotalLeft = pageContentRight - grandTotalWidth;
+  const grandTotalAmount = `${formatCurrency(calculatedTotal)} SDG`;
+
+  const labelColW = 130;
+  const amountColW = grandTotalWidth - labelColW;
+  doc.font("Helvetica-Bold").fontSize(14).fillColor("#0f172a");
+  doc.text("Grand Total", grandTotalLeft, y, { width: labelColW, align: "left", lineBreak: false });
+  doc.text(grandTotalAmount, grandTotalLeft + labelColW, y, {
+    width: amountColW,
+    align: "right",
+    lineBreak: false,
+  });
+  y += 22;
   return y;
 };
 
@@ -292,7 +298,7 @@ router.get("/quotations/:id/pdf", async (req, res, next) => {
       addHeader(doc, {
         title: "Quotation",
         docNoLabel: "Quotation No:",
-        docNo: quotation.quotationNo || String(quotation._id || ""),
+        docNo: String(quotation.quotationNo || "").trim() || "—",
         branding,
         issueDate: new Date(quotation.createdAt || Date.now()).toLocaleDateString(),
       });
@@ -353,7 +359,7 @@ router.get("/invoices/:id/pdf", async (req, res, next) => {
       addHeader(doc, {
         title: "Invoice",
         docNoLabel: "Invoice No:",
-        docNo: invoice.invoiceNo || String(invoice._id || ""),
+        docNo: String(invoice.invoiceNo || "").trim() || "—",
         branding,
         issueDate: new Date(invoice.createdAt || Date.now()).toLocaleDateString(),
       });
