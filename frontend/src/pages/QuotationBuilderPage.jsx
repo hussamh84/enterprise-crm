@@ -242,10 +242,9 @@ export default function QuotationBuilderPage() {
             </div>
           </div>
           <div className="grand-total">
-            <span>Grand Total</span>
+            <span className="label">Grand Total</span>
             <span className="amount">
-              <span className="value numeric">{formatCurrency(grandTotal)}</span>
-              <span className="currency">SDG</span>
+              {formatCurrency(grandTotal)} <span className="currency">SDG</span>
             </span>
           </div>
         </div>

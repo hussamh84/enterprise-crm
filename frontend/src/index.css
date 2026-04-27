@@ -580,22 +580,45 @@ a.btn-approve {
 }
 
 .grand-total {
-  width: 320px;
-  margin-left: auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 10px;
+  width: 360px;
+  margin-left: auto;
+  margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid #ddd;
-  font-size: 16px;
+  border-top: 1px solid #e5e7eb;
   font-weight: 600;
   color: #0f172a;
   white-space: nowrap;
 }
 
+.grand-total .label {
+  font-size: 15px;
+}
+
+.grand-total .amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.grand-total .currency {
+  font-size: 13px;
+  opacity: 0.7;
+  width: auto;
+  min-width: 0;
+  display: inline;
+  text-align: inherit;
+  font-weight: 600;
+}
+
 .summary {
-  width: 320px;
+  width: 360px;
   margin-left: auto;
 }
 
@@ -604,47 +627,6 @@ a.btn-approve {
   justify-content: space-between;
   align-items: center;
   padding: 6px 0;
-}
-
-.grand-total .amount {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.grand-total .value {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.grand-total .currency {
-  font-size: 12px;
-  opacity: 0.7;
-  width: auto;
-  min-width: 0;
-  display: inline;
-  white-space: nowrap;
-}
-
-.amount {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  white-space: nowrap !important;
-}
-
-.value {
-  font-size: 15px !important;
-}
-
-.currency {
-  font-size: 12px !important;
-}
-
-.grand-total {
-  white-space: nowrap !important;
 }
 
 .premium-card {
