@@ -148,15 +148,26 @@ const addQuotationMetaBlock = (doc, quotation) => {
 
 const addItemsTable = (doc, rows, top = 356) => {
   const items = rows?.length ? rows : [{ description: "Service", quantity: 1, unitPrice: 0, total: 0 }];
-  doc.roundedRect(50, top - 4, 500, 22, 4).fillAndStroke("#f8fafc", "#e2e8f0");
+  const x = 50;
+  const tableWidth = 500;
+  const rowHeight = 24;
+  const descriptionWidth = 260;
+  const qtyWidth = 70;
+  const unitWidth = 85;
+  const totalWidth = 85;
+  const col1 = x;
+  const col2 = col1 + descriptionWidth;
+  const col3 = col2 + qtyWidth;
+  const col4 = col3 + unitWidth;
+  doc.roundedRect(x, top - 4, tableWidth, 22, 4).fillAndStroke("#f8fafc", "#e2e8f0");
   doc
     .font("Helvetica-Bold")
     .fontSize(10)
     .fillColor("#475569")
-    .text("Description", 60, top + 3)
-    .text("Qty", 320, top + 3)
-    .text("Unit Price", 385, top + 3)
-    .text("Total", 480, top + 3);
+    .text("Description", col1 + 10, top + 3, { width: descriptionWidth - 20, align: "left" })
+    .text("Qty", col2, top + 3, { width: qtyWidth, align: "center" })
+    .text("Unit Price", col3, top + 3, { width: unitWidth, align: "right" })
+    .text("Total", col4, top + 3, { width: totalWidth, align: "right" });
 
   let y = top + 28;
   let subtotal = 0;
@@ -165,19 +176,17 @@ const addItemsTable = (doc, rows, top = 356) => {
     const rate = Number(item.unitPrice || item.rate || 0);
     const amount = Number(item.total != null ? item.total : qty * rate);
     subtotal += amount;
-    if (index % 2 === 0) {
-      doc.rect(50, y - 4, 500, 22).fill("#fcfdff");
-    }
+    if (index % 2 === 0) doc.rect(x, y - 4, tableWidth, 22).fill("#fcfdff");
     doc
       .font("Helvetica")
       .fontSize(10)
       .fillColor("#0a2540")
-      .text(item.description || item.name || "Line Item", 50, y, { width: 240 })
-      .text(String(qty), 320, y)
-      .text(formatSdgMoney(rate), 380, y, { width: 110, align: "right" })
-      .text(formatSdgMoney(amount), 470, y, { width: 110, align: "right" });
-    doc.moveTo(50, y + 18).lineTo(550, y + 18).strokeColor("#eef2f7").stroke();
-    y += 26;
+      .text(item.description || item.name || "Line Item", col1 + 10, y, { width: descriptionWidth - 20, align: "left" })
+      .text(String(qty), col2, y, { width: qtyWidth, align: "center" })
+      .text(formatSdgMoney(rate), col3, y, { width: unitWidth, align: "right" })
+      .text(formatSdgMoney(amount), col4, y, { width: totalWidth, align: "right" });
+    doc.moveTo(x, y + 18).lineTo(x + tableWidth, y + 18).strokeColor("#eef2f7").stroke();
+    y += rowHeight + 2;
   });
 
   return { y, subtotal };

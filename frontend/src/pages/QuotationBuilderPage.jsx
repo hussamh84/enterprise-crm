@@ -183,14 +183,16 @@ export default function QuotationBuilderPage() {
 
         <div className="space-y-3">
           {items.map((item, index) => (
-            <div key={`quotation-item-${index}`} className="grid grid-cols-12 gap-3 items-center">
-              <input className="col-span-5 w-full min-w-0" value={item.description} onChange={(event) => updateItem(index, "description", event.target.value)} placeholder="Item description" />
-              <input type="number" min="0" className="col-span-2 w-full min-w-0" value={item.quantity} onChange={(event) => updateItem(index, "quantity", event.target.value)} placeholder="Qty" />
-              <input type="number" min="0" className="col-span-2 w-full min-w-0" value={item.unitPrice} onChange={(event) => updateItem(index, "unitPrice", event.target.value)} placeholder="Unit price" />
-              <p className="col-span-2 text-sm font-medium text-[#0a2540] currency-col">
-                <span className="currency">{formatMoney(calculatedItems[index]?.total)}</span>
-              </p>
-              <button type="button" className="col-span-1 text-slate-500 hover:text-rose-600 flex justify-center p-1" onClick={() => removeItem(index)} aria-label="Remove line">
+            <div key={`quotation-item-${index}`} className="quotation-item-row">
+              <input className="input-field" value={item.description} onChange={(event) => updateItem(index, "description", event.target.value)} placeholder="Item description" />
+              <input type="number" min="0" className="input-field text-center" value={item.quantity} onChange={(event) => updateItem(index, "quantity", event.target.value)} placeholder="Qty" />
+              <input type="number" min="0" className="input-field text-right" value={item.unitPrice} onChange={(event) => updateItem(index, "unitPrice", event.target.value)} placeholder="Unit price" />
+              <input
+                className="input-field total-field"
+                value={`SDG ${formatCurrency(calculatedItems[index]?.total)}`}
+                readOnly
+              />
+              <button type="button" className="text-slate-500 hover:text-rose-600 flex justify-center p-1" onClick={() => removeItem(index)} aria-label="Remove line">
                 <Trash2 size={16} />
               </button>
             </div>

@@ -349,6 +349,32 @@ a.btn-secondary {
   white-space: nowrap;
 }
 
+.input-field {
+  height: 36px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+  width: 100%;
+  min-width: 0;
+  background: #fff;
+}
+
+.total-field {
+  text-align: right;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-family: Inter, monospace;
+}
+
+.quotation-item-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) 80px 120px 140px 40px;
+  gap: 10px;
+  align-items: center;
+}
+
 /* Enterprise invoice / quotation document layout */
 .enterprise-doc {
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
