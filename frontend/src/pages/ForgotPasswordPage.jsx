@@ -2,66 +2,57 @@ import { useState } from "react";
 import api from "../lib/api";
 
 export default function ForgotPasswordPage() {
-  console.log("PAGE LOADED");
-
   const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("FORM SUBMITTED");
-
+    setError("");
     try {
       await api.post("/auth/forgot-password", { email });
       alert("Request sent");
     } catch (err) {
       console.error(err);
-      alert("Error");
+      setError("Unable to send reset link. Try again.");
     }
   };
 
+  const handleLogoError = (event) => {
+    event.currentTarget.onerror = null;
+    if (!event.currentTarget.src.endsWith("/logo.png")) {
+      event.currentTarget.src = "/logo.png";
+      return;
+    }
+    event.currentTarget.src = "/favicon.svg";
+  };
+
   return (
-  <div style={{
-    padding: 40,
-    maxWidth: 400,
-    margin: "100px auto",
-    background: "white",
-    borderRadius: "12px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.1)"
-  }}>
-    <h1 style={{ marginBottom: 20 }}>Forgot Password</h1>
+    <div
+      className="login-page"
+      style={{
+        backgroundImage: "url('/login-bg.png')",
+      }}
+    >
+      <div className="login-page-inner">
+        <form className="login-card" onSubmit={handleSubmit}>
+          <img src="/logo.png" onError={handleLogoError} alt="" />
 
-    <form onSubmit={handleSubmit}>
-      <input
-        type="email"
-        placeholder="Enter email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "12px",
-          marginBottom: "20px",
-          borderRadius: "8px",
-          border: "1px solid #ccc",
-          fontSize: "16px"
-        }}
-      />
+          <h1>Forgot Password</h1>
 
-      <button
-        type="submit"
-        style={{
-          width: "100%",
-          padding: "12px",
-          background: "#4f46e5",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-          fontSize: "16px",
-          cursor: "pointer"
-        }}
-      >
-        Send Reset Link
-      </button>
-    </form>
-  </div>
-);
+          <label htmlFor="forgot-email">Email</label>
+          <input
+            id="forgot-email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+
+          {error ? <p className="login-card__error">{error}</p> : null}
+
+          <button type="submit">Send Reset Link</button>
+        </form>
+      </div>
+    </div>
+  );
 }
