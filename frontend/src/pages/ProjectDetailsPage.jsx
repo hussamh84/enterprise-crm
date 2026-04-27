@@ -50,11 +50,6 @@ export default function ProjectDetailsPage() {
     [invoices, projectId]
   );
 
-  const openInvoicePdf = (invoice) => {
-    console.log("PDF ID:", invoice._id);
-    window.open(`/api/v1/invoices/${invoice._id}/pdf`, "_blank");
-  };
-
   const expenseMutation = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -352,7 +347,11 @@ export default function ProjectDetailsPage() {
                       <span className="font-semibold text-[#0a2540] currency numeric">{formatCurrency(invoice.total || 0)}</span>
                       <button
                         type="button"
-                        onClick={() => openInvoicePdf(invoice)}
+                        onClick={() => {
+                          console.log("PDF CLICKED", invoice);
+                          console.log("OPEN PDF:", invoice._id);
+                          window.open(`/api/v1/invoices/${invoice._id}/pdf`, "_blank");
+                        }}
                         className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-[#425466] hover:bg-slate-50"
                       >
                         PDF

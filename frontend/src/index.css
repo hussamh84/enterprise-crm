@@ -628,6 +628,25 @@ a.btn-approve {
   white-space: nowrap;
 }
 
+.amount {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+}
+
+.value {
+  font-size: 15px !important;
+}
+
+.currency {
+  font-size: 12px !important;
+}
+
+.grand-total {
+  white-space: nowrap !important;
+}
+
 .premium-card {
   border: 1px solid #f1f5f9;
   background: #fff;
