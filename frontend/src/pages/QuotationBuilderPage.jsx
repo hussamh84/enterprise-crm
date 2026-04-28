@@ -262,12 +262,16 @@ export default function QuotationBuilderPage() {
                   placeholder="Type item name (e.g. cam)"
                 />
                 {Array.isArray(itemSuggestions[index]) && itemSuggestions[index].length > 0 ? (
-                  <div className="autocomplete-dropdown absolute left-0 right-0 top-[calc(100%+4px)] z-20 bg-white text-black">
+                  <div
+                    className="autocomplete-dropdown absolute left-0 right-0 top-[calc(100%+4px)] z-20 bg-white text-black"
+                    style={{ background: "#fff", color: "#000" }}
+                  >
                     {itemSuggestions[index].map((suggestion) => (
                       <button
                         key={suggestion._id}
                         type="button"
                         className={`autocomplete-item hover:bg-gray-100 text-black ${item.productId === suggestion._id ? "active" : ""}`}
+                        style={{ background: "#fff", color: "#000" }}
                         onClick={() => handleProductSelect(index, suggestion)}
                       >
                         <span className="font-medium text-slate-800">{suggestion.name}</span>

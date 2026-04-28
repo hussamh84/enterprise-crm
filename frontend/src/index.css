@@ -1149,3 +1149,16 @@ button,
 button * {
   color: #ffffff !important;
 }
+
+button,
+.btn,
+[class*="btn"] {
+  background: #111827 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+button:hover,
+.btn:hover {
+  background: #000000 !important;
+}
