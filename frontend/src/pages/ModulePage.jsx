@@ -177,6 +177,34 @@ export default function ModulePage({ title, endpoint }) {
     }
   };
 
+  const handleAddInventoryItem = async (event) => {
+    if (event?.preventDefault) event.preventDefault();
+    console.log("ADD CLICKED");
+    const name = window.prompt("Item name");
+    if (!name || !name.trim()) return;
+    const sku = window.prompt("SKU code");
+    if (!sku || !sku.trim()) return;
+    try {
+      await api.post("/inventory", {
+        name: name.trim(),
+        sku: sku.trim(),
+        category: "General",
+        price: 0,
+        cost: 0,
+        quantity: 0,
+        minQuantity: 0,
+        unit: "pcs",
+        status: "active",
+      });
+      await queryClient.invalidateQueries([endpoint]);
+      alert("Inventory item added.");
+    } catch (error) {
+      console.error(error);
+      const message = error?.response?.data?.message || "Failed to add item.";
+      alert(message);
+    }
+  };
+
   if (isLoading) {
     return <div className="p-6 text-center text-sm">Loading...</div>;
   }
@@ -547,9 +575,9 @@ export default function ModulePage({ title, endpoint }) {
                 onChange={handleInventoryImport}
               />
             </label>
-            <Link to={`${endpoint}/new`} className="button-primary">
+            <button type="button" onClick={handleAddInventoryItem} className="button-primary">
               + Add
-            </Link>
+            </button>
           </div>
         ) : null}
       </div>
