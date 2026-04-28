@@ -685,9 +685,6 @@ export default function ModulePage({ title, endpoint }) {
                         <button type="button" className="inventory-btn btn-secondary" onClick={() => handleEdit(item)}>
                           Edit
                         </button>
-                        <Link to={`${endpoint}/${item._id}`} className="inventory-btn btn-secondary">
-                          View
-                        </Link>
                       </div>
                     </td>
                   </tr>

@@ -311,6 +311,26 @@ a.btn-primary {
   background: #e5e7eb;
 }
 
+.react-select__menu,
+.select-dropdown,
+.command-list,
+.popover-content {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.react-select__option,
+.command-item {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.react-select__option--is-focused,
+.command-item:hover {
+  background: #f3f4f6 !important;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -722,20 +742,20 @@ a.btn-approve {
   font-family: Inter, monospace;
 }
 
-.quotation-item-row {
+.q-row {
   display: grid;
-  grid-template-columns: 1fr 80px 140px 160px 50px;
-  gap: 10px;
+  grid-template-columns: 1fr 70px 140px 160px 40px;
+  gap: 12px;
   align-items: center;
 }
 
-.quotation-item-row input {
-  height: 36px;
+.q-row input {
+  height: 38px;
   font-size: 14px;
 }
 
-.quotation-item-row .price,
-.quotation-item-row .total {
+.q-row .price,
+.q-row .total {
   text-align: right;
   font-family: monospace;
 }
@@ -1101,4 +1121,15 @@ body.dark-mode .totals-box {
   color: white;
   font-size: 16px;
   cursor: pointer;
+}
+
+button,
+.btn-primary {
+  background: #111827 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+button:hover {
+  background: #000000 !important;
 }

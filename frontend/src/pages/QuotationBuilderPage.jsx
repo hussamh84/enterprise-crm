@@ -253,7 +253,7 @@ export default function QuotationBuilderPage() {
 
         <div className="space-y-3">
           {items.map((item, index) => (
-            <div key={`quotation-item-${index}`} className="quotation-item-row">
+            <div key={`quotation-item-${index}`} className="q-row">
               <div className="relative">
                 <input
                   className="input-field"
