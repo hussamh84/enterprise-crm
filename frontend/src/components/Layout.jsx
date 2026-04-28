@@ -1,4 +1,4 @@
-import { Bell, BarChart3, Box, LayoutDashboard, LogOut, Search, ShoppingCart, Users } from "lucide-react";
+import { Bell, Briefcase, LayoutDashboard, LogOut, Search, Settings, ShieldCheck, User, UserCircle2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet } from "react-router-dom";
@@ -11,16 +11,44 @@ console.log("CHECK PAGE:", __filename);
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/inventory", label: "Product", icon: Box },
-  { to: "/invoices", label: "Order", icon: ShoppingCart },
-  { to: "/clients", label: "Customer", icon: Users },
-  { to: "/reports", label: "Report", icon: BarChart3 },
-  { to: "/settings", label: "Analytics", icon: BarChart3 },
+  { to: "/leads", label: "Leads", icon: Briefcase },
+  { to: "/clients", label: "Clients", icon: UserCircle2 },
+  { to: "/quotations", label: "Quotations", icon: Settings },
+  { to: "/projects", label: "Projects", icon: ShieldCheck },
+  { to: "/invoices", label: "Invoices", icon: Settings },
+  { to: "/inventory", label: "Inventory", icon: Briefcase },
+  { to: "/tickets", label: "Support", icon: ShieldCheck },
+  { to: "/users", label: "Users", icon: Users },
+  { to: "/profile", label: "Profile", icon: User },
+  { to: "/reports", label: "Reports", icon: Briefcase },
+  { to: "/settings", label: "Settings", icon: Settings },
 ];
+
+const resolveLogoSrc = (logoPath) => {
+  if (!logoPath) return "/logo.png";
+  if (logoPath.startsWith("http")) return logoPath;
+  if (logoPath.startsWith("/uploads/")) return `http://localhost:5000${logoPath}`;
+  return logoPath;
+};
+
+const handleLogoError = (event) => {
+  event.currentTarget.onerror = null;
+  if (!event.currentTarget.src.endsWith("/logo.png")) {
+    event.currentTarget.src = "/logo.png";
+    return;
+  }
+  event.currentTarget.src = "/favicon.svg";
+};
 
 export default function Layout() {
   const clearSession = useAuthStore((s) => s.clearSession);
   const [theme, setTheme] = useState(() => localStorage.getItem("ce_theme") || "light");
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
   const { data: settings } = useQuery({
     queryKey: ["workspace-settings"],
     queryFn: async () => (await api.get("/settings")).data,
@@ -54,17 +82,26 @@ export default function Layout() {
 
   return (
     <div className="relative z-[1] flex min-h-screen bg-[#f8fafc]">
-      <aside className="w-[260px] shrink-0 h-screen bg-white border-r border-slate-200 flex flex-col justify-between p-4 text-sm">
-          <div className="min-h-0 flex-1 flex flex-col">
-          <div className="pb-4 mb-4">
-            <p className="text-xl font-semibold text-slate-900">Nexlio</p>
-            <div className="mt-4 flex items-center gap-2 rounded-lg border border-slate-200 px-3 h-9 text-slate-400">
-              <Search size={14} />
-              <input className="w-full border-0 bg-transparent text-sm outline-none" placeholder="Search" />
+      <aside className="sidebar shrink-0 h-screen flex flex-col justify-between overflow-hidden text-sm">
+        <div className="min-h-0 flex-1 flex flex-col">
+          <div className="pb-4 mb-2 border-b border-slate-100 dark:border-gray-700">
+            <div className="flex items-center gap-3">
+              <img
+                src={resolveLogoSrc(settings?.companyLogoUrl)}
+                onError={handleLogoError}
+                alt="Config Engineering Logo"
+                className="h-[56px] w-auto max-w-[180px] object-contain bg-transparent border-0 shadow-none"
+              />
+              <div>
+                <p className="muted-label">Enterprise Suite</p>
+                <p className="text-sm font-semibold mt-1 text-[#0a2540] dark:text-white leading-snug">
+                  {settings?.companyName || "Config Engineering"}
+                </p>
+              </div>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto">
-          <nav className="space-y-1.5">
+            <nav className="space-y-1">
             {nav.map((item) => {
               const Icon = item.icon;
               return (
@@ -72,10 +109,10 @@ export default function Layout() {
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `flex items-center gap-2 rounded-lg px-3 py-2 text-[14px] transition ${
+                    `sidebar-item flex items-center gap-2 text-[14px] transition ${
                       isActive
-                        ? "bg-gray-900 text-white font-medium"
-                        : "text-slate-600 hover:bg-slate-100"
+                        ? "active font-medium dark:bg-gray-800 dark:text-white dark:border dark:border-gray-700"
+                        : "hover:bg-slate-50 dark:hover:bg-gray-800"
                     }`
                   }
                 >
@@ -84,35 +121,54 @@ export default function Layout() {
                 </NavLink>
               );
             })}
-          </nav>
+            </nav>
           </div>
-          </div>
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3">
-            <p className="text-xs font-medium text-slate-700">Upgrade to unlock advanced analytics</p>
-            <button type="button" className="mt-3 w-full rounded-lg bg-gray-900 text-white py-2 text-sm hover:bg-black">
-              Upgrade to Pro
+        </div>
+        <div className="p-3 border-t border-slate-100 dark:border-gray-700">
+          <button onClick={clearSession} className="w-full bg-gray-900 text-white py-2 rounded hover:bg-black flex items-center justify-center gap-2">
+              <LogOut size={14} /> Logout
             </button>
-          </div>
+        </div>
       </aside>
-      <main className="relative z-[1] flex-1 p-4">
-        <div className="min-h-[calc(100vh-2rem)] rounded-2xl border border-slate-200 bg-white overflow-hidden">
-          <header className="h-16 px-5 border-b border-slate-100 flex items-center justify-end gap-3">
+      <main className="main relative z-[1] flex-1">
+        <div className="relative z-[1] card min-h-[calc(100vh-3rem)] !p-0">
+          <header className="min-h-14 px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
+            <div>
+              <p className="muted-label">Operations Control Center</p>
+              <div className="flex items-center gap-2 text-[#0a2540] font-semibold mt-0.5">
+                <img
+                  src={resolveLogoSrc(settings?.companyLogoUrl)}
+                  onError={handleLogoError}
+                  alt="Config Engineering Logo"
+                  className="h-7 w-auto max-w-[120px] object-contain bg-transparent border-0 shadow-none"
+                />
+                <LayoutDashboard size={18} />
+                <span className="truncate">Config Engineering Workspace</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-gray-500">{today}</div>
+              <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 h-9 text-slate-500 min-w-[240px] max-w-md bg-white">
+                <Search size={15} className="shrink-0" />
+                <input
+                  type="search"
+                  className="layout-search-input !min-h-0 h-full py-0 border-0 shadow-none bg-transparent text-sm w-full placeholder:text-slate-400 outline-none"
+                  placeholder="Search..."
+                />
+              </div>
               <button type="button" className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 h-9 w-9 inline-flex items-center justify-center">
                 <Bell size={16} />
               </button>
-              <button type="button" className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 h-9 w-9 inline-flex items-center justify-center">
-                <Search size={16} />
-              </button>
               <button
                 type="button"
+                className="button-secondary !text-slate-600"
                 onClick={() => setTheme((prev) => (prev === "light" ? "dark" : "light"))}
-                className="h-9 w-9 rounded-full bg-gray-900 text-white text-xs font-semibold"
-                title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
               >
-                {theme === "light" ? "U" : "L"}
+                {theme === "light" ? "Dark Mode" : "Light Mode"}
               </button>
+            </div>
           </header>
-          <section className="p-5">
+          <section className="p-5 space-y-5">
             <Outlet />
           </section>
         </div>
