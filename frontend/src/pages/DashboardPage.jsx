@@ -47,12 +47,12 @@ export default function DashboardPage() {
           <h1 className="section-title">Executive Dashboard</h1>
           <p className="page-subtitle text-[#6b7c93]">Real-time visibility across sales, project delivery, and support operations.</p>
         </div>
-        <button type="button" onClick={() => navigate("/reports")} className="btn-primary">
+        <button type="button" onClick={() => navigate("/reports")} className="button-primary">
           Generate Report
         </button>
       </div>
 
-      <div className="premium-card p-5">
+      <div className="card">
         <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 h-9 text-slate-500 bg-white max-w-md">
           <Search size={15} className="shrink-0" />
           <input
@@ -65,13 +65,13 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-4 gap-3">
+      <div className="dashboard-grid">
         {filteredCards.map((card) => (
-          <div key={card.label} className="premium-card p-5">
+          <div key={card.label} className="card">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[#6b7c93] text-sm">{card.label}</p>
-                <p className="text-2xl font-semibold mt-2 text-[#0a2540] numeric">{card.value}</p>
+                <p className="card-title">{card.label}</p>
+                <p className="card-value mt-2 text-[#0a2540] numeric">{card.value}</p>
               </div>
               <div className="h-10 w-10 rounded-lg border border-slate-200 text-[#0a2540] flex items-center justify-center bg-slate-50">
                 <card.icon size={18} />
@@ -83,36 +83,36 @@ export default function DashboardPage() {
           </div>
         ))}
         {!filteredCards.length ? (
-          <div className="premium-card p-5 md:col-span-4 text-sm text-[#6b7c93]">
+          <div className="card md:col-span-4 text-sm text-[#6b7c93]">
             No dashboard results found for "{search}".
           </div>
         ) : null}
       </div>
 
       <div className="grid md:grid-cols-3 gap-3">
-        <div className="premium-card p-5">
-          <p className="text-[#6b7c93] text-sm">Total Revenue</p>
-          <p className="text-xl font-semibold mt-2 text-[#0a2540]">
+        <div className="card">
+          <p className="card-title">Total Revenue</p>
+          <p className="card-value mt-2 text-[#0a2540]">
             <span className="currency numeric">{formatCurrency(totalRevenue)}</span>
           </p>
         </div>
-        <div className="premium-card p-5">
-          <p className="text-[#6b7c93] text-sm">Total Expenses</p>
-          <p className="text-xl font-semibold mt-2 text-[#0a2540]">
+        <div className="card">
+          <p className="card-title">Total Expenses</p>
+          <p className="card-value mt-2 text-[#0a2540]">
             <span className="currency numeric">{formatCurrency(totalExpenses)}</span>
           </p>
         </div>
-        <div className="premium-card p-5">
-          <p className="text-[#6b7c93] text-sm">Total Profit</p>
-          <p className={`text-xl font-semibold mt-2 ${totalProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+        <div className="card">
+          <p className="card-title">Total Profit</p>
+          <p className={`card-value mt-2 ${totalProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
             <span className="currency numeric">{formatCurrency(totalProfit)}</span>
           </p>
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-3">
-        <div className="premium-card p-5">
-          <p className="text-[#6b7c93] text-sm">Monthly Report</p>
+        <div className="card">
+          <p className="card-title">Monthly Report</p>
           <p className="text-xs text-[#94a3b8] mt-1">
             {now.toLocaleString("default", { month: "long" })} {now.getFullYear()}
           </p>
@@ -122,8 +122,8 @@ export default function DashboardPage() {
             <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Profit</span><span className="font-semibold text-[#0a2540] shrink-0"><span className="currency numeric">{formatCurrency(monthlyReport?.totals?.totalProfit)}</span></span></p>
           </div>
         </div>
-        <div className="premium-card p-5">
-          <p className="text-[#6b7c93] text-sm">Yearly Report</p>
+        <div className="card">
+          <p className="card-title">Yearly Report</p>
           <p className="text-xs text-[#94a3b8] mt-1">{now.getFullYear()}</p>
           <div className="mt-3 space-y-1.5 text-sm">
             <p className="flex items-center justify-between gap-2"><span className="text-[#6b7c93]">Total Revenue</span><span className="font-medium text-[#0a2540] shrink-0"><span className="currency numeric">{formatCurrency(yearlyReport?.totals?.totalRevenue)}</span></span></p>
@@ -134,7 +134,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-3">
-        <div className="premium-card p-5 lg:col-span-2">
+        <div className="card lg:col-span-2">
           <h2 className="text-[#0a2540]">Performance Snapshot</h2>
           <p className="text-sm text-[#6b7c93] mb-4">Pipeline conversion, installation velocity, and revenue trend.</p>
           <div className="grid grid-cols-3 gap-3">
@@ -146,7 +146,7 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
-        <div className="premium-card p-5">
+        <div className="card">
           <h2 className="text-[#0a2540]">Today's Priorities</h2>
           <ul className="mt-4 space-y-3 text-sm">
             <li className="rounded-lg border border-slate-200 text-[#425466] px-3 py-2">Follow-up high-score solar leads</li>

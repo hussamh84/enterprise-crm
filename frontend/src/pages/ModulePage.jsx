@@ -133,12 +133,13 @@ export default function ModulePage({ title, endpoint }) {
             <h1 className="page-title">{title}</h1>
             <p className="page-subtitle">Manage all your {title.toLowerCase()}</p>
           </div>
-          <Link to={`${endpoint}/new`} className="btn-primary">
+          <Link to={`${endpoint}/new`} className="button-primary">
             + Add
           </Link>
         </div>
 
-        <div className="saas-table-shell">
+        <div className="card !p-0 overflow-hidden">
+          <div className="saas-table-shell border-0 rounded-none">
           <div className="saas-grid-head grid grid-cols-12">
             <div className="col-span-2">ID</div>
             <div className="col-span-4">Client</div>
@@ -195,6 +196,7 @@ export default function ModulePage({ title, endpoint }) {
               </div>
             );
           })}
+          </div>
         </div>
       </div>
     );
@@ -208,13 +210,14 @@ export default function ModulePage({ title, endpoint }) {
             <h1 className="page-title">{title}</h1>
             <p className="page-subtitle">Manage all your {title.toLowerCase()}</p>
           </div>
-          <Link to={`${endpoint}/new`} className="btn-primary">
+          <Link to={`${endpoint}/new`} className="button-primary">
             + Add
           </Link>
         </div>
 
         <div className="overflow-x-auto">
-          <div className="saas-table-shell min-w-[720px]" style={{ overflow: "visible" }}>
+          <div className="card !p-0 min-w-[720px]" style={{ overflow: "visible" }}>
+            <div className="saas-table-shell border-0 rounded-none" style={{ overflow: "visible" }}>
             <div className="saas-grid-head grid grid-cols-12">
               <div className="col-span-3">Client</div>
               <div className="col-span-3">Project Name</div>
@@ -275,6 +278,7 @@ export default function ModulePage({ title, endpoint }) {
               </div>
             );
           })}
+            </div>
           </div>
         </div>
       </div>
@@ -289,13 +293,14 @@ export default function ModulePage({ title, endpoint }) {
             <h1 className="page-title">{title}</h1>
             <p className="page-subtitle">Manage all your {title.toLowerCase()}</p>
           </div>
-          <Link to={`${endpoint}/new`} className="btn-primary">
+          <Link to={`${endpoint}/new`} className="button-primary">
             + Add
           </Link>
         </div>
 
         <div className="overflow-x-auto">
-          <div className="saas-table-shell min-w-[720px]" style={{ overflow: "visible" }}>
+          <div className="card !p-0 min-w-[720px]" style={{ overflow: "visible" }}>
+            <div className="saas-table-shell border-0 rounded-none" style={{ overflow: "visible" }}>
             <div className="saas-grid-head grid grid-cols-12">
               <div className="col-span-3">Client</div>
               <div className="col-span-3">Quotation</div>
@@ -363,6 +368,7 @@ export default function ModulePage({ title, endpoint }) {
               </div>
             );
           })}
+            </div>
           </div>
         </div>
       </div>
@@ -380,7 +386,8 @@ export default function ModulePage({ title, endpoint }) {
         </div>
 
         <div className="overflow-x-auto">
-          <div className="saas-table-shell min-w-[720px]">
+          <div className="card !p-0 min-w-[720px]">
+            <div className="saas-table-shell border-0 rounded-none">
             <div className="saas-grid-head grid grid-cols-12">
               <div className="col-span-3">Client</div>
               <div className="col-span-3">Invoice</div>
@@ -450,6 +457,7 @@ export default function ModulePage({ title, endpoint }) {
               </div>
             );
           })}
+            </div>
           </div>
         </div>
       </div>
@@ -465,13 +473,14 @@ export default function ModulePage({ title, endpoint }) {
         </div>
 
         {!isInvoices ? (
-          <Link to={`${endpoint}/new`} className="btn-primary">
+          <Link to={`${endpoint}/new`} className="button-primary">
             + Add
           </Link>
         ) : null}
       </div>
 
-      <div className="saas-table-shell">
+      <div className="card !p-0 overflow-hidden">
+        <div className="saas-table-shell border-0 rounded-none">
         <div className="saas-grid-head grid grid-cols-12">
           {isClients ? <div className="col-span-2">Client ID</div> : null}
           <div className="col-span-4">Name</div>
@@ -532,6 +541,7 @@ export default function ModulePage({ title, endpoint }) {
             </div>
           </div>
         ))}
+        </div>
       </div>
     </div>
   );

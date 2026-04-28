@@ -6,6 +6,12 @@
 
 /* —— SaaS design tokens —— */
 :root {
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --text: #111827;
+  --subtext: #6b7280;
+  --primary: #4f46e5;
   --saas-text: #0a2540;
   --saas-muted: #6b7280;
   --saas-border: #e5e7eb;
@@ -31,6 +37,12 @@ body {
   color: var(--saas-text);
   letter-spacing: -0.01em;
   position: relative;
+}
+
+body.dashboard-theme {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, sans-serif;
 }
 
 h1 {
@@ -196,6 +208,128 @@ a.btn-primary {
   color: #fff !important;
   text-decoration: none;
   transition: filter 0.15s ease, opacity 0.15s ease;
+}
+
+.sidebar {
+  width: 240px;
+  background: #ffffff;
+  border-right: 1px solid var(--border);
+  padding: 20px;
+}
+
+.sidebar-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--subtext);
+  cursor: pointer;
+}
+
+.sidebar-item.active {
+  background: #f1f5f9;
+  color: var(--text);
+}
+
+.main {
+  padding: 25px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.card-title {
+  font-size: 14px;
+  color: var(--subtext);
+}
+
+.card-value {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.button-primary {
+  background: #111827;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+}
+
+.button-secondary {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  font-size: 13px;
+  color: var(--subtext);
+  padding: 10px;
+}
+
+td {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+/* Keep existing component classes mapped to new design tokens safely. */
+.btn-primary,
+a.btn-primary,
+.btn-pdf,
+a.btn-pdf,
+.btn-approve,
+a.btn-approve {
+  background: #111827;
+  color: #fff !important;
+  border-radius: 8px;
+  border: none;
+}
+
+.btn-secondary,
+a.btn-secondary,
+.btn-view,
+a.btn-view,
+.btn-outline,
+a.btn-outline {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.saas-table-shell,
+.premium-card,
+.enterprise-doc-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.saas-grid-head {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  color: var(--subtext);
+  font-size: 13px;
+}
+
+.saas-grid-row {
+  border-bottom: 1px solid var(--border);
 }
 
 .btn-primary:hover:not(:disabled) {
