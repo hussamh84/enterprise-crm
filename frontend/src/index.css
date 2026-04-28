@@ -278,7 +278,8 @@ a.btn-primary {
 }
 
 .autocomplete-dropdown {
-  background: #ffffff;
+  background: #ffffff !important;
+  color: #111827 !important;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
@@ -290,10 +291,10 @@ a.btn-primary {
   width: 100%;
   padding: 10px 14px;
   font-size: 14px;
-  color: #111827;
+  color: #111827 !important;
   cursor: pointer;
   text-align: left;
-  background: #ffffff;
+  background: #ffffff !important;
   border: none;
   border-bottom: 1px solid #f1f5f9;
 }
@@ -303,7 +304,7 @@ a.btn-primary {
 }
 
 .autocomplete-item:hover {
-  background: #f3f4f6;
+  background: #f3f4f6 !important;
 }
 
 .autocomplete-item.active {
@@ -723,9 +724,28 @@ a.btn-approve {
 
 .quotation-item-row {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) 80px 120px 140px 40px;
+  grid-template-columns: 1fr 80px 140px 160px 50px;
   gap: 10px;
   align-items: center;
+}
+
+.quotation-item-row input {
+  height: 36px;
+  font-size: 14px;
+}
+
+.quotation-item-row .price,
+.quotation-item-row .total {
+  text-align: right;
+  font-family: monospace;
+}
+
+.delete-btn {
+  height: 36px;
+  width: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Enterprise invoice / quotation document layout */

@@ -282,7 +282,7 @@ export default function QuotationBuilderPage() {
                 <input
                   type="number"
                   min="0"
-                  className="input-field text-right numeric"
+                  className="input-field price numeric"
                   value={item.unitPrice}
                   onChange={(event) => updateItem(index, "unitPrice", event.target.value)}
                   placeholder="Unit price"
@@ -298,11 +298,11 @@ export default function QuotationBuilderPage() {
                 </label>
               </div>
               <input
-                className="input-field total-field numeric"
+                className="input-field total total-field numeric"
                 value={formatCurrency(calculatedItems[index]?.total)}
                 readOnly
               />
-              <button type="button" className="text-slate-500 hover:text-rose-600 flex justify-center p-1" onClick={() => removeItem(index)} aria-label="Remove line">
+              <button type="button" className="delete-btn text-slate-500 hover:text-rose-600" onClick={() => removeItem(index)} aria-label="Remove line">
                 <Trash2 size={16} />
               </button>
             </div>
