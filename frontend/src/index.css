@@ -156,6 +156,25 @@ textarea::placeholder {
   border-color: transparent !important;
 }
 
+/* Smart search (scoped): dark shell + readable white input text */
+.smart-search-shell {
+  background: #111827;
+  border-color: #1f2937;
+}
+
+.smart-search-icon {
+  color: #cbd5e1;
+}
+
+.smart-search-input {
+  color: #ffffff;
+  caret-color: #ffffff;
+}
+
+.smart-search-input::placeholder {
+  color: #cbd5e1;
+}
+
 .currency {
   white-space: nowrap;
   text-align: right;

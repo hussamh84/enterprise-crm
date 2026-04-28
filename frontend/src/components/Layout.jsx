@@ -143,11 +143,11 @@ export default function Layout() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 h-9 text-slate-500 min-w-[240px] max-w-md bg-white">
-                <Search size={15} className="shrink-0" />
+              <div className="smart-search-shell flex items-center gap-2 rounded-lg border px-3 h-9 min-w-[240px] max-w-md">
+                <Search size={15} className="smart-search-icon shrink-0" />
                 <input
                   type="search"
-                  className="layout-search-input !min-h-0 h-full py-0 border-0 shadow-none bg-transparent text-sm w-full placeholder:text-slate-400 outline-none"
+                  className="layout-search-input smart-search-input !min-h-0 h-full py-0 border-0 shadow-none bg-transparent text-sm w-full outline-none"
                   placeholder="Search leads, clients, projects..."
                 />
               </div>

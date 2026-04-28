@@ -61,13 +61,13 @@ export default function DashboardPage() {
       </div>
 
       <div className="card">
-        <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 h-9 text-slate-500 bg-white max-w-md">
-          <Search size={15} className="shrink-0" />
+        <div className="smart-search-shell flex items-center gap-2 rounded-lg border px-3 h-9 max-w-md">
+          <Search size={15} className="smart-search-icon shrink-0" />
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="layout-search-input !min-h-0 h-full py-0 border-0 shadow-none bg-transparent text-sm w-full placeholder:text-slate-400 outline-none"
+            className="layout-search-input smart-search-input !min-h-0 h-full py-0 border-0 shadow-none bg-transparent text-sm w-full outline-none"
             placeholder="Search dashboard cards..."
           />
         </div>
