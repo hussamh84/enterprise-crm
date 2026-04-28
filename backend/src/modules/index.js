@@ -125,6 +125,8 @@ const Invoice = makeEntityModel("Invoice", {
   remainingAmount: { type: Number, default: 0 },
   paidAt: { type: Date, default: null },
   status: { type: String, enum: ["unpaid", "paid"], default: "unpaid" },
+  stockDeducted: { type: Boolean, default: false },
+  profit: { type: Number, default: 0 },
 });
 const ExpenseSchema = new mongoose.Schema(
   {
@@ -169,6 +171,7 @@ const InventoryItemSchema = new mongoose.Schema(
     price: { type: Number, required: true, min: 0, default: 0 },
     cost: { type: Number, min: 0, default: null },
     quantity: { type: Number, required: true, min: 0, default: 0 },
+    minQuantity: { type: Number, required: true, min: 0, default: 0 },
     unit: { type: String, required: true, trim: true, default: "pcs" },
     status: { type: String, default: "active" },
   },
@@ -259,6 +262,103 @@ const ensureClientProjectLink = async ({ tenantId, clientId, projectId }) => {
   return { client, project };
 };
 
+const calculateInvoiceProfitFromQuotation = async ({ tenantId, quotationId }) => {
+  if (!quotationId) return 0;
+  const quotation = await Quotation.findOne({ _id: String(quotationId), tenantId, deletedAt: null }).lean();
+  if (!quotation) return 0;
+  const items = Array.isArray(quotation.items) ? quotation.items : [];
+  const productIds = [...new Set(items.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
+  if (!productIds.length) return 0;
+
+  const products = await InventoryItem.find({
+    tenantId,
+    _id: { $in: productIds },
+    deletedAt: null,
+  })
+    .select("_id cost")
+    .lean();
+  const productCostMap = Object.fromEntries(products.map((product) => [String(product._id), Number(product.cost || 0)]));
+
+  const totalProfit = items.reduce((sum, item) => {
+    const productId = String(item?.productId || "").trim();
+    if (!productId) return sum;
+    const qty = Number(item?.quantity || item?.qty || 0);
+    const sellPrice = Number(item?.unitPrice ?? item?.price ?? 0);
+    const purchaseCost = Number(productCostMap[productId] || 0);
+    const itemProfit = (sellPrice - purchaseCost) * qty;
+    return sum + itemProfit;
+  }, 0);
+
+  return Number(totalProfit.toFixed(2));
+};
+
+const deductInventoryForInvoice = async ({ invoice, tenantId, userId, session = null }) => {
+  if (!invoice || invoice.stockDeducted) return invoice;
+  if (!invoice.quotationId) return invoice;
+
+  const quotation = await Quotation.findOne({
+    _id: String(invoice.quotationId),
+    tenantId,
+    deletedAt: null,
+  }).session(session);
+  if (!quotation) return invoice;
+
+  const items = (Array.isArray(quotation.items) ? quotation.items : []).filter(
+    (item) => String(item?.productId || "").trim() && Number(item?.quantity || 0) > 0
+  );
+  if (!items.length) return invoice;
+
+  const productIds = [...new Set(items.map((item) => String(item.productId).trim()))];
+  const products = await InventoryItem.find({
+    _id: { $in: productIds },
+    tenantId,
+    deletedAt: null,
+  }).session(session);
+  const productMap = Object.fromEntries(products.map((product) => [String(product._id), product]));
+
+  for (const item of items) {
+    const productId = String(item.productId).trim();
+    const product = productMap[productId];
+    const qty = Number(item.quantity || item.qty || 0);
+    if (!product) throw new AppError("Not enough stock", 400);
+    if (qty <= 0) continue;
+    if (Number(product.quantity || 0) - qty < 0) {
+      throw new AppError("Not enough stock", 400);
+    }
+  }
+
+  for (const item of items) {
+    const productId = String(item.productId).trim();
+    const product = productMap[productId];
+    const qty = Number(item.quantity || item.qty || 0);
+    if (!product || qty <= 0) continue;
+    product.quantity = Number(product.quantity || 0) - qty;
+    product.updatedBy = userId;
+    product.auditLog = [
+      ...(Array.isArray(product.auditLog) ? product.auditLog : []),
+      {
+        action: "inventory.stock.deduct",
+        by: userId,
+        note: `Deducted ${qty} from invoice ${invoice.invoiceNo || invoice._id}`,
+      },
+    ];
+    await product.save({ session });
+  }
+
+  invoice.stockDeducted = true;
+  invoice.updatedBy = userId;
+  invoice.auditLog = [
+    ...(Array.isArray(invoice.auditLog) ? invoice.auditLog : []),
+    {
+      action: "invoice.stock_deducted",
+      by: userId,
+      note: "Stock deducted from linked quotation items",
+    },
+  ];
+  await invoice.save({ session });
+  return invoice;
+};
+
 const syncInventoryUsageForQuotation = async ({ tenantId, quotation, userId }) => {
   if (!quotation?._id) return;
   const quotationId = String(quotation._id);
@@ -316,12 +416,51 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
   const tenantId = getTenantId(req);
   if (!tenantId) throw new AppError("Tenant context is required", 400);
   const total = Number(quotation.grandTotal ?? quotation.subtotal ?? 0);
+  const calculatedProfit = await calculateInvoiceProfitFromQuotation({
+    tenantId,
+    quotationId: quotation._id,
+  });
   const existing = await Invoice.findOne({
     tenantId,
     quotationId: String(quotation._id),
     deletedAt: null,
   });
   if (existing) {
+    if (Number(existing.profit || 0) !== calculatedProfit) {
+      existing.profit = calculatedProfit;
+      existing.updatedBy = req.user?.id;
+      existing.auditLog = [
+        ...(Array.isArray(existing.auditLog) ? existing.auditLog : []),
+        {
+          action: "invoice.profit.sync",
+          by: req.user?.id,
+          note: `Profit synchronized from quotation: ${calculatedProfit}`,
+        },
+      ];
+      await existing.save();
+    }
+    if (!existing.stockDeducted) {
+      const session = await mongoose.startSession();
+      try {
+        await session.withTransaction(async () => {
+          const invoiceInSession = await Invoice.findOne({
+            _id: existing._id,
+            tenantId,
+            deletedAt: null,
+          }).session(session);
+          if (invoiceInSession && !invoiceInSession.stockDeducted) {
+            await deductInventoryForInvoice({
+              invoice: invoiceInSession,
+              tenantId,
+              userId: req.user?.id,
+              session,
+            });
+          }
+        });
+      } finally {
+        await session.endSession();
+      }
+    }
     await InventoryUsage.updateMany(
       { tenantId, quotationId: String(quotation._id), source: "quotation", deletedAt: null },
       {
@@ -341,21 +480,40 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
   }
   const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV", tenantId });
 
-  const invoice = await Invoice.create({
-    tenantId,
-    invoiceNo,
-    name: quotation.name || invoiceNo,
-    clientId: String(quotation.clientId),
-    projectId: String(quotation.projectId),
-    quotationId: String(quotation._id),
-    total,
-    paidAmount: 0,
-    remainingAmount: total,
-    status: "unpaid",
-    createdBy: req.user?.id,
-    updatedBy: req.user?.id,
-    auditLog: [{ action: "invoice.create_from_quotation", by: req.user?.id, note: note || "Created from quotation" }],
-  });
+  let invoice = null;
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const created = await Invoice.create(
+        [{
+          tenantId,
+          invoiceNo,
+          name: quotation.name || invoiceNo,
+          clientId: String(quotation.clientId),
+          projectId: String(quotation.projectId),
+          quotationId: String(quotation._id),
+          total,
+          profit: calculatedProfit,
+          paidAmount: 0,
+          remainingAmount: total,
+          status: "unpaid",
+          createdBy: req.user?.id,
+          updatedBy: req.user?.id,
+          auditLog: [{ action: "invoice.create_from_quotation", by: req.user?.id, note: note || "Created from quotation" }],
+        }],
+        { session }
+      );
+      invoice = created[0];
+      await deductInventoryForInvoice({
+        invoice,
+        tenantId,
+        userId: req.user?.id,
+        session,
+      });
+    });
+  } finally {
+    await session.endSession();
+  }
   await InventoryUsage.updateMany(
     { tenantId, quotationId: String(quotation._id), source: "quotation", deletedAt: null },
     {
@@ -687,15 +845,35 @@ router.patch("/clients/:id", updateClientById);
 router.use("/clients", buildCrudRouter({ model: Client, entity: "client" }));
 router.use("/activities", buildCrudRouter({ model: Activity, entity: "activity" }));
 router.use("/site-visits", buildCrudRouter({ model: SiteVisit, entity: "site_visit" }));
-const computeQuotationTotals = (payload = {}) => {
+const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
   const rawItems = Array.isArray(payload.items) ? payload.items : [];
+  const productIds = [...new Set(rawItems.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
+  if (!productIds.length && rawItems.length > 0) {
+    throw new AppError("Each quotation item must reference an inventory product.", 400);
+  }
+  const inventoryItems = productIds.length
+    ? await InventoryItem.find({
+        tenantId,
+        _id: { $in: productIds },
+        deletedAt: null,
+      })
+        .select("_id name price")
+        .lean()
+    : [];
+  const inventoryMap = Object.fromEntries(inventoryItems.map((item) => [String(item._id), item]));
+
   const items = rawItems.map((item) => {
-    const resolvedName = String(item.name || item.description || "").trim();
+    const productId = String(item.productId || "").trim();
+    const inventoryProduct = inventoryMap[productId];
+    if (!inventoryProduct) {
+      throw new AppError("Each quotation item must reference a valid inventory product.", 400);
+    }
+    const resolvedName = String(inventoryProduct.name || "").trim();
     const quantity = Number(item.quantity || 0);
-    const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
+    const unitPrice = Number(inventoryProduct.price ?? 0);
     const total = Number((quantity * unitPrice).toFixed(2));
     return {
-      productId: String(item.productId || ""),
+      productId,
       name: resolvedName,
       description: resolvedName,
       price: unitPrice,
@@ -795,7 +973,7 @@ router.post("/quotations", async (req, res, next) => {
     await ensureClientProjectLink({ tenantId, clientId, projectId });
     const quotationNo = await generateDocumentNo({ model: Quotation, prefix: "QTN", tenantId });
 
-    const calculated = computeQuotationTotals(req.body);
+    const calculated = await computeQuotationTotals({ tenantId, payload: req.body });
     const payload = {
       ...req.body,
       quotationNo,
@@ -827,7 +1005,7 @@ router.put("/quotations/:id", async (req, res, next) => {
     if (!projectId) return res.status(400).json({ message: "projectId is required" });
     await ensureClientProjectLink({ tenantId, clientId, projectId });
 
-    const calculated = computeQuotationTotals(req.body);
+    const calculated = await computeQuotationTotals({ tenantId, payload: req.body });
     const doc = await Quotation.findOneAndUpdate(
       { _id: req.params.id, tenantId, deletedAt: null },
       {
@@ -1193,24 +1371,47 @@ router.post("/invoices", async (req, res, next) => {
     const safePaidAmount = Number.isFinite(paidAmount) && paidAmount >= 0 ? Math.min(paidAmount, total) : 0;
     const remainingAmount = Math.max(total - safePaidAmount, 0);
     const status = safePaidAmount >= total ? "paid" : "unpaid";
+    const calculatedProfit = await calculateInvoiceProfitFromQuotation({
+      tenantId,
+      quotationId: req.body?.quotationId,
+    });
     const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV", tenantId });
 
-    const doc = await Invoice.create({
-      ...req.body,
-      invoiceNo,
-      name: String(req.body?.name || "").trim() || invoiceNo,
-      clientId,
-      projectId,
-      total,
-      paidAmount: safePaidAmount,
-      remainingAmount,
-      paidAt: status === "paid" ? new Date() : null,
-      tenantId,
-      status,
-      createdBy: req.user?.id,
-      updatedBy: req.user?.id,
-      auditLog: [{ action: "invoice.create", by: req.user?.id, note: "Created invoice" }],
-    });
+    let doc = null;
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        const created = await Invoice.create(
+          [{
+            ...req.body,
+            invoiceNo,
+            name: String(req.body?.name || "").trim() || invoiceNo,
+            clientId,
+            projectId,
+            total,
+            profit: calculatedProfit,
+            paidAmount: safePaidAmount,
+            remainingAmount,
+            paidAt: status === "paid" ? new Date() : null,
+            tenantId,
+            status,
+            createdBy: req.user?.id,
+            updatedBy: req.user?.id,
+            auditLog: [{ action: "invoice.create", by: req.user?.id, note: "Created invoice" }],
+          }],
+          { session }
+        );
+        doc = created[0];
+        await deductInventoryForInvoice({
+          invoice: doc,
+          tenantId,
+          userId: req.user?.id,
+          session,
+        });
+      });
+    } finally {
+      await session.endSession();
+    }
     await syncProjectFinancialsForProject({ tenantId, projectId, userId: req.user?.id });
     res.status(201).json(doc);
   } catch (error) {
@@ -1232,23 +1433,48 @@ router.patch("/invoices/:id/pay", async (req, res, next) => {
     const remainingAmount = Math.max(total - nextPaidAmount, 0);
     const status = remainingAmount <= 0 ? "paid" : "unpaid";
 
-    invoice.paidAmount = nextPaidAmount;
-    invoice.remainingAmount = remainingAmount;
-    invoice.status = status;
-    invoice.paidAt = status === "paid" ? new Date() : invoice.paidAt;
-    invoice.updatedBy = req.user?.id;
-    invoice.auditLog = [
-      ...(Array.isArray(invoice.auditLog) ? invoice.auditLog : []),
-      { action: "invoice.pay", by: req.user?.id, note: `Payment recorded: ${amount}` },
-    ];
-    await invoice.save();
+    const session = await mongoose.startSession();
+    let updatedInvoice = null;
+    try {
+      await session.withTransaction(async () => {
+        const invoiceInSession = await Invoice.findOne({
+          _id: req.params.id,
+          tenantId: req.tenantId,
+          deletedAt: null,
+        }).session(session);
+        if (!invoiceInSession) throw new AppError("Invoice not found", 404);
+
+        invoiceInSession.paidAmount = nextPaidAmount;
+        invoiceInSession.remainingAmount = remainingAmount;
+        invoiceInSession.status = status;
+        invoiceInSession.paidAt = status === "paid" ? new Date() : invoiceInSession.paidAt;
+        invoiceInSession.updatedBy = req.user?.id;
+        invoiceInSession.auditLog = [
+          ...(Array.isArray(invoiceInSession.auditLog) ? invoiceInSession.auditLog : []),
+          { action: "invoice.pay", by: req.user?.id, note: `Payment recorded: ${amount}` },
+        ];
+        if (status === "paid" && !invoiceInSession.stockDeducted) {
+          await deductInventoryForInvoice({
+            invoice: invoiceInSession,
+            tenantId: req.tenantId,
+            userId: req.user?.id,
+            session,
+          });
+        } else {
+          await invoiceInSession.save({ session });
+        }
+        updatedInvoice = invoiceInSession;
+      });
+    } finally {
+      await session.endSession();
+    }
 
     await syncProjectFinancialsForProject({
       tenantId: req.tenantId,
       projectId: invoice.projectId,
       userId: req.user?.id,
     });
-    res.json(invoice);
+    res.json(updatedInvoice || invoice);
   } catch (error) {
     next(error);
   }
@@ -1402,8 +1628,18 @@ router.get("/reports/monthly", async (req, res, next) => {
       const monthIndex = expenseDate.getUTCMonth();
       monthlyBreakdown[monthIndex].expenses += Number(expense.amount || 0);
     });
+    invoices.forEach((invoice) => {
+      const paidDate = invoice.paidAt ? new Date(invoice.paidAt) : null;
+      if (!paidDate || Number.isNaN(paidDate.getTime())) return;
+      const monthIndex = paidDate.getUTCMonth();
+      const invoiceProfit = Number(invoice.profit || 0);
+      const invoiceTotal = Number(invoice.total || 0);
+      const paidAmount = Number(invoice.paidAmount ?? invoiceTotal);
+      const realizedRatio = invoiceTotal > 0 ? Math.min(Math.max(paidAmount / invoiceTotal, 0), 1) : 0;
+      monthlyBreakdown[monthIndex].profit += Number((invoiceProfit * realizedRatio).toFixed(2));
+    });
     monthlyBreakdown.forEach((row) => {
-      row.profit = row.revenue - row.expenses;
+      row.profit = Number((row.profit - row.expenses).toFixed(2));
     });
     const filtered =
       monthParam && monthParam >= 1 && monthParam <= 12
@@ -1443,6 +1679,11 @@ router.get("/reports/yearly", async (req, res, next) => {
       const year = paidDate.getUTCFullYear();
       const row = yearlyMap.get(year) || { year, revenue: 0, expenses: 0, profit: 0 };
       row.revenue += Number(invoice.paidAmount ?? invoice.total ?? 0);
+      const invoiceProfit = Number(invoice.profit || 0);
+      const invoiceTotal = Number(invoice.total || 0);
+      const paidAmount = Number(invoice.paidAmount ?? invoiceTotal);
+      const realizedRatio = invoiceTotal > 0 ? Math.min(Math.max(paidAmount / invoiceTotal, 0), 1) : 0;
+      row.profit += Number((invoiceProfit * realizedRatio).toFixed(2));
       yearlyMap.set(year, row);
     });
     expenses.forEach((expense) => {
@@ -1455,7 +1696,7 @@ router.get("/reports/yearly", async (req, res, next) => {
     });
     const breakdown = [...yearlyMap.values()].sort((a, b) => a.year - b.year).map((row) => ({
       ...row,
-      profit: row.revenue - row.expenses,
+      profit: Number((row.profit - row.expenses).toFixed(2)),
     }));
     const totalRevenue = breakdown.reduce((sum, row) => sum + row.revenue, 0);
     const totalExpenses = breakdown.reduce((sum, row) => sum + row.expenses, 0);
@@ -1654,6 +1895,25 @@ router.get("/inventory/:id/usage", async (req, res, next) => {
         linkedProjects: new Set(usage.map((row) => String(row.projectId || ""))).size,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/inventory", async (req, res, next) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return next(new AppError("Tenant context is required", 400));
+    const docs = await InventoryItem.find({ tenantId, deletedAt: null }).sort({ createdAt: -1 }).lean();
+    const enriched = docs.map((item) => {
+      const quantity = Number(item.quantity || 0);
+      const minQuantity = Number(item.minQuantity || 0);
+      return {
+        ...item,
+        lowStock: quantity <= minQuantity,
+      };
+    });
+    res.json(enriched);
   } catch (error) {
     next(error);
   }

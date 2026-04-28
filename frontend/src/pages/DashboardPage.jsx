@@ -27,10 +27,15 @@ export default function DashboardPage() {
     queryKey: ["yearly-report", now.getFullYear()],
     queryFn: async () => (await api.get(`/reports/yearly?year=${now.getFullYear()}`)).data,
   });
+  const { data: inventoryItems = [] } = useQuery({
+    queryKey: ["inventory-low-stock-dashboard"],
+    queryFn: async () => (await api.get("/inventory")).data,
+  });
 
   const totalRevenue = Number(yearlyReport?.totals?.totalRevenue || monthlyReport?.totals?.totalRevenue || 0);
   const totalExpenses = Number(yearlyReport?.totals?.totalExpenses || monthlyReport?.totals?.totalExpenses || 0);
   const totalProfit = Number(yearlyReport?.totals?.totalProfit || monthlyReport?.totals?.totalProfit || 0);
+  const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
   const cards = [
     { name: "Leads", label: "Leads", value: data?.leads ?? 0, icon: Activity },
@@ -39,6 +44,9 @@ export default function DashboardPage() {
     { name: "Tickets", label: "Tickets", value: data?.tickets ?? 0, icon: Headset },
   ];
   const filteredCards = cards.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()));
+  const lowStockCount = Array.isArray(inventoryItems)
+    ? inventoryItems.filter((item) => item?.lowStock).length
+    : 0;
 
   return (
     <div className="space-y-5">
@@ -65,6 +73,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {lowStockCount > 0 ? (
+        <div className="card border-rose-200 bg-rose-50 text-rose-700 !py-3">
+          ⚠ {lowStockCount} items low in stock
+        </div>
+      ) : null}
+
       <div className="dashboard-grid">
         {filteredCards.map((card) => (
           <div key={card.label} className="card">
@@ -89,7 +103,7 @@ export default function DashboardPage() {
         ) : null}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-3">
+      <div className="grid md:grid-cols-4 gap-3">
         <div className="card">
           <p className="card-title">Total Revenue</p>
           <p className="card-value mt-2 text-[#0a2540]">
@@ -106,6 +120,12 @@ export default function DashboardPage() {
           <p className="card-title">Total Profit</p>
           <p className={`card-value mt-2 ${totalProfit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
             <span className="currency numeric">{formatCurrency(totalProfit)}</span>
+          </p>
+        </div>
+        <div className="card">
+          <p className="card-title">Profit Margin %</p>
+          <p className={`card-value mt-2 ${profitMargin >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+            <span className="numeric">{profitMargin.toFixed(2)}%</span>
           </p>
         </div>
       </div>

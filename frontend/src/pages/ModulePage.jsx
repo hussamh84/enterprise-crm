@@ -88,6 +88,11 @@ export default function ModulePage({ title, endpoint }) {
     const clientName = item?.clientId?.name || "No Client";
     return `${clientName} - ${item.name || "Project"}`;
   };
+  const inventoryStatusLabel = (item) => {
+    if (!isInventory) return item.status || "pending";
+    if (item?.lowStock) return "Low Stock";
+    return "In Stock";
+  };
   const clientNumberOnly = (item) => String(formatClientNumber(item) || "").replace(/^Client\s*/i, "");
 
   const handleApprove = async (item) => {
@@ -551,28 +556,48 @@ export default function ModulePage({ title, endpoint }) {
 
       <div className="card !p-0 overflow-hidden">
         <div className="saas-table-shell border-0 rounded-none">
-        <div className="saas-grid-head grid grid-cols-12">
+        <div className={`saas-grid-head grid ${isInventory ? "grid-cols-16" : "grid-cols-12"}`}>
           {isClients ? <div className="col-span-2">Client ID</div> : null}
-          <div className="col-span-4">Name</div>
-          <div className={isClients ? "col-span-2" : "col-span-3"}>Date</div>
+          <div className={isInventory ? "col-span-4" : "col-span-4"}>Name</div>
+          {isInventory ? <div className="col-span-2">SKU</div> : null}
+          {isInventory ? <div className="col-span-2">Category</div> : null}
+          {isInventory ? <div className="col-span-2">Price</div> : null}
+          {isInventory ? <div className="col-span-2">Stock</div> : null}
+          <div className={isInventory ? "col-span-2" : isClients ? "col-span-2" : "col-span-3"}>{isInventory ? "Updated" : "Date"}</div>
           <div className="col-span-2">Status</div>
-          <div className={isClients ? "col-span-2" : "col-span-3"}>Actions</div>
+          <div className={isInventory ? "col-span-2" : isClients ? "col-span-2" : "col-span-3"}>Actions</div>
         </div>
 
         {data.map((item) => (
           <div
             key={item._id}
-            className="saas-grid-row grid grid-cols-12 items-center hover:bg-slate-50/80 transition"
+            className={`saas-grid-row grid ${isInventory ? "grid-cols-16" : "grid-cols-12"} items-center transition ${
+              isInventory && item?.lowStock ? "bg-rose-50/60 hover:bg-rose-50/80" : "hover:bg-slate-50/80"
+            }`}
           >
             {isClients ? (
               <div className="col-span-2 text-xs font-medium text-[#425466]">{formatClientNumber(item)}</div>
             ) : null}
-            <div className={`${isClients ? "col-span-4" : "col-span-4"} font-medium`}>
+            <div className="col-span-4 font-medium">
               {isInvoices ? invoiceDisplayName(item) : projectDisplayName(item)}
             </div>
+            {isInventory ? (
+              <div className="col-span-2 text-xs text-gray-600">{item?.sku || "-"}</div>
+            ) : null}
+            {isInventory ? (
+              <div className="col-span-2 text-xs text-gray-600">{item?.category || "-"}</div>
+            ) : null}
+            {isInventory ? (
+              <div className="col-span-2 text-xs text-gray-600 numeric">{formatCurrency(item?.price || 0)}</div>
+            ) : null}
+            {isInventory ? (
+              <div className="col-span-2 text-xs text-gray-600">
+                {Number(item?.quantity || 0)} / min {Number(item?.minQuantity || 0)}
+              </div>
+            ) : null}
 
             <div
-              className={`${isClients ? "col-span-2" : "col-span-3"} text-gray-500 text-xs`}
+              className={`${isInventory ? "col-span-2" : isClients ? "col-span-2" : "col-span-3"} text-gray-500 text-xs`}
             >
               {new Date(item.createdAt).toLocaleDateString()}
             </div>
@@ -580,16 +605,20 @@ export default function ModulePage({ title, endpoint }) {
             <div className="col-span-2">
               <span
                 className={`px-2 py-1 rounded text-xs ${
-                  item.status === "approved"
+                  isInventory
+                    ? item?.lowStock
+                      ? "bg-rose-100 text-rose-700"
+                      : "bg-emerald-100 text-emerald-700"
+                    : item.status === "approved"
                     ? "bg-green-100 text-green-600"
                     : "bg-yellow-100 text-yellow-600"
                 }`}
               >
-                {item.status || "pending"}
+                {inventoryStatusLabel(item)}
               </span>
             </div>
 
-            <div className={`${isClients ? "col-span-2" : "col-span-3"} flex flex-wrap gap-2`}>
+            <div className={`${isInventory ? "col-span-2" : isClients ? "col-span-2" : "col-span-3"} flex flex-wrap gap-2`}>
               <Link to={`${endpoint}/${item._id}`} className="btn-secondary btn-compact">
                 View
               </Link>
