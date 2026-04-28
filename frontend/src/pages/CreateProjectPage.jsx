@@ -170,7 +170,7 @@ export default function CreateProjectPage() {
                 onClick={() => setCctvType("Analog")}
                 className={`h-8 px-3 text-sm rounded-md border ${
                   cctvType === "Analog"
-                    ? "bg-indigo-600 text-white border-indigo-600"
+                    ? "bg-black text-white border-black"
                     : "border-slate-300 text-[#425466] bg-white hover:bg-slate-50"
                 }`}
               >
@@ -181,7 +181,7 @@ export default function CreateProjectPage() {
                 onClick={() => setCctvType("IP")}
                 className={`h-8 px-3 text-sm rounded-md border ${
                   cctvType === "IP"
-                    ? "bg-indigo-600 text-white border-indigo-600"
+                    ? "bg-black text-white border-black"
                     : "border-slate-300 text-[#425466] bg-white hover:bg-slate-50"
                 }`}
               >
@@ -196,7 +196,7 @@ export default function CreateProjectPage() {
         <button
           type="submit"
           disabled={createProject.isPending || !canSubmit || clientsLoading}
-          className="rounded-md bg-[#635bff] text-white px-3 py-1.5 text-sm font-medium hover:opacity-90 transition disabled:opacity-50 disabled:pointer-events-none"
+          className="rounded-md bg-black text-white px-3 py-1.5 text-sm font-medium hover:opacity-90 transition disabled:opacity-50 disabled:pointer-events-none"
         >
           {createProject.isPending ? "Saving…" : "Create project & continue to quotation"}
         </button>

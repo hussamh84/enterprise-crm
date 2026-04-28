@@ -744,13 +744,13 @@ a.btn-approve {
 
 .q-row {
   display: grid;
-  grid-template-columns: 1fr 70px 140px 160px 40px;
+  grid-template-columns: 1fr 80px 140px 140px 40px;
   gap: 12px;
   align-items: center;
 }
 
 .q-row input {
-  height: 38px;
+  height: 40px;
   font-size: 14px;
 }
 
@@ -758,6 +758,13 @@ a.btn-approve {
 .q-row .total {
   text-align: right;
   font-family: monospace;
+}
+
+.q-total {
+  text-align: right;
+  padding: 10px;
+  background: #f9fafb;
+  border-radius: 8px;
 }
 
 .delete-btn {
@@ -1132,4 +1139,13 @@ button,
 
 button:hover {
   background: #000000 !important;
+}
+
+button,
+.btn {
+  color: #ffffff !important;
+}
+
+button * {
+  color: #ffffff !important;
 }

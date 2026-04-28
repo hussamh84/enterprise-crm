@@ -254,7 +254,7 @@ export default function QuotationBuilderPage() {
         <div className="space-y-3">
           {items.map((item, index) => (
             <div key={`quotation-item-${index}`} className="q-row">
-              <div className="relative">
+              <div className="q-item relative">
                 <input
                   className="input-field"
                   value={itemSearch[index] ?? item.description}
@@ -262,12 +262,12 @@ export default function QuotationBuilderPage() {
                   placeholder="Type item name (e.g. cam)"
                 />
                 {Array.isArray(itemSuggestions[index]) && itemSuggestions[index].length > 0 ? (
-                  <div className="autocomplete-dropdown absolute left-0 right-0 top-[calc(100%+4px)] z-20">
+                  <div className="autocomplete-dropdown absolute left-0 right-0 top-[calc(100%+4px)] z-20 bg-white text-black">
                     {itemSuggestions[index].map((suggestion) => (
                       <button
                         key={suggestion._id}
                         type="button"
-                        className={`autocomplete-item ${item.productId === suggestion._id ? "active" : ""}`}
+                        className={`autocomplete-item hover:bg-gray-100 text-black ${item.productId === suggestion._id ? "active" : ""}`}
                         onClick={() => handleProductSelect(index, suggestion)}
                       >
                         <span className="font-medium text-slate-800">{suggestion.name}</span>
@@ -277,32 +277,28 @@ export default function QuotationBuilderPage() {
                   </div>
                 ) : null}
               </div>
-              <input type="number" min="0" className="input-field text-center" value={item.quantity} onChange={(event) => updateItem(index, "quantity", event.target.value)} placeholder="Qty" />
-              <div className="space-y-2">
-                <input
-                  type="number"
-                  min="0"
-                  className="input-field price numeric"
-                  value={item.unitPrice}
-                  onChange={(event) => updateItem(index, "unitPrice", event.target.value)}
-                  placeholder="Unit price"
-                  readOnly={Boolean(item.lockPrice)}
-                />
-                <label className="flex items-center gap-2 text-xs text-slate-500">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(item.lockPrice)}
-                    onChange={(event) => updateItem(index, "lockPrice", event.target.checked)}
-                  />
-                  Lock price
-                </label>
-              </div>
               <input
-                className="input-field total total-field numeric"
-                value={formatCurrency(calculatedItems[index]?.total)}
-                readOnly
+                type="number"
+                min="0"
+                className="q-qty input-field text-center"
+                value={item.quantity}
+                onChange={(event) => updateItem(index, "quantity", event.target.value)}
+                placeholder="Qty"
               />
-              <button type="button" className="delete-btn text-slate-500 hover:text-rose-600" onClick={() => removeItem(index)} aria-label="Remove line">
+              <input
+                type="number"
+                min="0"
+                className="q-price input-field price numeric"
+                value={item.unitPrice}
+                onChange={(event) => updateItem(index, "unitPrice", event.target.value)}
+                placeholder="Unit price"
+                readOnly={Boolean(item.lockPrice)}
+              />
+              <div className="q-total total-field numeric">
+                {formatCurrency(calculatedItems[index]?.total)}
+              </div>
+
+              <button type="button" className="q-delete delete-btn text-slate-500 hover:text-rose-600" onClick={() => removeItem(index)} aria-label="Remove line">
                 <Trash2 size={16} />
               </button>
             </div>
