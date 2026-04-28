@@ -1199,3 +1199,30 @@ a.btn-black:hover {
 [role="option"]:hover {
   background: #f3f4f6 !important;
 }
+
+/* FINAL HARD OVERRIDE: primary action buttons */
+.btn-primary,
+button.create-project,
+a.create-project,
+button.create-project-continue,
+a.create-project-continue,
+button.create-quotation,
+a.create-quotation,
+.bg-purple-600,
+.bg-purple-500 {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+.btn-primary:hover,
+.btn-primary:active,
+button.create-project:hover,
+a.create-project:hover,
+button.create-project-continue:hover,
+a.create-project-continue:hover,
+button.create-quotation:hover,
+a.create-quotation:hover {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+}

@@ -101,7 +101,7 @@ export default function ProjectDetailsPage() {
         <div className="flex items-center gap-2">
           <Link
             to={`/quotations/new?clientId=${encodeURIComponent(client?._id || project.clientId || "")}&projectId=${encodeURIComponent(project._id)}`}
-            className="btn-primary btn-black"
+            className="btn-primary btn-black create-quotation"
           >
             Create Quotation
           </Link>
