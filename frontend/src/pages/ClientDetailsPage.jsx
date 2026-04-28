@@ -59,7 +59,7 @@ export default function ClientDetailsPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             to={`/projects/new?clientId=${encodeURIComponent(clientId)}`}
-            className="bg-gray-900 text-white hover:bg-black px-4 py-2 rounded"
+            className="rounded-lg bg-gray-900 text-white px-3 py-2 text-sm font-medium hover:bg-black"
             data-ui="create-project-btn"
           >
             Create project
@@ -117,7 +117,7 @@ export default function ClientDetailsPage() {
             <h2 className="font-semibold text-[#0a2540]">Client projects</h2>
             <Link
               to={`/projects/new?clientId=${encodeURIComponent(clientId)}`}
-              className="bg-gray-900 text-white hover:bg-black px-4 py-2 rounded"
+              className="rounded-lg bg-gray-900 text-white px-3 py-2 text-sm font-medium hover:bg-black"
               data-ui="create-project-btn"
             >
               Create project

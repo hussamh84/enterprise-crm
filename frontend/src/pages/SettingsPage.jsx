@@ -85,7 +85,7 @@ export default function SettingsPage() {
       <div>
         <button
           type="button"
-          className="rounded-lg bg-[#635bff] text-white px-4 py-2.5 text-sm font-medium hover:bg-[#5849ff] disabled:opacity-60"
+          className="rounded-lg bg-gray-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-black disabled:opacity-60"
           disabled={isLoading || updateSettings.isPending}
           onClick={() => updateSettings.mutate()}
         >

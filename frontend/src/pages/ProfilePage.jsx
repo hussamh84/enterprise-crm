@@ -144,7 +144,7 @@ export default function ProfilePage() {
         <button
           type="submit"
           disabled={updateProfile.isPending}
-          className="rounded-md bg-[#635bff] text-white px-3 py-1.5 text-sm hover:opacity-90 transition disabled:opacity-60"
+          className="rounded-md bg-gray-900 text-white px-3 py-1.5 text-sm hover:bg-black transition disabled:opacity-60"
         >
           {updateProfile.isPending ? "Saving…" : "Save profile"}
         </button>
@@ -187,7 +187,7 @@ export default function ProfilePage() {
         <button
           type="submit"
           disabled={isChangingPassword}
-          className="rounded-md bg-[#635bff] text-white px-3 py-1.5 text-sm hover:opacity-90 transition disabled:opacity-60"
+          className="rounded-md bg-gray-900 text-white px-3 py-1.5 text-sm hover:bg-black transition disabled:opacity-60"
         >
           {isChangingPassword ? "Updating…" : "Update password"}
         </button>

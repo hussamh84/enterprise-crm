@@ -131,7 +131,7 @@ export default function EditClientPage() {
           <button
             type="submit"
             disabled={updateClient.isPending || !name.trim()}
-            className="rounded-lg bg-[#635bff] px-4 py-2 text-sm font-medium text-white shadow hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow hover:bg-black disabled:opacity-50"
           >
             {updateClient.isPending ? "Saving…" : "Save"}
           </button>
