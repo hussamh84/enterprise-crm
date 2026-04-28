@@ -1179,9 +1179,7 @@ a.btn-dark * {
   color: inherit;
 }
 
-/* FINAL ENFORCEMENT (keep at end): exact targets requested */
-.btn-primary,
-a.btn-primary,
+/* FINAL ENFORCEMENT (scoped): exact targets only */
 button.create-quotation,
 a.create-quotation,
 button.create-project,
@@ -1191,14 +1189,10 @@ a.create-project {
   border-color: #000000 !important;
 }
 
-.btn-primary:hover,
-a.btn-primary:hover,
 button.create-quotation:hover,
 a.create-quotation:hover,
 button.create-project:hover,
 a.create-project:hover,
-.btn-primary:active,
-a.btn-primary:active,
 button.create-quotation:active,
 a.create-quotation:active,
 button.create-project:active,
@@ -1207,12 +1201,11 @@ a.create-project:active {
   color: #ffffff !important;
 }
 
-input[type="search"],
 .smart-search-input {
   color: #ffffff !important;
+  caret-color: #ffffff !important;
 }
 
-.smart-search-input::placeholder,
-input[type="search"]::placeholder {
+.smart-search-input::placeholder {
   color: #cbd5e1 !important;
 }
