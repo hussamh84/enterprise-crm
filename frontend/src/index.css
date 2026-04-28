@@ -1305,3 +1305,13 @@ a[href*="quotation"] {
   background-color: #111827 !important;
   color: #ffffff !important;
 }
+
+/* Final override for Tailwind arbitrary purple class on anchors */
+a.bg-\[\#635bff\] {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+}
+
+a.bg-\[\#635bff\]:hover {
+  background-color: #000000 !important;
+}
