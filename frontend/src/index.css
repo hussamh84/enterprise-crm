@@ -265,6 +265,51 @@ a.btn-primary {
   padding: 8px 14px;
 }
 
+.inventory-btn {
+  min-width: 80px;
+  height: 36px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+}
+
+.autocomplete-dropdown {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.autocomplete-item {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #111827;
+  cursor: pointer;
+  text-align: left;
+  background: #ffffff;
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-item:hover {
+  background: #f3f4f6;
+}
+
+.autocomplete-item.active {
+  background: #e5e7eb;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
