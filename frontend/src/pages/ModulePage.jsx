@@ -10,6 +10,7 @@ console.log("CHECK PAGE:", __filename);
 
 export default function ModulePage({ title, endpoint }) {
   const queryClient = useQueryClient();
+  const isInventory = endpoint === "/inventory";
 
   const { data = [], isLoading } = useQuery({
     queryKey: [endpoint],
@@ -119,6 +120,56 @@ export default function ModulePage({ title, endpoint }) {
         console.error(e);
       }
     })();
+  };
+
+  const downloadInventorySample = async () => {
+    try {
+      const response = await api.get("/inventory/sample", { responseType: "blob" });
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "inventory-import-sample.xlsx";
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to download sample Excel format.");
+    }
+  };
+
+  const handleInventoryImport = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await api.post("/inventory/import", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      await queryClient.invalidateQueries([endpoint]);
+      const summary = response?.data?.summary || {};
+      const errors = Array.isArray(response?.data?.errors) ? response.data.errors : [];
+      if (errors.length > 0) {
+        const preview = errors
+          .slice(0, 5)
+          .map((item) => `Row ${item.row}: ${item.reason}`)
+          .join("\n");
+        alert(
+          `Import finished with row issues.\nCreated: ${summary.created || 0}, Updated: ${summary.updated || 0}, Failed: ${summary.failed || errors.length}\n\n${preview}${errors.length > 5 ? "\n..." : ""}`
+        );
+      } else {
+        alert("Inventory import completed successfully.");
+      }
+    } catch (error) {
+      console.error(error);
+      const message = error?.response?.data?.message || "Import failed.";
+      alert(message);
+    } finally {
+      event.target.value = "";
+    }
   };
 
   if (isLoading) {
@@ -472,10 +523,29 @@ export default function ModulePage({ title, endpoint }) {
           <p className="page-subtitle">Manage all your {title.toLowerCase()}</p>
         </div>
 
-        {!isInvoices ? (
+        {!isInvoices && !isInventory ? (
           <Link to={`${endpoint}/new`} className="button-primary">
             + Add
           </Link>
+        ) : null}
+        {isInventory ? (
+          <div className="flex items-center gap-2">
+            <button type="button" className="btn-secondary btn-compact" onClick={downloadInventorySample}>
+              Download sample Excel format
+            </button>
+            <label className="button-primary cursor-pointer">
+              Import Excel
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={handleInventoryImport}
+              />
+            </label>
+            <Link to={`${endpoint}/new`} className="button-primary">
+              + Add
+            </Link>
+          </div>
         ) : null}
       </div>
 

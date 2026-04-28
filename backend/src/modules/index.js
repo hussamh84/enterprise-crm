@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
+const XLSX = require("xlsx");
 const { makeEntityModel, buildCrudRouter } = require("./shared");
 const { incrementClientCounter, Counter } = require("./clients/counter.model");
 const { clientNumberField } = require("./clients/client.model");
@@ -24,6 +25,7 @@ const logoUpload = multer({
     },
   }),
 });
+const inventoryImportUpload = multer({ storage: multer.memoryStorage() });
 
 const Lead = makeEntityModel("Lead", {
   score: { type: Number, default: 0 },
@@ -72,8 +74,11 @@ const Quotation = makeEntityModel("Quotation", {
   status: { type: String, default: "draft" },
   items: [
     {
+      productId: { type: String, default: "" },
+      name: { type: String, trim: true, default: "" },
       description: { type: String, trim: true },
       quantity: { type: Number, default: 1 },
+      price: { type: Number, default: 0 },
       unitPrice: { type: Number, default: 0 },
       total: { type: Number, default: 0 },
     },
@@ -144,7 +149,68 @@ const ExpenseSchema = new mongoose.Schema(
   { timestamps: true }
 );
 const Expense = mongoose.models.Expense || mongoose.model("Expense", ExpenseSchema);
-const InventoryItem = makeEntityModel("InventoryItem", { sku: String, quantity: Number, lowStockThreshold: Number });
+const InventoryItemSchema = new mongoose.Schema(
+  {
+    tenantId: { type: String, required: true, index: true },
+    createdBy: { type: String },
+    updatedBy: { type: String },
+    deletedAt: { type: Date, default: null },
+    auditLog: [
+      {
+        action: String,
+        at: { type: Date, default: Date.now },
+        by: String,
+        note: String,
+      },
+    ],
+    name: { type: String, required: true, trim: true },
+    sku: { type: String, required: true, trim: true, uppercase: true },
+    category: { type: String, required: true, trim: true },
+    price: { type: Number, required: true, min: 0, default: 0 },
+    cost: { type: Number, min: 0, default: null },
+    quantity: { type: Number, required: true, min: 0, default: 0 },
+    unit: { type: String, required: true, trim: true, default: "pcs" },
+    status: { type: String, default: "active" },
+  },
+  { timestamps: true }
+);
+InventoryItemSchema.index({ tenantId: 1, name: 1 });
+InventoryItemSchema.index({ tenantId: 1, sku: 1 }, { unique: true });
+const InventoryItem = mongoose.models.InventoryItem || mongoose.model("InventoryItem", InventoryItemSchema);
+const InventoryUsageSchema = new mongoose.Schema(
+  {
+    tenantId: { type: String, required: true, index: true },
+    createdBy: { type: String },
+    updatedBy: { type: String },
+    deletedAt: { type: Date, default: null },
+    auditLog: [
+      {
+        action: String,
+        at: { type: Date, default: Date.now },
+        by: String,
+        note: String,
+      },
+    ],
+    inventoryItemId: { type: String, required: true, index: true },
+    quotationId: { type: String, index: true },
+    invoiceId: { type: String, index: true },
+    projectId: { type: String, index: true },
+    clientId: { type: String, index: true },
+    sku: { type: String, trim: true, uppercase: true },
+    productName: { type: String, trim: true },
+    quantity: { type: Number, required: true, min: 0, default: 0 },
+    unitPrice: { type: Number, min: 0, default: 0 },
+    amount: { type: Number, min: 0, default: 0 },
+    source: { type: String, enum: ["quotation", "invoice"], default: "quotation" },
+    status: { type: String, default: "planned" },
+  },
+  { timestamps: true }
+);
+InventoryUsageSchema.index(
+  { tenantId: 1, inventoryItemId: 1, quotationId: 1, source: 1, deletedAt: 1 },
+  { unique: true, partialFilterExpression: { deletedAt: null } }
+);
+const InventoryUsage = mongoose.models.InventoryUsage || mongoose.model("InventoryUsage", InventoryUsageSchema);
 const Ticket = makeEntityModel("Ticket", { priority: String, slaStatus: String, assignedTo: String });
 const SettingsSchema = new mongoose.Schema(
   {
@@ -193,6 +259,59 @@ const ensureClientProjectLink = async ({ tenantId, clientId, projectId }) => {
   return { client, project };
 };
 
+const syncInventoryUsageForQuotation = async ({ tenantId, quotation, userId }) => {
+  if (!quotation?._id) return;
+  const quotationId = String(quotation._id);
+  await InventoryUsage.deleteMany({ tenantId, quotationId, source: "quotation" });
+
+  const items = Array.isArray(quotation.items) ? quotation.items : [];
+  const candidateItems = items.filter((item) => String(item?.productId || "").trim());
+  if (!candidateItems.length) return;
+
+  const inventoryIds = [...new Set(candidateItems.map((item) => String(item.productId).trim()))];
+  const inventoryRows = await InventoryItem.find({
+    tenantId,
+    _id: { $in: inventoryIds },
+    deletedAt: null,
+  })
+    .select("_id sku name")
+    .lean();
+  const inventoryMap = Object.fromEntries(inventoryRows.map((row) => [String(row._id), row]));
+
+  const usageDocs = candidateItems
+    .map((item) => {
+      const inventoryItemId = String(item.productId || "").trim();
+      const inv = inventoryMap[inventoryItemId];
+      if (!inv) return null;
+      const quantity = Number(item.quantity || 0);
+      const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
+      const amount = Number((quantity * unitPrice).toFixed(2));
+      return {
+        tenantId,
+        inventoryItemId,
+        quotationId,
+        invoiceId: null,
+        projectId: String(quotation.projectId || ""),
+        clientId: String(quotation.clientId || ""),
+        sku: inv.sku || "",
+        productName: item.name || item.description || inv.name || "",
+        quantity,
+        unitPrice,
+        amount,
+        source: "quotation",
+        status: String(quotation.status || "draft").toLowerCase() === "approved" ? "approved" : "planned",
+        createdBy: userId,
+        updatedBy: userId,
+        auditLog: [{ action: "inventory.usage.sync", by: userId, note: "Synced from quotation items" }],
+      };
+    })
+    .filter(Boolean);
+
+  if (usageDocs.length) {
+    await InventoryUsage.insertMany(usageDocs, { ordered: false });
+  }
+};
+
 const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
   const tenantId = getTenantId(req);
   if (!tenantId) throw new AppError("Tenant context is required", 400);
@@ -202,10 +321,27 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
     quotationId: String(quotation._id),
     deletedAt: null,
   });
-  if (existing) return existing;
+  if (existing) {
+    await InventoryUsage.updateMany(
+      { tenantId, quotationId: String(quotation._id), source: "quotation", deletedAt: null },
+      {
+        invoiceId: String(existing._id),
+        status: "approved",
+        updatedBy: req.user?.id,
+        $push: {
+          auditLog: {
+            action: "inventory.usage.attach_invoice",
+            by: req.user?.id,
+            note: "Attached existing invoice to quotation usage",
+          },
+        },
+      }
+    );
+    return existing;
+  }
   const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV", tenantId });
 
-  return Invoice.create({
+  const invoice = await Invoice.create({
     tenantId,
     invoiceNo,
     name: quotation.name || invoiceNo,
@@ -220,6 +356,22 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
     updatedBy: req.user?.id,
     auditLog: [{ action: "invoice.create_from_quotation", by: req.user?.id, note: note || "Created from quotation" }],
   });
+  await InventoryUsage.updateMany(
+    { tenantId, quotationId: String(quotation._id), source: "quotation", deletedAt: null },
+    {
+      invoiceId: String(invoice._id),
+      status: "approved",
+      updatedBy: req.user?.id,
+      $push: {
+        auditLog: {
+          action: "inventory.usage.attach_invoice",
+          by: req.user?.id,
+          note: "Linked invoice generated from quotation",
+        },
+      },
+    }
+  );
+  return invoice;
 };
 
 const calculateProjectFinancials = async ({ tenantId, projectId }) => {
@@ -538,11 +690,15 @@ router.use("/site-visits", buildCrudRouter({ model: SiteVisit, entity: "site_vis
 const computeQuotationTotals = (payload = {}) => {
   const rawItems = Array.isArray(payload.items) ? payload.items : [];
   const items = rawItems.map((item) => {
+    const resolvedName = String(item.name || item.description || "").trim();
     const quantity = Number(item.quantity || 0);
-    const unitPrice = Number(item.unitPrice || 0);
+    const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
     const total = Number((quantity * unitPrice).toFixed(2));
     return {
-      description: item.description || "",
+      productId: String(item.productId || ""),
+      name: resolvedName,
+      description: resolvedName,
+      price: unitPrice,
       quantity,
       unitPrice,
       total,
@@ -654,6 +810,7 @@ router.post("/quotations", async (req, res, next) => {
       auditLog: [{ action: "quotation.create", by: req.user?.id, note: "Created quotation" }],
     };
     const doc = await Quotation.create(payload);
+    await syncInventoryUsageForQuotation({ tenantId, quotation: doc, userId: req.user?.id });
     res.status(201).json(doc);
   } catch (error) {
     next(error);
@@ -683,6 +840,9 @@ router.put("/quotations/:id", async (req, res, next) => {
       },
       { new: true }
     );
+    if (doc) {
+      await syncInventoryUsageForQuotation({ tenantId, quotation: doc, userId: req.user?.id });
+    }
     res.json(doc);
   } catch (error) {
     next(error);
@@ -718,6 +878,7 @@ router.patch("/quotations/:id/approve", async (req, res, next) => {
     );
 
     if (!doc) return res.status(404).json({ message: "Quotation not found" });
+    await syncInventoryUsageForQuotation({ tenantId, quotation: doc, userId: req.user?.id });
 
     const invoice = await createInvoiceFromQuotation({
       quotation: doc,
@@ -743,6 +904,16 @@ router.delete("/quotations/:id", async (req, res, next) => {
       },
       { new: true }
     );
+    if (doc) {
+      await InventoryUsage.updateMany(
+        { tenantId: req.tenantId, quotationId: String(doc._id), source: "quotation", deletedAt: null },
+        {
+          deletedAt: new Date(),
+          updatedBy: req.user?.id,
+          $push: { auditLog: { action: "inventory.usage.delete", by: req.user?.id, note: "Soft deleted with quotation" } },
+        }
+      );
+    }
     res.json({ message: "Deleted", doc });
   } catch (error) {
     next(error);
@@ -812,18 +983,33 @@ router.get("/projects/:id/details", async (req, res, next) => {
 
     const quotations = await Quotation.find({ projectId: String(project._id), tenantId, deletedAt: null }).sort({ createdAt: -1 });
     const expenses = await Expense.find({ projectId: String(project._id), tenantId, deletedAt: null }).sort({ date: -1, createdAt: -1 });
+    const inventoryUsage = await InventoryUsage.find({
+      projectId: String(project._id),
+      tenantId,
+      deletedAt: null,
+      source: "quotation",
+    })
+      .sort({ createdAt: -1 })
+      .lean();
 
     const totalQuoted = quotations.reduce((sum, q) => sum + Number(q.grandTotal ?? q.subtotal ?? 0), 0);
     const totalExpenses = Number(project.totalExpenses ?? expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0));
     const totalRevenue = Number(project.totalRevenue ?? 0);
     const progress = Number(project.progress || 0);
     const calculatedProfit = Number(project.profit ?? totalRevenue - totalExpenses);
+    const inventorySummary = {
+      totalItemsUsed: inventoryUsage.reduce((sum, row) => sum + Number(row.quantity || 0), 0),
+      totalUsageAmount: inventoryUsage.reduce((sum, row) => sum + Number(row.amount || 0), 0),
+      uniqueProducts: new Set(inventoryUsage.map((row) => String(row.inventoryItemId || ""))).size,
+    };
 
     res.json({
       project,
       client,
       quotations,
       expenses,
+      inventoryUsage,
+      inventorySummary,
       quotationSummary: {
         totalQuoted,
         quotationCount: quotations.length,
@@ -970,12 +1156,21 @@ router.get("/invoices/:id", async (req, res, next) => {
     const subtotal = quotation ? Number(quotation.subtotal ?? 0) : Number(invoice.total || 0);
     const discountAmount = quotation ? Number(quotation.discount?.amount ?? 0) : 0;
     const taxAmount = quotation ? Number(quotation.tax ?? 0) : 0;
+    const inventoryUsage = await InventoryUsage.find({
+      tenantId: req.tenantId,
+      invoiceId: String(req.params.id),
+      deletedAt: null,
+      source: "quotation",
+    })
+      .sort({ createdAt: -1 })
+      .lean();
     res.json({
       ...invoice,
       quotationNo: quotation?.quotationNo || "",
       summarySubtotal: subtotal,
       summaryDiscount: discountAmount,
       summaryTax: taxAmount,
+      inventoryUsage,
     });
   } catch (error) {
     next(error);
@@ -1280,6 +1475,190 @@ router.get("/reports/yearly", async (req, res, next) => {
   }
 });
 
+router.get("/inventory/search", async (req, res, next) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return next(new AppError("Tenant context is required", 400));
+    const q = String(req.query?.q || "").trim();
+    if (!q) return res.json([]);
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const docs = await InventoryItem.find({
+      tenantId,
+      deletedAt: null,
+      name: { $regex: escaped, $options: "i" },
+    })
+      .sort({ name: 1 })
+      .limit(15)
+      .select("_id name sku price unit category quantity")
+      .lean();
+    res.json(docs);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/inventory/sample", async (_req, res, next) => {
+  try {
+    const sampleRows = [
+      { Name: "Camera 2MP", SKU: "CAM-001", Category: "CCTV", Price: 65000, Quantity: 10 },
+      { Name: "Analog cam", SKU: "CAM-002", Category: "CCTV", Price: 54000, Quantity: 6 },
+      { Name: "Cam cable", SKU: "CAB-001", Category: "Accessories", Price: 8000, Quantity: 100 },
+    ];
+    const worksheet = XLSX.utils.json_to_sheet(sampleRows, {
+      header: ["Name", "SKU", "Category", "Price", "Quantity"],
+    });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", 'attachment; filename="inventory-import-sample.xlsx"');
+    res.send(buffer);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/inventory/import", inventoryImportUpload.single("file"), async (req, res, next) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return next(new AppError("Tenant context is required", 400));
+    if (!req.file?.buffer) return res.status(400).json({ message: "Excel file is required" });
+
+    const fileName = String(req.file.originalname || "").toLowerCase();
+    if (!(fileName.endsWith(".xlsx") || fileName.endsWith(".xls"))) {
+      return res.status(400).json({ message: "Wrong format. Upload .xlsx or .xls file." });
+    }
+
+    const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+    const firstSheetName = workbook.SheetNames?.[0];
+    if (!firstSheetName) return res.status(400).json({ message: "Wrong format. File has no sheet." });
+    const worksheet = workbook.Sheets[firstSheetName];
+    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+    const requiredColumns = ["Name", "SKU", "Category", "Price", "Quantity"];
+    const headerRow = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 0 })?.[0] || [];
+    const missingColumns = requiredColumns.filter((column) => !headerRow.includes(column));
+    if (missingColumns.length > 0) {
+      return res.status(400).json({
+        message: `Missing required columns: ${missingColumns.join(", ")}`,
+      });
+    }
+    if (!Array.isArray(jsonRows) || jsonRows.length === 0) {
+      return res.status(400).json({ message: "Wrong format. File has no data rows." });
+    }
+
+    const rowErrors = [];
+    const validRows = [];
+    jsonRows.forEach((row, idx) => {
+      const rowNumber = idx + 2; // +1 for 0-index and +1 for header
+      const name = String(row.Name || "").trim();
+      const sku = String(row.SKU || "").trim().toUpperCase();
+      const category = String(row.Category || "").trim();
+      const price = Number(row.Price);
+      const quantity = Number(row.Quantity);
+
+      if (!name || !sku || !category || !Number.isFinite(price) || !Number.isFinite(quantity)) {
+        rowErrors.push({
+          row: rowNumber,
+          sku: sku || null,
+          reason: "Each row must include valid Name, SKU, Category, Price, Quantity.",
+        });
+      }
+      if (Number.isFinite(price) && Number.isFinite(quantity) && (price < 0 || quantity < 0)) {
+        rowErrors.push({
+          row: rowNumber,
+          sku: sku || null,
+          reason: "Price and Quantity must be >= 0.",
+        });
+      }
+      if (!rowErrors.some((errorItem) => errorItem.row === rowNumber)) {
+        validRows.push({ name, sku, category, price, quantity });
+      }
+    });
+
+    let created = 0;
+    let updated = 0;
+    for (const row of validRows) {
+      const { name, sku, category, price, quantity } = row;
+      const existing = await InventoryItem.findOne({ tenantId, sku, deletedAt: null });
+      if (existing) {
+        existing.name = name;
+        existing.category = category;
+        existing.price = price;
+        existing.quantity = quantity;
+        existing.updatedBy = req.user?.id;
+        existing.auditLog = [
+          ...(Array.isArray(existing.auditLog) ? existing.auditLog : []),
+          { action: "inventory.import_update", by: req.user?.id, note: "Updated from Excel import" },
+        ];
+        await existing.save();
+        updated += 1;
+      } else {
+        await InventoryItem.create({
+          tenantId,
+          name,
+          sku,
+          category,
+          price,
+          quantity,
+          unit: "pcs",
+          createdBy: req.user?.id,
+          updatedBy: req.user?.id,
+          auditLog: [{ action: "inventory.import_create", by: req.user?.id, note: "Created from Excel import" }],
+        });
+        created += 1;
+      }
+    }
+
+    if (created + updated === 0 && rowErrors.length > 0) {
+      return res.status(400).json({
+        message: "No rows imported. Please fix the file and try again.",
+        summary: { created: 0, updated: 0, total: 0, failed: rowErrors.length },
+        errors: rowErrors,
+      });
+    }
+
+    return res.status(rowErrors.length > 0 ? 207 : 200).json({
+      message: rowErrors.length > 0 ? "Inventory import completed with some row errors." : "Inventory import completed",
+      summary: { created, updated, total: created + updated, failed: rowErrors.length },
+      errors: rowErrors,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/inventory/:id/usage", async (req, res, next) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return next(new AppError("Tenant context is required", 400));
+    const inventoryItem = await InventoryItem.findOne({ _id: req.params.id, tenantId, deletedAt: null }).lean();
+    if (!inventoryItem) return res.status(404).json({ message: "Inventory item not found" });
+
+    const usage = await InventoryUsage.find({
+      tenantId,
+      inventoryItemId: String(req.params.id),
+      deletedAt: null,
+      source: "quotation",
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      inventoryItem,
+      usage,
+      summary: {
+        totalQuantity: usage.reduce((sum, row) => sum + Number(row.quantity || 0), 0),
+        totalAmount: usage.reduce((sum, row) => sum + Number(row.amount || 0), 0),
+        linkedQuotations: new Set(usage.map((row) => String(row.quotationId || ""))).size,
+        linkedInvoices: new Set(usage.map((row) => String(row.invoiceId || ""))).size,
+        linkedProjects: new Set(usage.map((row) => String(row.projectId || ""))).size,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.use("/inventory", buildCrudRouter({ model: InventoryItem, entity: "inventory" }));
 router.use("/tickets", buildCrudRouter({ model: Ticket, entity: "ticket" }));
 
@@ -1551,6 +1930,7 @@ module.exports = {
     Invoice,
     Expense,
     InventoryItem,
+    InventoryUsage,
     Ticket,
     Settings,
   },

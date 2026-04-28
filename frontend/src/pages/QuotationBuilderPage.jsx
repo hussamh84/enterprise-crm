@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CirclePlus, FileText, Trash2 } from "lucide-react";
@@ -6,7 +6,7 @@ import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
 import { formatClientNumber } from "../utils/formatClientNumber";
 
-const BLANK_ITEM = { description: "", quantity: 1, unitPrice: 0 };
+const BLANK_ITEM = { productId: "", description: "", quantity: 1, unitPrice: 0, lockPrice: false };
 
 const toNumber = (value) => Number(value || 0);
 
@@ -27,6 +27,9 @@ export default function QuotationBuilderPage() {
   const [tax, setTax] = useState(0);
   const [quoteStatus, setQuoteStatus] = useState("draft");
   const [items, setItems] = useState([{ ...BLANK_ITEM }]);
+  const [itemSearch, setItemSearch] = useState({});
+  const [itemSuggestions, setItemSuggestions] = useState({});
+  const searchTimersRef = useRef({});
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -50,15 +53,21 @@ export default function QuotationBuilderPage() {
     if (Array.isArray(q.items) && q.items.length > 0) {
       setItems(
         q.items.map((row) => ({
-          description: row.description || "",
+          productId: row.productId || "",
+          description: row.description || row.name || "",
           quantity: row.quantity ?? 1,
-          unitPrice: row.unitPrice ?? 0,
+          unitPrice: row.unitPrice ?? row.price ?? 0,
+          lockPrice: false,
         }))
       );
     } else {
       setItems([{ ...BLANK_ITEM }]);
     }
   }, [isEdit, editBundle]);
+
+  useEffect(() => () => {
+    Object.values(searchTimersRef.current).forEach((timerId) => clearTimeout(timerId));
+  }, []);
 
   const { data: clients = [] } = useQuery({
     queryKey: ["/clients", "quotation-builder"],
@@ -68,7 +77,6 @@ export default function QuotationBuilderPage() {
     queryKey: ["/projects", "quotation-builder"],
     queryFn: async () => (await api.get("/projects")).data,
   });
-
   const clientProjects = useMemo(
     () => projects.filter((project) => String(project.clientId) === String(clientId)),
     [projects, clientId]
@@ -81,8 +89,11 @@ export default function QuotationBuilderPage() {
         const unitPrice = toNumber(item.unitPrice);
         const total = quantity * unitPrice;
         return {
+          productId: item.productId || "",
+          name: item.description?.trim() || "",
           description: item.description?.trim() || "",
           quantity,
+          price: unitPrice,
           unitPrice,
           total,
         };
@@ -133,6 +144,50 @@ export default function QuotationBuilderPage() {
 
   const removeItem = (index) => {
     setItems((previous) => (previous.length > 1 ? previous.filter((_, itemIndex) => itemIndex !== index) : previous));
+  };
+
+  const handleProductSelect = (index, selectedProduct) => {
+    if (!selectedProduct) return;
+    setItems((previous) =>
+      previous.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              productId: String(selectedProduct._id),
+              description: String(selectedProduct.name || ""),
+              unitPrice: Number(selectedProduct.price || 0),
+            }
+          : item
+      )
+    );
+    setItemSearch((previous) => ({ ...previous, [index]: String(selectedProduct.name || "") }));
+    setItemSuggestions((previous) => ({ ...previous, [index]: [] }));
+  };
+
+  const searchInventorySuggestions = async (index, query) => {
+    const trimmed = String(query || "").trim();
+    if (!trimmed) {
+      setItemSuggestions((previous) => ({ ...previous, [index]: [] }));
+      return;
+    }
+    try {
+      const response = await api.get(`/inventory/search?q=${encodeURIComponent(trimmed)}`);
+      setItemSuggestions((previous) => ({ ...previous, [index]: Array.isArray(response.data) ? response.data : [] }));
+    } catch (error) {
+      console.error("Failed to search inventory", error);
+      setItemSuggestions((previous) => ({ ...previous, [index]: [] }));
+    }
+  };
+
+  const handleItemNameInput = (index, value) => {
+    setItemSearch((previous) => ({ ...previous, [index]: value }));
+    updateItem(index, "description", value);
+    updateItem(index, "productId", "");
+    const currentTimer = searchTimersRef.current[index];
+    if (currentTimer) clearTimeout(currentTimer);
+    searchTimersRef.current[index] = setTimeout(() => {
+      void searchInventorySuggestions(index, value);
+    }, 220);
   };
 
   if (isEdit && editLoading) {
@@ -199,9 +254,49 @@ export default function QuotationBuilderPage() {
         <div className="space-y-3">
           {items.map((item, index) => (
             <div key={`quotation-item-${index}`} className="quotation-item-row">
-              <input className="input-field" value={item.description} onChange={(event) => updateItem(index, "description", event.target.value)} placeholder="Item description" />
+              <div className="relative">
+                <input
+                  className="input-field"
+                  value={itemSearch[index] ?? item.description}
+                  onChange={(event) => handleItemNameInput(index, event.target.value)}
+                  placeholder="Type item name (e.g. cam)"
+                />
+                {Array.isArray(itemSuggestions[index]) && itemSuggestions[index].length > 0 ? (
+                  <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-20 max-h-44 overflow-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+                    {itemSuggestions[index].map((suggestion) => (
+                      <button
+                        key={suggestion._id}
+                        type="button"
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 border-b border-slate-100 last:border-b-0"
+                        onClick={() => handleProductSelect(index, suggestion)}
+                      >
+                        <span className="font-medium text-slate-800">{suggestion.name}</span>
+                        <span className="ml-2 text-xs text-slate-500">{suggestion.sku || "N/A"} - {formatCurrency(suggestion.price || 0)}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
               <input type="number" min="0" className="input-field text-center" value={item.quantity} onChange={(event) => updateItem(index, "quantity", event.target.value)} placeholder="Qty" />
-              <input type="number" min="0" className="input-field text-right numeric" value={item.unitPrice} onChange={(event) => updateItem(index, "unitPrice", event.target.value)} placeholder="Unit price" />
+              <div className="space-y-2">
+                <input
+                  type="number"
+                  min="0"
+                  className="input-field text-right numeric"
+                  value={item.unitPrice}
+                  onChange={(event) => updateItem(index, "unitPrice", event.target.value)}
+                  placeholder="Unit price"
+                  readOnly={Boolean(item.lockPrice)}
+                />
+                <label className="flex items-center gap-2 text-xs text-slate-500">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(item.lockPrice)}
+                    onChange={(event) => updateItem(index, "lockPrice", event.target.checked)}
+                  />
+                  Lock price
+                </label>
+              </div>
               <input
                 className="input-field total-field numeric"
                 value={formatCurrency(calculatedItems[index]?.total)}
