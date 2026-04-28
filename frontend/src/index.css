@@ -1289,3 +1289,19 @@ button[data-ui="create-project-continue-btn"]:focus-visible {
   background-color: #111827 !important;
   color: #ffffff !important;
 }
+
+/* Forced route-based button styling (high specificity) */
+a[href*="/projects/new"] {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+  border-radius: 0.5rem;
+}
+
+a[href*="/projects/new"]:hover {
+  background-color: #000000 !important;
+}
+
+a[href*="quotation"] {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+}
