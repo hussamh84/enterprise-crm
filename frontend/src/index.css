@@ -1178,3 +1178,41 @@ button.btn-dark *,
 a.btn-dark * {
   color: inherit;
 }
+
+/* FINAL ENFORCEMENT (keep at end): exact targets requested */
+.btn-primary,
+a.btn-primary,
+button.create-quotation,
+a.create-quotation,
+button.create-project,
+a.create-project {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+}
+
+.btn-primary:hover,
+a.btn-primary:hover,
+button.create-quotation:hover,
+a.create-quotation:hover,
+button.create-project:hover,
+a.create-project:hover,
+.btn-primary:active,
+a.btn-primary:active,
+button.create-quotation:active,
+a.create-quotation:active,
+button.create-project:active,
+a.create-project:active {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+input[type="search"],
+.smart-search-input {
+  color: #ffffff !important;
+}
+
+.smart-search-input::placeholder,
+input[type="search"]::placeholder {
+  color: #cbd5e1 !important;
+}
