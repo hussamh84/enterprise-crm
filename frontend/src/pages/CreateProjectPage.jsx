@@ -196,7 +196,7 @@ export default function CreateProjectPage() {
         <button
           type="submit"
           disabled={createProject.isPending || !canSubmit || clientsLoading}
-          className="btn-primary btn-black create-project-continue rounded-md px-3 py-1.5 text-sm font-medium transition disabled:opacity-50 disabled:pointer-events-none"
+          className="bg-gray-900 text-white hover:bg-black px-4 py-2 rounded disabled:opacity-50 disabled:pointer-events-none"
           data-ui="create-project-continue-btn"
         >
           {createProject.isPending ? "Saving…" : "Create project & continue to quotation"}
