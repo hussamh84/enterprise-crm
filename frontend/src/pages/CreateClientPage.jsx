@@ -38,7 +38,7 @@ export default function CreateClientPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="client-page space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="page-title">New client</h1>

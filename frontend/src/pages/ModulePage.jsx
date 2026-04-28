@@ -253,7 +253,7 @@ export default function ModulePage({ title, endpoint }) {
 
   if (isClients) {
     return (
-      <div className="space-y-5">
+      <div className="client-page space-y-5">
         <div className="flex justify-between items-center gap-3">
           <div>
             <h1 className="page-title">{title}</h1>

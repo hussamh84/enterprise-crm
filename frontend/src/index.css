@@ -1252,3 +1252,40 @@ button[data-ui="create-project-continue-btn"]:focus-visible {
   background-color: #111827 !important;
   color: #ffffff !important;
 }
+
+/* Client scope only: force dark action buttons without global side effects */
+.client-page button,
+.client-page .btn,
+.client-page .btn-primary,
+.client-page .button-primary,
+.client-page [type="button"],
+.client-page [type="submit"] {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+  border: none;
+}
+
+.client-page a.btn,
+.client-page a.btn-primary,
+.client-page a.button-primary {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+  border: none;
+}
+
+/* Tailwind utility overrides inside client scope only */
+.client-page button.bg-purple-600,
+.client-page button.bg-purple-500,
+.client-page button.bg-white,
+.client-page a.bg-purple-600,
+.client-page a.bg-purple-500,
+.client-page a.bg-white,
+.client-page [type="button"].bg-purple-600,
+.client-page [type="button"].bg-purple-500,
+.client-page [type="button"].bg-white,
+.client-page [type="submit"].bg-purple-600,
+.client-page [type="submit"].bg-purple-500,
+.client-page [type="submit"].bg-white {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+}
