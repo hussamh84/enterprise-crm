@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet } from "react-router-dom";
 import api from "../lib/api";
+import SidebarCalendar from "./SidebarCalendar";
 import { syncCurrencyConfig } from "../config/currency";
 import { useAuthStore } from "../store/authStore";
 
@@ -43,7 +44,6 @@ const handleLogoError = (event) => {
 };
 
 export default function Layout() {
-  const user = useAuthStore((s) => s.user);
   const clearSession = useAuthStore((s) => s.clearSession);
   const [theme, setTheme] = useState(() => localStorage.getItem("ce_theme") || "light");
   const { data: settings } = useQuery({
@@ -79,7 +79,8 @@ export default function Layout() {
 
   return (
     <div className="relative z-[1] flex min-h-screen">
-      <aside className="sidebar shrink-0 h-screen overflow-hidden flex flex-col text-sm">
+      <aside className="sidebar shrink-0 h-screen flex flex-col justify-between overflow-hidden text-sm">
+          <div className="min-h-0 flex-1 flex flex-col">
           <div className="pb-4 mb-2 border-b border-slate-100 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <img
@@ -118,10 +119,10 @@ export default function Layout() {
             })}
           </nav>
           </div>
-          <div className="mt-auto pt-4 border-t border-slate-100 dark:border-gray-700">
-            <p className="text-xs font-medium text-[#0a2540] dark:text-white">{user?.fullName ?? "CRM User"}</p>
-            <p className="text-xs text-[#6b7c93] dark:text-gray-300">{user?.role ?? "team_member"}</p>
-            <button onClick={clearSession} className="mt-3 w-full flex items-center justify-center gap-2 bg-red-500 text-white h-9 rounded-lg text-sm font-medium hover:bg-red-600 transition">
+          </div>
+          <div className="p-3 border-t border-slate-100 dark:border-gray-700 space-y-3">
+            <SidebarCalendar />
+            <button onClick={clearSession} className="w-full bg-gray-900 text-white py-2 rounded hover:bg-black flex items-center justify-center gap-2">
               <LogOut size={14} /> Logout
             </button>
           </div>
