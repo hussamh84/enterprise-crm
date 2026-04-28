@@ -590,6 +590,27 @@ a.btn-approve {
   text-decoration: none;
 }
 
+/* Quotations + Invoices: unify primary actions to black only */
+.quotation-invoice-theme .btn-primary,
+.quotation-invoice-theme a.btn-primary,
+.quotation-invoice-theme .btn-pdf,
+.quotation-invoice-theme a.btn-pdf,
+.quotation-invoice-theme .btn-approve,
+.quotation-invoice-theme a.btn-approve {
+  background: #111827;
+  color: #fff !important;
+}
+
+.quotation-invoice-theme .btn-primary:hover:not(:disabled),
+.quotation-invoice-theme a.btn-primary:hover,
+.quotation-invoice-theme .btn-pdf:hover:not(:disabled),
+.quotation-invoice-theme a.btn-pdf:hover,
+.quotation-invoice-theme .btn-approve:hover:not(:disabled),
+.quotation-invoice-theme a.btn-approve:hover {
+  background: #000000;
+  filter: none;
+}
+
 .header-actions {
   display: flex;
   gap: 8px;

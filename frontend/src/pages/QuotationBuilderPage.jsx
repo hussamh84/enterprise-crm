@@ -151,7 +151,7 @@ export default function QuotationBuilderPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 quotation-invoice-theme">
       <div
         style={{
           display: "flex",

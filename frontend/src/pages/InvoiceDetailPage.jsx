@@ -80,12 +80,12 @@ export default function InvoiceDetailPage() {
   const summaryTax = Number(data.summaryTax ?? 0);
 
   return (
-    <div className="enterprise-doc p-6 pb-10 max-w-5xl mx-auto">
+    <div className="enterprise-doc p-6 pb-10 max-w-5xl mx-auto quotation-invoice-theme">
       <div className="flex justify-end gap-2 flex-wrap enterprise-doc-section">
         <button
           type="button"
           onClick={() => openPdf(`/invoices/${invoiceId}/pdf`)}
-          className="rounded-lg bg-[#4f46e5] text-white px-3 py-2 text-sm font-medium hover:bg-[#4338ca] shadow-sm"
+          className="rounded-lg bg-[#111827] text-white px-3 py-2 text-sm font-medium hover:bg-black shadow-sm"
         >
           Print PDF
         </button>
