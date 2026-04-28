@@ -1130,35 +1130,32 @@ body.dark-mode .totals-box {
   cursor: pointer;
 }
 
-button,
-.btn-primary {
-  background: #111827 !important;
-  color: #ffffff !important;
-  border: none !important;
+/* Dark button contrast rule (scoped + maintainable).
+   Apply white text ONLY when the button background is intentionally dark. */
+.btn-black,
+button.btn-black,
+a.btn-black,
+.btn-dark,
+button.btn-dark,
+a.btn-dark,
+button.bg-black,
+a.bg-black,
+button.bg-\[\#111827\],
+a.bg-\[\#111827\],
+button.bg-\[\#000000\],
+a.bg-\[\#000000\],
+button[class*="bg-black"],
+a[class*="bg-black"],
+button[class*="bg-[#111827]"],
+a[class*="bg-[#111827]"] {
+  color: #ffffff;
 }
 
-button:hover {
-  background: #000000 !important;
-}
-
-button,
-.btn {
-  color: #ffffff !important;
-}
-
-button * {
-  color: #ffffff !important;
-}
-
-button,
-.btn,
-[class*="btn"] {
-  background: #111827 !important;
-  color: #ffffff !important;
-  border: none !important;
-}
-
-button:hover,
-.btn:hover {
-  background: #000000 !important;
+.btn-black *,
+button.btn-black *,
+a.btn-black *,
+.btn-dark *,
+button.btn-dark *,
+a.btn-dark * {
+  color: inherit;
 }
