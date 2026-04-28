@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BriefcaseBusiness, DollarSign, Search, TrendingUp, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
 
@@ -8,6 +9,7 @@ const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const now = new Date();
   const { data } = useQuery({
     queryKey: ["kpis"],
@@ -61,7 +63,16 @@ export default function DashboardPage() {
     <div className="space-y-4 bg-gray-50 rounded-lg p-2">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
-        <div className="text-sm text-slate-500">{today}</div>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">{today}</span>
+          <button
+            type="button"
+            onClick={() => navigate("/reports")}
+            className="border border-slate-300 px-3 py-1 rounded text-sm text-slate-700 hover:bg-slate-50"
+          >
+            Generate Report
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">

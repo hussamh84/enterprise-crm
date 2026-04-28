@@ -48,12 +48,6 @@ export default function Layout() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const searchShellRef = useRef(null);
-  const today = new Date().toLocaleDateString(undefined, {
-    weekday: "short",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
   const { data: settings } = useQuery({
     queryKey: ["workspace-settings"],
     queryFn: async () => (await api.get("/settings")).data,
@@ -210,7 +204,6 @@ export default function Layout() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="text-sm text-gray-500">{today}</div>
               <div ref={searchShellRef} className="relative min-w-[240px] w-full max-w-md">
                 <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 h-9 text-slate-500 bg-white">
                   <Search size={15} className="shrink-0" />
