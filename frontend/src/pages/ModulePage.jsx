@@ -472,7 +472,9 @@ export default function ModulePage({ title, endpoint }) {
                       item?.status
                     )}`}
                   >
-                    {getQuotationStatusLabel(item?.status)}
+                    {String(item?.source || "").toLowerCase() === "inventory"
+                      ? "Inventory Sale"
+                      : getQuotationStatusLabel(item?.status)}
                   </span>
                 </div>
 
@@ -563,7 +565,7 @@ export default function ModulePage({ title, endpoint }) {
                   <span
                     className={`rounded-full px-2 py-1 text-xs font-medium ${getInvoiceStatusBadge(statusLabel)}`}
                   >
-                    {statusLabel}
+                    {String(item?.source || "").toLowerCase() === "inventory" ? "Inventory Sale" : statusLabel}
                   </span>
                 </div>
 
@@ -599,6 +601,9 @@ export default function ModulePage({ title, endpoint }) {
             <p className="page-subtitle">Manage all your {title.toLowerCase()}</p>
           </div>
           <div className="flex items-center gap-2">
+            <Link to="/sales/new" className="button-primary">
+              Sell
+            </Link>
             <button type="button" className="btn-secondary btn-compact" onClick={downloadInventorySample}>
               Download sample Excel format
             </button>

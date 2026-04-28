@@ -69,7 +69,8 @@ const Activity = makeEntityModel("Activity", { type: String, dueAt: Date, remind
 const SiteVisit = makeEntityModel("SiteVisit", { visitDate: Date, assignedTechnician: String, report: String, images: [String] });
 const Quotation = makeEntityModel("Quotation", {
   clientId: { type: String, required: true },
-  projectId: { type: String, required: true },
+  projectId: { type: String, default: null },
+  source: { type: String, enum: ["project", "inventory"], default: "project" },
   quotationNo: { type: String, trim: true },
   status: { type: String, default: "draft" },
   items: [
@@ -117,8 +118,20 @@ const Project = makeEntityModel("Project", {
 });
 const Invoice = makeEntityModel("Invoice", {
   clientId: { type: String, required: true },
-  projectId: { type: String, required: true },
+  projectId: { type: String, default: null },
+  source: { type: String, enum: ["project", "inventory"], default: "project" },
   quotationId: { type: String },
+  items: [
+    {
+      productId: { type: String, default: "" },
+      name: { type: String, trim: true, default: "" },
+      description: { type: String, trim: true, default: "" },
+      quantity: { type: Number, default: 1 },
+      price: { type: Number, default: 0 },
+      unitPrice: { type: Number, default: 0 },
+      total: { type: Number, default: 0 },
+    },
+  ],
   invoiceNo: { type: String, trim: true },
   total: { type: Number, default: 0 },
   paidAmount: { type: Number, default: 0 },
@@ -262,12 +275,10 @@ const ensureClientProjectLink = async ({ tenantId, clientId, projectId }) => {
   return { client, project };
 };
 
-const calculateInvoiceProfitFromQuotation = async ({ tenantId, quotationId }) => {
-  if (!quotationId) return 0;
-  const quotation = await Quotation.findOne({ _id: String(quotationId), tenantId, deletedAt: null }).lean();
-  if (!quotation) return 0;
-  const items = Array.isArray(quotation.items) ? quotation.items : [];
-  const productIds = [...new Set(items.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
+const calculateInvoiceProfitFromItems = async ({ tenantId, items = [] }) => {
+  const safeItems = Array.isArray(items) ? items : [];
+  if (!safeItems.length) return 0;
+  const productIds = [...new Set(safeItems.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
   if (!productIds.length) return 0;
 
   const products = await InventoryItem.find({
@@ -279,7 +290,7 @@ const calculateInvoiceProfitFromQuotation = async ({ tenantId, quotationId }) =>
     .lean();
   const productCostMap = Object.fromEntries(products.map((product) => [String(product._id), Number(product.cost || 0)]));
 
-  const totalProfit = items.reduce((sum, item) => {
+  const totalProfit = safeItems.reduce((sum, item) => {
     const productId = String(item?.productId || "").trim();
     if (!productId) return sum;
     const qty = Number(item?.quantity || item?.qty || 0);
@@ -292,20 +303,72 @@ const calculateInvoiceProfitFromQuotation = async ({ tenantId, quotationId }) =>
   return Number(totalProfit.toFixed(2));
 };
 
+const calculateInvoiceProfitFromQuotation = async ({ tenantId, quotationId }) => {
+  if (!quotationId) return 0;
+  const quotation = await Quotation.findOne({ _id: String(quotationId), tenantId, deletedAt: null }).lean();
+  if (!quotation) return 0;
+  const items = Array.isArray(quotation.items) ? quotation.items : [];
+  return calculateInvoiceProfitFromItems({ tenantId, items });
+};
+
+const normalizeInventorySaleItems = async ({ tenantId, items = [], enforceInventoryPrice = false }) => {
+  const safeItems = Array.isArray(items) ? items : [];
+  const productIds = [...new Set(safeItems.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
+  if (!productIds.length) return [];
+  const products = await InventoryItem.find({
+    tenantId,
+    _id: { $in: productIds },
+    deletedAt: null,
+  })
+    .select("_id name price")
+    .lean();
+  const productMap = Object.fromEntries(products.map((product) => [String(product._id), product]));
+
+  return safeItems
+    .map((item) => {
+      const productId = String(item?.productId || "").trim();
+      if (!productId) return null;
+      const product = productMap[productId];
+      if (!product) throw new AppError("Each sale item must reference a valid inventory product.", 400);
+      const quantity = Number(item?.quantity || item?.qty || 0);
+      if (!Number.isFinite(quantity) || quantity <= 0) return null;
+      const requestedPrice = Number(item?.unitPrice ?? item?.price ?? product.price ?? 0);
+      const unitPrice = enforceInventoryPrice ? Number(product.price ?? 0) : (Number.isFinite(requestedPrice) ? requestedPrice : 0);
+      const total = Number((quantity * unitPrice).toFixed(2));
+      const resolvedName = String(product.name || item?.name || item?.description || "").trim();
+      return {
+        productId,
+        name: resolvedName,
+        description: resolvedName,
+        quantity,
+        price: unitPrice,
+        unitPrice,
+        total,
+      };
+    })
+    .filter(Boolean);
+};
+
 const deductInventoryForInvoice = async ({ invoice, tenantId, userId, session = null }) => {
   if (!invoice || invoice.stockDeducted) return invoice;
-  if (!invoice.quotationId) return invoice;
-
-  const quotation = await Quotation.findOne({
-    _id: String(invoice.quotationId),
-    tenantId,
-    deletedAt: null,
-  }).session(session);
-  if (!quotation) return invoice;
-
-  const items = (Array.isArray(quotation.items) ? quotation.items : []).filter(
-    (item) => String(item?.productId || "").trim() && Number(item?.quantity || 0) > 0
-  );
+  const source = String(invoice.source || "project").toLowerCase();
+  let items = [];
+  if (source === "inventory") {
+    items = (Array.isArray(invoice.items) ? invoice.items : []).filter(
+      (item) => String(item?.productId || "").trim() && Number(item?.quantity || item?.qty || 0) > 0
+    );
+  } else {
+    if (!invoice.quotationId) return invoice;
+    const quotation = await Quotation.findOne({
+      _id: String(invoice.quotationId),
+      tenantId,
+      deletedAt: null,
+    }).session(session);
+    if (!quotation) return invoice;
+    items = (Array.isArray(quotation.items) ? quotation.items : []).filter(
+      (item) => String(item?.productId || "").trim() && Number(item?.quantity || 0) > 0
+    );
+  }
   if (!items.length) return invoice;
 
   const productIds = [...new Set(items.map((item) => String(item.productId).trim()))];
@@ -490,7 +553,8 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
           invoiceNo,
           name: quotation.name || invoiceNo,
           clientId: String(quotation.clientId),
-          projectId: String(quotation.projectId),
+          projectId: quotation.projectId ? String(quotation.projectId) : null,
+          source: "project",
           quotationId: String(quotation._id),
           total,
           profit: calculatedProfit,
@@ -847,6 +911,8 @@ router.use("/activities", buildCrudRouter({ model: Activity, entity: "activity" 
 router.use("/site-visits", buildCrudRouter({ model: SiteVisit, entity: "site_visit" }));
 const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
   const rawItems = Array.isArray(payload.items) ? payload.items : [];
+  const source = String(payload?.source || "project").toLowerCase();
+  const isInventorySource = source === "inventory";
   const productIds = [...new Set(rawItems.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
   if (!productIds.length && rawItems.length > 0) {
     throw new AppError("Each quotation item must reference an inventory product.", 400);
@@ -870,7 +936,10 @@ const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
     }
     const resolvedName = String(inventoryProduct.name || "").trim();
     const quantity = Number(item.quantity || 0);
-    const unitPrice = Number(inventoryProduct.price ?? 0);
+    const requestedPrice = Number(item.unitPrice ?? item.price ?? inventoryProduct.price ?? 0);
+    const unitPrice = isInventorySource
+      ? (Number.isFinite(requestedPrice) ? requestedPrice : Number(inventoryProduct.price ?? 0))
+      : Number(inventoryProduct.price ?? 0);
     const total = Number((quantity * unitPrice).toFixed(2));
     return {
       productId,
@@ -967,10 +1036,13 @@ router.post("/quotations", async (req, res, next) => {
     const tenantId = getTenantId(req);
     if (!tenantId) return next(new AppError("Tenant context is required", 400));
     const clientId = String(req.body?.clientId || "").trim();
-    const projectId = String(req.body?.projectId || "").trim();
+    const source = String(req.body?.source || "project").toLowerCase() === "inventory" ? "inventory" : "project";
+    const projectId = source === "inventory" ? null : String(req.body?.projectId || "").trim();
     if (!clientId) return res.status(400).json({ message: "clientId is required" });
-    if (!projectId) return res.status(400).json({ message: "projectId is required" });
-    await ensureClientProjectLink({ tenantId, clientId, projectId });
+    if (source === "project") {
+      if (!projectId) return res.status(400).json({ message: "projectId is required" });
+      await ensureClientProjectLink({ tenantId, clientId, projectId });
+    }
     const quotationNo = await generateDocumentNo({ model: Quotation, prefix: "QTN", tenantId });
 
     const calculated = await computeQuotationTotals({ tenantId, payload: req.body });
@@ -980,6 +1052,7 @@ router.post("/quotations", async (req, res, next) => {
       name: String(req.body?.name || "").trim() || quotationNo,
       clientId,
       projectId,
+      source,
       ...calculated,
       status: "draft",
       tenantId,
@@ -1000,10 +1073,13 @@ router.put("/quotations/:id", async (req, res, next) => {
     const tenantId = getTenantId(req);
     if (!tenantId) return next(new AppError("Tenant context is required", 400));
     const clientId = String(req.body?.clientId || "").trim();
-    const projectId = String(req.body?.projectId || "").trim();
+    const source = String(req.body?.source || "project").toLowerCase() === "inventory" ? "inventory" : "project";
+    const projectId = source === "inventory" ? null : String(req.body?.projectId || "").trim();
     if (!clientId) return res.status(400).json({ message: "clientId is required" });
-    if (!projectId) return res.status(400).json({ message: "projectId is required" });
-    await ensureClientProjectLink({ tenantId, clientId, projectId });
+    if (source === "project") {
+      if (!projectId) return res.status(400).json({ message: "projectId is required" });
+      await ensureClientProjectLink({ tenantId, clientId, projectId });
+    }
 
     const calculated = await computeQuotationTotals({ tenantId, payload: req.body });
     const doc = await Quotation.findOneAndUpdate(
@@ -1012,6 +1088,7 @@ router.put("/quotations/:id", async (req, res, next) => {
         ...req.body,
         clientId,
         projectId,
+        source,
         ...calculated,
         updatedBy: req.user?.id,
         $push: { auditLog: { action: "quotation.update", by: req.user?.id, note: "Updated quotation" } },
@@ -1033,7 +1110,8 @@ router.patch("/quotations/:id/approve", async (req, res, next) => {
     if (!tenantId) return next(new AppError("Tenant context is required", 400));
     const before = await Quotation.findOne({ _id: req.params.id, tenantId, deletedAt: null });
     if (!before) return res.status(404).json({ message: "Quotation not found" });
-    if (before.projectId == null || String(before.projectId).trim() === "") {
+    const quotationSource = String(before.source || "project").toLowerCase();
+    if (quotationSource === "project" && (before.projectId == null || String(before.projectId).trim() === "")) {
       return res.status(400).json({
         message: "Quotation must be linked to a project before approval.",
       });
@@ -1359,11 +1437,20 @@ router.post("/invoices", async (req, res, next) => {
     const tenantId = getTenantId(req);
     if (!tenantId) return next(new AppError("Tenant context is required", 400));
     const clientId = String(req.body?.clientId || "").trim();
-    const projectId = String(req.body?.projectId || "").trim();
+    const source = String(req.body?.source || "project").toLowerCase() === "inventory" ? "inventory" : "project";
+    const projectId = source === "inventory" ? null : String(req.body?.projectId || "").trim();
     if (!clientId) return res.status(400).json({ message: "clientId is required" });
-    if (!projectId) return res.status(400).json({ message: "projectId is required" });
-    await ensureClientProjectLink({ tenantId, clientId, projectId });
-    const total = Number(req.body?.total ?? 0);
+    if (source === "project") {
+      if (!projectId) return res.status(400).json({ message: "projectId is required" });
+      await ensureClientProjectLink({ tenantId, clientId, projectId });
+    }
+
+    const normalizedItems = source === "inventory"
+      ? await normalizeInventorySaleItems({ tenantId, items: req.body?.items, enforceInventoryPrice: false })
+      : [];
+    const total = source === "inventory"
+      ? Number(normalizedItems.reduce((sum, item) => sum + Number(item.total || 0), 0).toFixed(2))
+      : Number(req.body?.total ?? 0);
     if (!Number.isFinite(total) || total < 0) return res.status(400).json({ message: "total must be >= 0" });
 
     const requestedPaid = req.body?.status === "paid";
@@ -1371,10 +1458,12 @@ router.post("/invoices", async (req, res, next) => {
     const safePaidAmount = Number.isFinite(paidAmount) && paidAmount >= 0 ? Math.min(paidAmount, total) : 0;
     const remainingAmount = Math.max(total - safePaidAmount, 0);
     const status = safePaidAmount >= total ? "paid" : "unpaid";
-    const calculatedProfit = await calculateInvoiceProfitFromQuotation({
-      tenantId,
-      quotationId: req.body?.quotationId,
-    });
+    const calculatedProfit = source === "inventory"
+      ? await calculateInvoiceProfitFromItems({ tenantId, items: normalizedItems })
+      : await calculateInvoiceProfitFromQuotation({
+          tenantId,
+          quotationId: req.body?.quotationId,
+        });
     const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV", tenantId });
 
     let doc = null;
@@ -1388,6 +1477,8 @@ router.post("/invoices", async (req, res, next) => {
             name: String(req.body?.name || "").trim() || invoiceNo,
             clientId,
             projectId,
+            source,
+            items: source === "inventory" ? normalizedItems : (Array.isArray(req.body?.items) ? req.body.items : []),
             total,
             profit: calculatedProfit,
             paidAmount: safePaidAmount,
@@ -1412,7 +1503,9 @@ router.post("/invoices", async (req, res, next) => {
     } finally {
       await session.endSession();
     }
-    await syncProjectFinancialsForProject({ tenantId, projectId, userId: req.user?.id });
+    if (projectId) {
+      await syncProjectFinancialsForProject({ tenantId, projectId, userId: req.user?.id });
+    }
     res.status(201).json(doc);
   } catch (error) {
     next(error);
@@ -1469,11 +1562,13 @@ router.patch("/invoices/:id/pay", async (req, res, next) => {
       await session.endSession();
     }
 
-    await syncProjectFinancialsForProject({
-      tenantId: req.tenantId,
-      projectId: invoice.projectId,
-      userId: req.user?.id,
-    });
+    if (invoice.projectId) {
+      await syncProjectFinancialsForProject({
+        tenantId: req.tenantId,
+        projectId: invoice.projectId,
+        userId: req.user?.id,
+      });
+    }
     res.json(updatedInvoice || invoice);
   } catch (error) {
     next(error);

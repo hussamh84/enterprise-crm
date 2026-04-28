@@ -58,6 +58,12 @@ export default function ClientDetailsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link
+            to={`/sales/new?clientId=${encodeURIComponent(clientId)}`}
+            className="btn-primary"
+          >
+            Sell from Inventory
+          </Link>
+          <Link
             to={`/projects/new?clientId=${encodeURIComponent(clientId)}`}
             className="rounded-lg bg-gray-900 text-white px-3 py-2 text-sm font-medium hover:bg-black"
             data-ui="create-project-btn"

@@ -364,10 +364,15 @@ router.get("/invoices/:id/pdf", async (req, res, next) => {
     const paid = Number(invoice.paidAmount || 0);
     const remaining = Number(invoice.remainingAmount ?? Math.max(total - paid, 0));
     const paidLabel = remaining <= 0 || String(invoice.status || "").toLowerCase() === "paid" ? "PAID" : "UNPAID";
+    const invoiceItems = Array.isArray(invoice.items) ? invoice.items : [];
     const items = quotation?.items?.length
       ? quotation.items
-      : [{ description: "Invoice amount", quantity: 1, unitPrice: total, total }];
-    const discount = quotation?.discount && typeof quotation.discount === "object" ? quotation.discount : { amount: 0 };
+      : invoiceItems.length
+        ? invoiceItems
+        : [{ description: "Invoice amount", quantity: 1, unitPrice: total, total }];
+    const discount = quotation?.discount && typeof quotation.discount === "object"
+      ? quotation.discount
+      : { amount: 0 };
     const tax = quotation ? Number(quotation.tax ?? 0) : 0;
     const grandTotal = total;
 

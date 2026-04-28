@@ -14,6 +14,7 @@ import EditClientPage from "./pages/EditClientPage";
 import QuotationBuilderPage from "./pages/QuotationBuilderPage";
 import QuotationViewPage from "./pages/QuotationViewPage";
 import CreateProjectPage from "./pages/CreateProjectPage";
+import SalesFromInventoryPage from "./pages/SalesFromInventoryPage";
 import InvoiceDetailPage from "./pages/InvoiceDetailPage";
 import UsersPage from "./pages/UsersPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -56,6 +57,7 @@ function App() {
           <Route path="quotations/:id" element={<QuotationViewPage />} />
           <Route path="projects" element={<ModulePage title="Projects" endpoint="/projects" />} />
           <Route path="projects/new" element={<CreateProjectPage />} />
+          <Route path="sales/new" element={<SalesFromInventoryPage />} />
           <Route path="projects/:projectId" element={<ProjectDetailsPage />} />
           <Route path="invoices" element={<ModulePage title="Invoices" endpoint="/invoices" />} />
           <Route path="invoices/:invoiceId" element={<InvoiceDetailPage />} />
