@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet } from "react-router-dom";
 import api from "../lib/api";
-import SidebarCalendar from "./SidebarCalendar";
 import { syncCurrencyConfig } from "../config/currency";
 import { useAuthStore } from "../store/authStore";
 
@@ -46,6 +45,12 @@ const handleLogoError = (event) => {
 export default function Layout() {
   const clearSession = useAuthStore((s) => s.clearSession);
   const [theme, setTheme] = useState(() => localStorage.getItem("ce_theme") || "light");
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
   const { data: settings } = useQuery({
     queryKey: ["workspace-settings"],
     queryFn: async () => (await api.get("/settings")).data,
@@ -120,8 +125,7 @@ export default function Layout() {
           </nav>
           </div>
           </div>
-          <div className="p-3 border-t border-slate-100 dark:border-gray-700 space-y-3">
-            <SidebarCalendar />
+          <div className="p-3 border-t border-slate-100 dark:border-gray-700">
             <button onClick={clearSession} className="w-full bg-gray-900 text-white py-2 rounded hover:bg-black flex items-center justify-center gap-2">
               <LogOut size={14} /> Logout
             </button>
@@ -144,6 +148,7 @@ export default function Layout() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <div className="text-sm text-gray-500">{today}</div>
               <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 h-9 text-slate-500 min-w-[240px] max-w-md bg-white">
                 <Search size={15} className="shrink-0" />
                 <input
