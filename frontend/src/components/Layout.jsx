@@ -1,7 +1,7 @@
 import { Bell, Briefcase, LayoutDashboard, LogOut, Search, Settings, ShieldCheck, User, UserCircle2, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { syncCurrencyConfig } from "../config/currency";
 import { useAuthStore } from "../store/authStore";
@@ -41,8 +41,13 @@ const handleLogoError = (event) => {
 };
 
 export default function Layout() {
+  const navigate = useNavigate();
   const clearSession = useAuthStore((s) => s.clearSession);
   const [theme, setTheme] = useState(() => localStorage.getItem("ce_theme") || "light");
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const searchShellRef = useRef(null);
   const today = new Date().toLocaleDateString(undefined, {
     weekday: "short",
     year: "numeric",
@@ -52,6 +57,18 @@ export default function Layout() {
   const { data: settings } = useQuery({
     queryKey: ["workspace-settings"],
     queryFn: async () => (await api.get("/settings")).data,
+  });
+  const { data: clients = [] } = useQuery({
+    queryKey: ["global-search-clients"],
+    queryFn: async () => (await api.get("/clients")).data,
+  });
+  const { data: projects = [] } = useQuery({
+    queryKey: ["global-search-projects"],
+    queryFn: async () => (await api.get("/projects")).data,
+  });
+  const { data: inventory = [] } = useQuery({
+    queryKey: ["global-search-inventory"],
+    queryFn: async () => (await api.get("/inventory")).data,
   });
 
   useEffect(() => {
@@ -79,6 +96,52 @@ export default function Layout() {
       document.body.classList.remove("dashboard-theme");
     };
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (!searchShellRef.current?.contains(event.target)) {
+        setShowSearchResults(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
+  const searchResults = useMemo(() => {
+    const q = debouncedQuery.toLowerCase();
+    if (!q) {
+      return { clients: [], projects: [], inventory: [] };
+    }
+    const includesQuery = (value) => String(value || "").toLowerCase().includes(q);
+    return {
+      clients: (Array.isArray(clients) ? clients : [])
+        .filter((c) => includesQuery(c?.name) || includesQuery(c?.email) || includesQuery(c?.phone))
+        .slice(0, 5),
+      projects: (Array.isArray(projects) ? projects : [])
+        .filter((p) => includesQuery(p?.name) || includesQuery(p?.title) || includesQuery(p?.code))
+        .slice(0, 5),
+      inventory: (Array.isArray(inventory) ? inventory : [])
+        .filter((i) => includesQuery(i?.name) || includesQuery(i?.sku) || includesQuery(i?.category))
+        .slice(0, 5),
+    };
+  }, [clients, projects, inventory, debouncedQuery]);
+
+  const hasSearchResults =
+    searchResults.clients.length || searchResults.projects.length || searchResults.inventory.length;
+
+  const handleSearchItemClick = (path) => {
+    setShowSearchResults(false);
+    setQuery("");
+    setDebouncedQuery("");
+    navigate(path);
+  };
 
   return (
     <div className="relative z-[1] flex min-h-screen bg-[#f8fafc]">
@@ -148,13 +211,75 @@ export default function Layout() {
             </div>
             <div className="flex items-center gap-3">
               <div className="text-sm text-gray-500">{today}</div>
-              <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 h-9 text-slate-500 min-w-[240px] max-w-md bg-white">
-                <Search size={15} className="shrink-0" />
-                <input
-                  type="search"
-                  className="layout-search-input !min-h-0 h-full py-0 border-0 shadow-none bg-transparent text-sm w-full placeholder:text-slate-400 outline-none"
-                  placeholder="Search..."
-                />
+              <div ref={searchShellRef} className="relative min-w-[240px] w-full max-w-md">
+                <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 h-9 text-slate-500 bg-white">
+                  <Search size={15} className="shrink-0" />
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    onFocus={() => setShowSearchResults(true)}
+                    className="layout-search-input !min-h-0 h-full py-0 border-0 shadow-none bg-transparent text-sm w-full placeholder:text-slate-400 outline-none"
+                    placeholder="Search clients, projects, inventory..."
+                  />
+                </div>
+                {showSearchResults && query.trim() ? (
+                  <div className="absolute top-full mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg p-2 z-40 max-h-80 overflow-auto">
+                    {hasSearchResults ? (
+                      <>
+                        <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Clients</p>
+                        {searchResults.clients.length ? (
+                          searchResults.clients.map((item) => (
+                            <button
+                              key={item._id}
+                              type="button"
+                              onClick={() => handleSearchItemClick(`/clients/${item._id}`)}
+                              className="w-full text-left px-2 py-1.5 rounded text-sm text-slate-700 hover:bg-slate-100"
+                            >
+                              {item.name || "Unnamed Client"}
+                            </button>
+                          ))
+                        ) : (
+                          <p className="px-2 py-1 text-xs text-slate-400">No clients found</p>
+                        )}
+
+                        <p className="px-2 py-1 mt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Projects</p>
+                        {searchResults.projects.length ? (
+                          searchResults.projects.map((item) => (
+                            <button
+                              key={item._id}
+                              type="button"
+                              onClick={() => handleSearchItemClick(`/projects/${item._id}`)}
+                              className="w-full text-left px-2 py-1.5 rounded text-sm text-slate-700 hover:bg-slate-100"
+                            >
+                              {item.name || item.title || "Unnamed Project"}
+                            </button>
+                          ))
+                        ) : (
+                          <p className="px-2 py-1 text-xs text-slate-400">No projects found</p>
+                        )}
+
+                        <p className="px-2 py-1 mt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Inventory</p>
+                        {searchResults.inventory.length ? (
+                          searchResults.inventory.map((item) => (
+                            <button
+                              key={item._id}
+                              type="button"
+                              onClick={() => handleSearchItemClick(`/inventory/${item._id}`)}
+                              className="w-full text-left px-2 py-1.5 rounded text-sm text-slate-700 hover:bg-slate-100"
+                            >
+                              {item.name || "Unnamed Item"}
+                            </button>
+                          ))
+                        ) : (
+                          <p className="px-2 py-1 text-xs text-slate-400">No inventory found</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="px-2 py-1 text-sm text-slate-500">No matching results</p>
+                    )}
+                  </div>
+                ) : null}
               </div>
               <button type="button" className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 h-9 w-9 inline-flex items-center justify-center">
                 <Bell size={16} />
