@@ -287,7 +287,7 @@ export default function ModulePage({ title, endpoint }) {
 
   if (isQuotations) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-5 quotation-invoice-theme">
         <div className="flex justify-between items-center gap-3">
           <div>
             <h1 className="page-title">{title}</h1>
@@ -377,7 +377,7 @@ export default function ModulePage({ title, endpoint }) {
 
   if (isInvoices) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-5 quotation-invoice-theme">
         <div className="flex justify-between items-center gap-3">
           <div>
             <h1 className="page-title">{title}</h1>

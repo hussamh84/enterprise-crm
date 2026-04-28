@@ -601,6 +601,15 @@ a.btn-approve {
   color: #fff !important;
 }
 
+.quotation-invoice-theme button:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]),
+.quotation-invoice-theme .btn:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]),
+.quotation-invoice-theme [class*="btn"]:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]),
+.quotation-invoice-theme .actions button:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]) {
+  background: #111827 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
 .quotation-invoice-theme .btn-primary:hover:not(:disabled),
 .quotation-invoice-theme a.btn-primary:hover,
 .quotation-invoice-theme .btn-pdf:hover:not(:disabled),
@@ -609,6 +618,12 @@ a.btn-approve {
 .quotation-invoice-theme a.btn-approve:hover {
   background: #000000;
   filter: none;
+}
+
+.quotation-invoice-theme button:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]):hover,
+.quotation-invoice-theme .btn:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]):hover,
+.quotation-invoice-theme [class*="btn"]:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]):hover {
+  background: #000000 !important;
 }
 
 .header-actions {

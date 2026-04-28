@@ -81,7 +81,7 @@ export default function QuotationViewPage() {
   const refId = quotation?.quotationNo || "QTN";
 
   return (
-    <div className="enterprise-doc p-6 pb-10 max-w-5xl mx-auto">
+    <div className="enterprise-doc p-6 pb-10 max-w-5xl mx-auto quotation-invoice-theme">
       <div className="enterprise-doc-section page-header">
         <span className="rounded-full border border-[#e2e8f0] bg-[#f8fafc] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#475569]">
           {status}
@@ -100,7 +100,7 @@ export default function QuotationViewPage() {
           <button
             type="button"
             onClick={() => printPdf()}
-            className="rounded-lg bg-[#4f46e5] text-white px-3 py-2 text-sm font-medium hover:bg-[#4338ca] shadow-sm"
+            className="rounded-lg bg-[#111827] text-white px-3 py-2 text-sm font-medium hover:bg-black shadow-sm"
           >
             Print PDF
           </button>
@@ -109,7 +109,7 @@ export default function QuotationViewPage() {
               type="button"
               disabled={approveMutation.isPending}
               onClick={() => approveMutation.mutate()}
-              className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+              className="rounded-lg bg-[#111827] px-3 py-2 text-sm font-medium text-white hover:bg-black disabled:opacity-50"
             >
               {approveMutation.isPending ? "Approving…" : "Approve"}
             </button>
