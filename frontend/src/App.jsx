@@ -16,6 +16,7 @@ import QuotationViewPage from "./pages/QuotationViewPage";
 import CreateProjectPage from "./pages/CreateProjectPage";
 import SalesFromInventoryPage from "./pages/SalesFromInventoryPage";
 import InvoiceDetailPage from "./pages/InvoiceDetailPage";
+import SearchPage from "./pages/SearchPage";
 import UsersPage from "./pages/UsersPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
@@ -61,6 +62,7 @@ function App() {
           <Route path="projects/:projectId" element={<ProjectDetailsPage />} />
           <Route path="invoices" element={<ModulePage title="Invoices" endpoint="/invoices" />} />
           <Route path="invoices/:invoiceId" element={<InvoiceDetailPage />} />
+          <Route path="search" element={<SearchPage />} />
           <Route path="inventory" element={<ModulePage title="Inventory" endpoint="/inventory" />} />
           <Route path="tickets" element={<ModulePage title="Support Tickets" endpoint="/tickets" />} />
           <Route path="users" element={<UsersPage />} />

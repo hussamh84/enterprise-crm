@@ -1,7 +1,7 @@
 import { Bell, Briefcase, LayoutDashboard, LogOut, Search, Settings, ShieldCheck, User, UserCircle2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { syncCurrencyConfig } from "../config/currency";
 import { useAuthStore } from "../store/authStore";
@@ -43,8 +43,10 @@ const handleLogoError = (event) => {
 };
 
 export default function Layout() {
+  const navigate = useNavigate();
   const clearSession = useAuthStore((s) => s.clearSession);
   const [theme, setTheme] = useState(() => localStorage.getItem("ce_theme") || "light");
+  const [search, setSearch] = useState("");
   const today = new Date().toLocaleDateString(undefined, {
     weekday: "short",
     year: "numeric",
@@ -81,6 +83,12 @@ export default function Layout() {
       document.body.classList.remove("dashboard-theme");
     };
   }, []);
+
+  const handleSearch = () => {
+    const q = String(search || "").trim();
+    if (!q) return;
+    navigate(`/search?q=${encodeURIComponent(q)}`);
+  };
 
   return (
     <div className="relative z-[1] flex min-h-screen">
@@ -149,13 +157,25 @@ export default function Layout() {
             </div>
             <div className="flex items-center gap-3">
               <div className="text-sm text-gray-500">{today}</div>
-              <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 h-9 text-slate-500 min-w-[240px] max-w-md bg-white">
+              <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-2 h-9 text-slate-500 min-w-[280px] max-w-md bg-white">
                 <Search size={15} className="shrink-0" />
                 <input
                   type="search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") handleSearch();
+                  }}
                   className="layout-search-input !min-h-0 h-full py-0 border-0 shadow-none bg-transparent text-sm w-full placeholder:text-slate-400 outline-none"
                   placeholder="Search leads, clients, projects..."
                 />
+                <button
+                  type="button"
+                  onClick={handleSearch}
+                  className="bg-gray-900 text-white px-3 py-1 rounded text-xs hover:bg-black"
+                >
+                  Search
+                </button>
               </div>
               <button type="button" className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 h-9 w-9 inline-flex items-center justify-center">
                 <Bell size={16} />
