@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../lib/api";
 import { formatClientNumber } from "../utils/formatClientNumber";
@@ -11,6 +12,11 @@ console.log("CHECK PAGE:", __filename);
 export default function ModulePage({ title, endpoint }) {
   const queryClient = useQueryClient();
   const isInventory = endpoint === "/inventory";
+  const [name, setName] = useState("");
+  const [sku, setSku] = useState("");
+  const [price, setPrice] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [editingId, setEditingId] = useState(null);
 
   const { data = [], isLoading } = useQuery({
     queryKey: [endpoint],
@@ -177,30 +183,66 @@ export default function ModulePage({ title, endpoint }) {
     }
   };
 
-  const handleAddInventoryItem = async (event) => {
-    if (event?.preventDefault) event.preventDefault();
+  const resetInventoryForm = () => {
+    setName("");
+    setSku("");
+    setPrice("");
+    setQuantity("");
+    setEditingId(null);
+  };
+
+  const updateItem = async (id, data) => {
+    await api.put(`/inventory/${id}`, data);
+  };
+
+  const addItem = async (payload) => {
+    await api.post("/inventory", payload);
+  };
+
+  const handleEdit = (item) => {
+    setName(String(item?.name || ""));
+    setSku(String(item?.sku || ""));
+    setPrice(String(item?.price ?? ""));
+    setQuantity(String(item?.quantity ?? ""));
+    setEditingId(item?._id || null);
+  };
+
+  const handleAddItem = async (event) => {
+    event.preventDefault();
     console.log("ADD CLICKED");
-    const name = window.prompt("Item name");
-    if (!name || !name.trim()) return;
-    const sku = window.prompt("SKU code");
-    if (!sku || !sku.trim()) return;
+    if (!name.trim() || !sku.trim()) {
+      alert("Name and SKU are required.");
+      return;
+    }
+    const normalizedPrice = Number(price || 0);
+    const normalizedQuantity = Number(quantity || 0);
+    if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0 || !Number.isFinite(normalizedQuantity) || normalizedQuantity < 0) {
+      alert("Price and Quantity must be valid numbers >= 0.");
+      return;
+    }
+    const payload = {
+      name: name.trim(),
+      sku: sku.trim(),
+      price: normalizedPrice,
+      quantity: normalizedQuantity,
+      category: "General",
+      cost: 0,
+      minQuantity: 0,
+      unit: "pcs",
+      status: "active",
+    };
     try {
-      await api.post("/inventory", {
-        name: name.trim(),
-        sku: sku.trim(),
-        category: "General",
-        price: 0,
-        cost: 0,
-        quantity: 0,
-        minQuantity: 0,
-        unit: "pcs",
-        status: "active",
-      });
+      if (editingId) {
+        await updateItem(editingId, payload);
+      } else {
+        await addItem(payload);
+      }
       await queryClient.invalidateQueries([endpoint]);
-      alert("Inventory item added.");
+      resetInventoryForm();
+      alert(editingId ? "Inventory item updated." : "Inventory item added.");
     } catch (error) {
       console.error(error);
-      const message = error?.response?.data?.message || "Failed to add item.";
+      const message = error?.response?.data?.message || "Failed to save item.";
       alert(message);
     }
   };
@@ -542,6 +584,116 @@ export default function ModulePage({ title, endpoint }) {
             );
           })}
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isInventory) {
+    return (
+      <div className="space-y-5">
+        <div className="flex justify-between items-center gap-3">
+          <div>
+            <h1 className="page-title">{title}</h1>
+            <p className="page-subtitle">Manage all your {title.toLowerCase()}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button type="button" className="btn-secondary btn-compact" onClick={downloadInventorySample}>
+              Download sample Excel format
+            </button>
+            <label className="button-primary cursor-pointer">
+              Import Excel
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={handleInventoryImport}
+              />
+            </label>
+          </div>
+        </div>
+
+        <form onSubmit={handleAddItem} className="card grid md:grid-cols-5 gap-3 items-end">
+          <input
+            className="input-field"
+            placeholder="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <input
+            className="input-field"
+            placeholder="SKU"
+            value={sku}
+            onChange={(e) => setSku(e.target.value)}
+          />
+          <input
+            type="number"
+            className="input-field"
+            placeholder="Price"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+          />
+          <input
+            type="number"
+            className="input-field"
+            placeholder="Quantity"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+          />
+          <div className="flex items-center gap-2">
+            <button type="submit" className="button-primary">
+              {editingId ? "Update" : "Add"}
+            </button>
+            {editingId ? (
+              <button type="button" className="btn-secondary btn-compact" onClick={resetInventoryForm}>
+                Cancel
+              </button>
+            ) : null}
+          </div>
+        </form>
+
+        <div className="card !p-0 overflow-hidden">
+          <div className="saas-table-shell border-0 rounded-none overflow-x-auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>SKU</th>
+                  <th>Price</th>
+                  <th>Quantity</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((item) => (
+                  <tr key={item._id} className={item?.lowStock ? "bg-rose-50" : ""}>
+                    <td>{item.name}</td>
+                    <td>{item.sku}</td>
+                    <td className="numeric">{formatCurrency(item.price || 0)}</td>
+                    <td>{item.quantity}</td>
+                    <td>
+                      {item?.lowStock ? (
+                        <span className="px-2 py-1 rounded text-xs bg-rose-100 text-rose-700">Low Stock</span>
+                      ) : (
+                        <span className="px-2 py-1 rounded text-xs bg-emerald-100 text-emerald-700">In Stock</span>
+                      )}
+                    </td>
+                    <td>
+                      <div className="flex gap-2">
+                        <button type="button" className="btn-secondary btn-compact" onClick={() => handleEdit(item)}>
+                          Edit
+                        </button>
+                        <Link to={`${endpoint}/${item._id}`} className="btn-secondary btn-compact">
+                          View
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
