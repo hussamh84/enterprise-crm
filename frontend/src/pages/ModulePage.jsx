@@ -682,6 +682,9 @@ export default function ModulePage({ title, endpoint }) {
                     </td>
                     <td>
                       <div className="flex gap-2">
+                        <Link to={`/inventory/${item._id}`} className="inventory-btn btn-black">
+                          View
+                        </Link>
                         <button type="button" className="inventory-btn btn-secondary" onClick={() => handleEdit(item)}>
                           Edit
                         </button>

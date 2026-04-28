@@ -1159,3 +1159,43 @@ button.btn-dark *,
 a.btn-dark * {
   color: inherit;
 }
+
+/* Reusable dark button style */
+.btn-black,
+button.btn-black,
+a.btn-black {
+  background: #111827;
+  color: #ffffff !important;
+  border: none;
+}
+
+.btn-black:hover:not(:disabled),
+a.btn-black:hover {
+  background: #000000;
+  color: #ffffff !important;
+}
+
+/* Safe purple override for legacy utility classes */
+.bg-purple-600,
+.bg-purple-500 {
+  background: #111827 !important;
+  color: #ffffff !important;
+}
+
+/* Dropdown/autocomplete readability fix */
+.dropdown,
+.autocomplete,
+[role="listbox"] {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border: 1px solid #d1d5db !important;
+}
+
+[role="option"] {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+[role="option"]:hover {
+  background: #f3f4f6 !important;
+}

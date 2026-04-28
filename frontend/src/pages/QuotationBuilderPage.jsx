@@ -253,8 +253,8 @@ export default function QuotationBuilderPage() {
 
         <div className="space-y-3">
           {items.map((item, index) => (
-            <div key={`quotation-item-${index}`} className="q-row">
-              <div className="q-item relative">
+            <div key={`quotation-item-${index}`} className="grid grid-cols-12 gap-3 items-center">
+              <div className="col-span-3 relative">
                 <input
                   className="input-field"
                   value={itemSearch[index] ?? item.description}
@@ -284,7 +284,7 @@ export default function QuotationBuilderPage() {
               <input
                 type="number"
                 min="0"
-                className="q-qty input-field text-center"
+                className="col-span-2 input-field text-center"
                 value={item.quantity}
                 onChange={(event) => updateItem(index, "quantity", event.target.value)}
                 placeholder="Qty"
@@ -292,17 +292,17 @@ export default function QuotationBuilderPage() {
               <input
                 type="number"
                 min="0"
-                className="q-price input-field price numeric"
+                className="col-span-2 input-field price numeric"
                 value={item.unitPrice}
                 onChange={(event) => updateItem(index, "unitPrice", event.target.value)}
                 placeholder="Unit price"
                 readOnly={Boolean(item.lockPrice)}
               />
-              <div className="q-total total-field numeric">
+              <div className="col-span-2 total-field numeric">
                 {formatCurrency(calculatedItems[index]?.total)}
               </div>
 
-              <button type="button" className="q-delete delete-btn text-slate-500 hover:text-rose-600" onClick={() => removeItem(index)} aria-label="Remove line">
+              <button type="button" className="col-span-3 delete-btn text-slate-500 hover:text-rose-600 justify-self-start" onClick={() => removeItem(index)} aria-label="Remove line">
                 <Trash2 size={16} />
               </button>
             </div>
