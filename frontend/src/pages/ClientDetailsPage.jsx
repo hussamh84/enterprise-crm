@@ -60,6 +60,7 @@ export default function ClientDetailsPage() {
           <Link
             to={`/projects/new?clientId=${encodeURIComponent(clientId)}`}
             className="btn-primary btn-black create-project"
+            data-ui="create-project-btn"
           >
             Create project
           </Link>
@@ -117,6 +118,7 @@ export default function ClientDetailsPage() {
             <Link
               to={`/projects/new?clientId=${encodeURIComponent(clientId)}`}
               className="btn-primary btn-black create-project"
+              data-ui="create-project-btn"
             >
               Create project
             </Link>

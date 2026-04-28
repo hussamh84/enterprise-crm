@@ -1226,3 +1226,29 @@ a.create-quotation:hover {
   background-color: #111827 !important;
   color: #ffffff !important;
 }
+
+/* TARGETED HARD FIX: exact buttons only (highest reliability) */
+a[data-ui="create-project-btn"],
+button[data-ui="create-project-btn"],
+a[data-ui="create-project-continue-btn"],
+button[data-ui="create-project-continue-btn"] {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+  border-color: #111827 !important;
+}
+
+a[data-ui="create-project-btn"]:hover,
+button[data-ui="create-project-btn"]:hover,
+a[data-ui="create-project-continue-btn"]:hover,
+button[data-ui="create-project-continue-btn"]:hover,
+a[data-ui="create-project-btn"]:active,
+button[data-ui="create-project-btn"]:active,
+a[data-ui="create-project-continue-btn"]:active,
+button[data-ui="create-project-continue-btn"]:active,
+a[data-ui="create-project-btn"]:focus-visible,
+button[data-ui="create-project-btn"]:focus-visible,
+a[data-ui="create-project-continue-btn"]:focus-visible,
+button[data-ui="create-project-continue-btn"]:focus-visible {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+}
