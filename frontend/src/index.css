@@ -1315,3 +1315,17 @@ a.bg-\[\#635bff\] {
 a.bg-\[\#635bff\]:hover {
   background-color: #000000 !important;
 }
+
+/* Absolute final lock for Create project anchor */
+a[data-ui="create-project-btn"],
+a[data-ui="create-project-btn"]:link,
+a[data-ui="create-project-btn"]:visited,
+a[data-ui="create-project-btn"]:hover,
+a[data-ui="create-project-btn"]:active,
+a[data-ui="create-project-btn"]:focus,
+a[data-ui="create-project-btn"]:focus-visible {
+  background-color: #111827 !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border-color: #111827 !important;
+}
