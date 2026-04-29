@@ -1,43 +1,29 @@
-import { Bell, Briefcase, Download, LayoutDashboard, LogOut, MapPinCheck, Menu, Search, Settings, ShieldCheck, Upload, User, UserCircle2, Users, X } from "lucide-react";
+import { Bell, Briefcase, LayoutDashboard, LogOut, Menu, Search, Settings, ShieldCheck, User, UserCircle2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { syncCurrencyConfig } from "../config/currency";
-import { usePWAInstall } from "../hooks/usePWAInstall";
 import { useAuthStore } from "../store/authStore";
-import { isTechnician } from "../utils/roleAccess";
 
 const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/leads", label: "Leads", icon: Briefcase },
   { to: "/clients", label: "Clients", icon: UserCircle2 },
-  { to: "/quotations", label: "Quotations", icon: Settings },
   { to: "/projects", label: "Projects", icon: ShieldCheck },
   { to: "/invoices", label: "Invoices", icon: Settings },
   { to: "/inventory", label: "Inventory", icon: Briefcase },
-  { to: "/tickets", label: "Support", icon: ShieldCheck },
-  { to: "/users", label: "Users", icon: Users },
-  { to: "/profile", label: "Profile", icon: User },
-  { to: "/reports", label: "Reports", icon: Briefcase },
-  { to: "/visit-proofs", label: "Visit Proofs", icon: MapPinCheck },
-  { to: "/settings", label: "Settings", icon: Settings },
-];
-
-const technicianNav = [
-  { to: "/technician/tasks", label: "Tasks", icon: Briefcase },
-  { to: "/site-visit", label: "Site Visit", icon: MapPinCheck },
-  { to: "/site-visit?mode=upload", label: "Upload Data", icon: Upload },
-  { to: "/site-visit?mode=checkin", label: "Check-in", icon: MapPinCheck },
 ];
 
 const resolveLogoSrc = (logoPath) => {
   if (!logoPath) return "/logo.png";
   if (logoPath.startsWith("http")) return logoPath;
-  if (logoPath.startsWith("/uploads/")) return `http://localhost:5000${logoPath}`;
+  if (logoPath.startsWith("/uploads/")) {
+    const apiBase = String(import.meta.env.VITE_API_URL || "").replace(/\/api(?:\/v1)?\/?$/, "");
+    return apiBase ? `${apiBase}${logoPath}` : logoPath;
+  }
   return logoPath;
 };
 
@@ -53,15 +39,11 @@ const handleLogoError = (event) => {
 export default function Layout() {
   const navigate = useNavigate();
   const clearSession = useAuthStore((s) => s.clearSession);
-  const user = useAuthStore((s) => s.user);
   const [theme, setTheme] = useState(() => localStorage.getItem("ce_theme") || "light");
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { isInstallable, promptInstall } = usePWAInstall();
-  const technician = isTechnician(user?.role);
-  const navItems = technician ? technicianNav : nav;
   const searchShellRef = useRef(null);
   const { data: settings } = useQuery({
     queryKey: ["workspace-settings"],
@@ -190,7 +172,7 @@ export default function Layout() {
           </div>
           <div className="flex-1 overflow-y-auto">
             <nav className="space-y-1">
-            {navItems.map((item) => {
+            {nav.map((item) => {
               const Icon = item.icon;
               return (
                 <NavLink
@@ -246,7 +228,7 @@ export default function Layout() {
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              <div ref={searchShellRef} className={`relative w-full max-w-md ${technician ? "hidden" : "hidden md:block"}`}>
+              <div ref={searchShellRef} className="relative w-full max-w-md hidden md:block">
                 <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 h-9 text-slate-500 bg-white">
                   <Search size={15} className="shrink-0" />
                   <input
@@ -319,11 +301,6 @@ export default function Layout() {
               <button type="button" className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 h-9 w-9 inline-flex items-center justify-center">
                 <Bell size={16} />
               </button>
-              {isInstallable ? (
-                <button type="button" className="button-secondary !text-slate-700 hidden sm:inline-flex" onClick={promptInstall}>
-                  <Download size={14} /> Install
-                </button>
-              ) : null}
               <button
                 type="button"
                 className="button-secondary !text-slate-600 hidden sm:inline-flex"

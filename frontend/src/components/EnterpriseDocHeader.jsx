@@ -2,7 +2,7 @@ const resolveLogoSrc = (logoPath) => {
   if (!logoPath) return "/logo.png";
   if (logoPath.startsWith("http")) return logoPath;
   if (logoPath.startsWith("/uploads/")) {
-    const base = (import.meta.env.VITE_API_URL || "").replace(/\/api\/v1\/?$/, "");
+    const base = (import.meta.env.VITE_API_URL || "").replace(/\/api(?:\/v1)?\/?$/, "");
     return base ? `${base}${logoPath}` : logoPath;
   }
   return logoPath;
