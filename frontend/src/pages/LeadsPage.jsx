@@ -85,6 +85,7 @@ export default function LeadsPage() {
       {!isLoading && !leads.length ? <div className="text-sm text-slate-500">No leads found.</div> : null}
       {!isLoading && leads.length ? (
         <div className="card !p-0 overflow-hidden">
+          <div className="overflow-x-auto">
           <div className="saas-table-shell border-0 rounded-none">
             <div className="saas-grid-head grid grid-cols-12">
               <div className="col-span-3">Name</div>
@@ -99,26 +100,27 @@ export default function LeadsPage() {
                 <div className="col-span-3 text-sm text-slate-600">{lead?.email || "-"}</div>
                 <div className="col-span-2 text-sm text-slate-600">{lead?.phone || "-"}</div>
                 <div className="col-span-2 text-sm">{lead?.status || lead?.stage || "lead"}</div>
-                <div className="col-span-2">
-                  <div className="flex gap-2 items-center">
+                <div className="col-span-2 p-3 whitespace-nowrap">
+                  <div className="flex items-center gap-2 justify-end">
                   <button
                     type="button"
-                    className="bg-red-500 text-white px-3 py-1 rounded h-8 inline-flex items-center"
+                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium"
                     onClick={() => handleDelete(lead._id)}
                   >
                     Delete
                   </button>
                   <button
                     type="button"
-                    className="bg-black text-white px-3 py-1 rounded h-8 inline-flex items-center"
+                    className="bg-black hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm font-medium"
                     onClick={() => handleConvert(lead._id)}
                   >
-                    Convert to Client
+                    Convert
                   </button>
                   </div>
                 </div>
               </div>
             ))}
+          </div>
           </div>
         </div>
       ) : null}
