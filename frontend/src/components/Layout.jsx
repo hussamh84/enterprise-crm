@@ -23,6 +23,7 @@ const nav = [
   { to: "/users", label: "Users", icon: Users },
   { to: "/profile", label: "Profile", icon: User },
   { to: "/reports", label: "Reports", icon: Briefcase },
+  { to: "/visit-proofs", label: "Visit Proofs", icon: MapPinCheck },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 

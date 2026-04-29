@@ -1,9 +1,38 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet-routing-machine";
 import api from "../lib/api";
 import { getTaskCoords } from "../utils/mobileTasks";
+
+function RouteLine({ technicianCoords, projectCoords }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!technicianCoords || !projectCoords) return undefined;
+
+    const control = L.Routing.control({
+      waypoints: [L.latLng(technicianCoords[0], technicianCoords[1]), L.latLng(projectCoords[0], projectCoords[1])],
+      routeWhileDragging: false,
+      addWaypoints: false,
+      draggableWaypoints: false,
+      fitSelectedRoutes: true,
+      show: false,
+      lineOptions: {
+        styles: [{ color: "#f59e0b", opacity: 0.9, weight: 5 }],
+      },
+      createMarker: () => null,
+    }).addTo(map);
+
+    return () => {
+      map.removeControl(control);
+    };
+  }, [map, technicianCoords, projectCoords]);
+
+  return null;
+}
 
 export default function MobileVisitPage() {
   const { id } = useParams();
@@ -65,6 +94,7 @@ export default function MobileVisitPage() {
           <div className="h-56 w-full">
             <MapContainer center={mapCenter} zoom={13} className="h-full w-full">
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              {technicianCoords ? <RouteLine technicianCoords={technicianCoords} projectCoords={projectCoords} /> : null}
               {technicianCoords ? (
                 <Marker position={technicianCoords}>
                   <Popup>Technician (current)</Popup>

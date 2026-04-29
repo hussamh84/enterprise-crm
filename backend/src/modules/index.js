@@ -67,6 +67,16 @@ Client.schema.set("toObject", { virtuals: true });
 Client.schema.index({ tenantId: 1, clientNumber: 1 }, { unique: true, sparse: true });
 const Activity = makeEntityModel("Activity", { type: String, dueAt: Date, reminderAt: Date });
 const SiteVisit = makeEntityModel("SiteVisit", { visitDate: Date, assignedTechnician: String, report: String, images: [String] });
+const Visit = makeEntityModel("Visit", {
+  technicianId: { type: String, required: true, trim: true },
+  projectId: { type: String, required: true, trim: true, index: true },
+  latitude: { type: Number, required: true },
+  longitude: { type: Number, required: true },
+  time: { type: Date, required: true, default: Date.now },
+  accuracy: { type: Number, default: null },
+  distance: { type: Number, default: 0 },
+  status: { type: String, enum: ["ON_SITE", "OUTSIDE"], default: "OUTSIDE" },
+});
 const Quotation = makeEntityModel("Quotation", {
   clientId: { type: String, required: true },
   projectId: { type: String, default: null },
@@ -915,8 +925,11 @@ router.post("/visit/checkin", async (req, res, next) => {
       return next(new AppError("Tenant context is required", 400));
     }
 
+    const technicianId = String(req.body?.technicianId || req.user?.id || "").trim();
+    const projectId = String(req.body?.projectId || req.body?.taskId || "").trim();
     const latitude = Number(req.body?.latitude);
     const longitude = Number(req.body?.longitude);
+    const accuracy = req.body?.accuracy == null ? null : Number(req.body.accuracy);
     const projectLatitude = Number(req.body?.projectLatitude);
     const projectLongitude = Number(req.body?.projectLongitude);
     const checkInTime = req.body?.time ? new Date(req.body.time) : new Date();
@@ -934,19 +947,26 @@ router.post("/visit/checkin", async (req, res, next) => {
       return R * c;
     };
 
+    if (!technicianId) {
+      return next(new AppError("technicianId is required", 400));
+    }
+    if (!projectId) {
+      return next(new AppError("projectId is required", 400));
+    }
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
       return next(new AppError("Valid latitude and longitude are required", 400));
     }
     if (!Number.isFinite(projectLatitude) || !Number.isFinite(projectLongitude)) {
       return next(new AppError("Valid project coordinates are required", 400));
     }
+    if (accuracy !== null && !Number.isFinite(accuracy)) {
+      return next(new AppError("accuracy must be a number", 400));
+    }
     if (Number.isNaN(checkInTime.getTime())) {
       return next(new AppError("Valid check-in time is required", 400));
     }
     const distance = getDistanceMeters(latitude, longitude, projectLatitude, projectLongitude);
-    if (distance > 100) {
-      return next(new AppError("You are too far from the site", 403));
-    }
+    const status = distance <= 100 ? "ON_SITE" : "OUTSIDE";
 
     const report = `CHECK_IN\nTIME: ${checkInTime.toISOString()}\nLAT: ${latitude}\nLNG: ${longitude}\nPROJECT_LAT: ${projectLatitude}\nPROJECT_LNG: ${projectLongitude}\nDISTANCE_M: ${distance.toFixed(2)}${taskId ? `\nTASK: ${taskId}` : ""}`;
     const checkIn = await SiteVisit.create({
@@ -959,18 +979,66 @@ router.post("/visit/checkin", async (req, res, next) => {
       updatedBy: req.user?.id,
       auditLog: [{ action: "visit.checkin", by: req.user?.id, note: "Technician GPS check-in" }],
     });
+    const visit = await Visit.create({
+      tenantId,
+      technicianId,
+      projectId,
+      latitude,
+      longitude,
+      time: checkInTime,
+      accuracy,
+      distance: Number(distance.toFixed(2)),
+      status,
+      createdBy: req.user?.id,
+      updatedBy: req.user?.id,
+      auditLog: [{ action: "visit.checkin", by: req.user?.id, note: "Technician GPS check-in" }],
+    });
 
     return res.status(201).json({
       message: "Check-in saved",
       checkInId: checkIn._id,
+      visitId: visit._id,
+      technicianId,
+      projectId,
       latitude,
       longitude,
+      accuracy,
       projectLatitude,
       projectLongitude,
       distanceMeters: Number(distance.toFixed(2)),
+      status,
       time: checkInTime.toISOString(),
       taskId: taskId || null,
     });
+  } catch (error) {
+    return next(error);
+  }
+});
+router.get("/visit", async (req, res, next) => {
+  try {
+    const tenantId = req.tenantId || getTenantId(req);
+    if (!tenantId) return next(new AppError("Tenant context is required", 400));
+
+    const projectId = String(req.query?.projectId || "").trim();
+    const query = { tenantId, deletedAt: null };
+    if (projectId) query.projectId = projectId;
+
+    const visits = await Visit.find(query).sort({ time: -1 }).limit(200).lean();
+    return res.json(visits);
+  } catch (error) {
+    return next(error);
+  }
+});
+router.get("/visit/:projectId", async (req, res, next) => {
+  try {
+    const tenantId = req.tenantId || getTenantId(req);
+    if (!tenantId) return next(new AppError("Tenant context is required", 400));
+
+    const projectId = String(req.params?.projectId || "").trim();
+    if (!projectId) return next(new AppError("projectId is required", 400));
+
+    const visits = await Visit.find({ tenantId, projectId, deletedAt: null }).sort({ time: -1 }).lean();
+    return res.json(visits);
   } catch (error) {
     return next(error);
   }
@@ -2347,6 +2415,7 @@ module.exports = {
     Counter,
     Activity,
     SiteVisit,
+    Visit,
     Quotation,
     Project,
     Invoice,

@@ -2,10 +2,12 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
-import { getDistanceMeters, getTaskCoordsStrict, getTaskLocation, getTaskTitle, normalizeTasks } from "../utils/mobileTasks";
+import { useAuthStore } from "../store/authStore";
+import { getTaskCoordsStrict, getTaskLocation, getTaskTitle, normalizeTasks } from "../utils/mobileTasks";
 
 export default function MobileTasksPage() {
   const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
   const [activeCheckInId, setActiveCheckInId] = useState("");
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["mobile-technician-tasks"],
@@ -39,22 +41,23 @@ export default function MobileTasksPage() {
           const [projectLat, projectLng] = projectCoords;
           const techLat = position.coords.latitude;
           const techLng = position.coords.longitude;
-          const distance = getDistanceMeters(techLat, techLng, projectLat, projectLng);
-          if (distance > 100) {
-            alert("You are too far from the site ❌");
-            return;
-          }
-
           const data = {
+            technicianId: String(user?._id || user?.id || ""),
+            projectId: taskId,
             latitude: techLat,
             longitude: techLng,
+            accuracy: position.coords.accuracy ?? null,
             time: new Date().toISOString(),
             taskId,
             projectLatitude: projectLat,
             projectLongitude: projectLng,
           };
 
-          await api.post("/visit/checkin", data);
+          const response = await api.post("/visit/checkin", data);
+          if (response?.data?.status === "OUTSIDE") {
+            alert("You are too far from the site ❌");
+            return;
+          }
           navigate(`/mobile/visit/${encodeURIComponent(taskId)}`);
         } catch (error) {
           console.error(error);

@@ -27,6 +27,7 @@ import MobileTechnicianLayout from "./components/MobileTechnicianLayout";
 import MobileMapPage from "./pages/MobileMapPage";
 import MobileTasksPage from "./pages/MobileTasksPage";
 import MobileVisitPage from "./pages/MobileVisitPage";
+import VisitProofsPage from "./pages/VisitProofsPage";
 import { useAuthStore } from "./store/authStore";
 import { isTechnician } from "./utils/roleAccess";
 
@@ -95,6 +96,7 @@ function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<AdminRoute technician={technician}><SettingsPage /></AdminRoute>} />
           <Route path="reports" element={<AdminRoute technician={technician}><ReportsPage /></AdminRoute>} />
+          <Route path="visit-proofs" element={<AdminRoute technician={technician}><VisitProofsPage /></AdminRoute>} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
