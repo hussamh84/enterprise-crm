@@ -47,9 +47,9 @@ function App() {
   return (
     <div className="relative z-[1]">
       <Routes>
+        <Route path="/mobile/tasks" element={<TechnicianHome />} />
         <Route path="/mobile" element={<MobileLayout />}>
           <Route index element={<Navigate to="/mobile/tasks" replace />} />
-          <Route path="tasks" element={<TechnicianHome />} />
           <Route path="map" element={<MobileMapPage />} />
           <Route path="visit/:id" element={<MobileVisitPage />} />
           <Route path="visit" element={<MobileVisitPage />} />
@@ -61,7 +61,6 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
           </>
         ) : (
           <>
@@ -93,7 +92,6 @@ function App() {
               <Route path="reports" element={<AdminRoute technician={technician}><ReportsPage /></AdminRoute>} />
               <Route path="visit-proofs" element={<AdminRoute technician={technician}><VisitProofsPage /></AdminRoute>} />
             </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
           </>
         )}
       </Routes>
