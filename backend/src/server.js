@@ -28,6 +28,7 @@ const start = async () => {
 
     await mongoose.connect(env.mongoUri);
     console.log("MongoDB connected successfully ✅");
+    console.log(`MongoDB database: ${mongoose.connection.name}`);
 
     app.listen(env.port, () => {
       console.log(`Server running on port ${env.port}`);

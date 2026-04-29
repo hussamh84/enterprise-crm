@@ -819,20 +819,11 @@ router.post("/clients", async (req, res, next) => {
 });
 router.get("/clients", async (req, res, next) => {
   try {
-    const tenantId = getTenantId(req);
-    if (!tenantId) {
-      return next(new AppError("Tenant context is required", 400));
-    }
-
-    const clients = await Client.find({ tenantId, deletedAt: null, isDeleted: { $ne: true } }).sort({
+    const clients = await Client.find({}).sort({
       clientNumber: -1,
       createdAt: -1,
     });
-    console.info("[clients.list] Returned clients for tenant", {
-      tenantId,
-      count: clients.length,
-      userId: req.user?.id || null,
-    });
+    console.log("RESULT COUNT:", clients.length);
 
     return res.json(clients);
   } catch (error) {
@@ -1529,20 +1520,18 @@ router.post("/projects", async (req, res, next) => {
 
 router.get("/projects", async (req, res, next) => {
   try {
-    const docs = await Project.find({ tenantId: req.tenantId, deletedAt: null }).sort({ createdAt: -1 });
+    const docs = await Project.find({}).sort({ createdAt: -1 });
     const projectObjects = docs.map((doc) => (typeof doc.toObject === "function" ? doc.toObject() : doc));
     const clientIds = [...new Set(projectObjects.map((doc) => String(doc.clientId || "")).filter(Boolean))];
 
     const clients = clientIds.length
       ? await Client.find({
           _id: { $in: clientIds },
-          tenantId: req.tenantId,
-          deletedAt: null,
-          isDeleted: { $ne: true },
         })
           .select("_id name email")
           .lean()
       : [];
+    console.log("RESULT COUNT:", docs.length);
 
     const clientMap = Object.fromEntries(clients.map((client) => [String(client._id), client]));
 
@@ -1566,7 +1555,7 @@ router.get("/projects", async (req, res, next) => {
 router.use("/projects", buildCrudRouter({ model: Project, entity: "project" }));
 router.get("/invoices", async (req, res, next) => {
   try {
-    const docs = await Invoice.find({ tenantId: req.tenantId, deletedAt: null }).sort({ createdAt: -1 });
+    const docs = await Invoice.find({}).sort({ createdAt: -1 });
     const invoiceObjects = docs.map((doc) => (typeof doc.toObject === "function" ? doc.toObject() : doc));
 
     const clientIds = [...new Set(invoiceObjects.map((doc) => String(doc.clientId || "")).filter(Boolean))];
@@ -1575,21 +1564,22 @@ router.get("/invoices", async (req, res, next) => {
 
     const [clients, projects, quotations] = await Promise.all([
       clientIds.length
-        ? Client.find({ _id: { $in: clientIds }, tenantId: req.tenantId, deletedAt: null, isDeleted: { $ne: true } })
+        ? Client.find({ _id: { $in: clientIds } })
             .select("_id name")
             .lean()
         : [],
       projectIds.length
-        ? Project.find({ _id: { $in: projectIds }, tenantId: req.tenantId, deletedAt: null })
+        ? Project.find({ _id: { $in: projectIds } })
             .select("_id name")
             .lean()
         : [],
       quotationIds.length
-        ? Quotation.find({ _id: { $in: quotationIds }, tenantId: req.tenantId, deletedAt: null })
+        ? Quotation.find({ _id: { $in: quotationIds } })
             .select("_id quotationNo")
             .lean()
         : [],
     ]);
+    console.log("RESULT COUNT:", docs.length);
 
     const clientMap = Object.fromEntries(clients.map((client) => [String(client._id), client]));
     const projectMap = Object.fromEntries(projects.map((project) => [String(project._id), project]));
@@ -2215,9 +2205,8 @@ router.get("/inventory/:id/usage", async (req, res, next) => {
 
 router.get("/inventory", async (req, res, next) => {
   try {
-    const tenantId = getTenantId(req);
-    if (!tenantId) return next(new AppError("Tenant context is required", 400));
-    const docs = await InventoryItem.find({ tenantId, deletedAt: null }).sort({ createdAt: -1 }).lean();
+    const docs = await InventoryItem.find({}).sort({ createdAt: -1 }).lean();
+    console.log("RESULT COUNT:", docs.length);
     const enriched = docs.map((item) => {
       const quantity = Number(item.quantity || 0);
       const minQuantity = Number(item.minQuantity || 0);
@@ -2330,7 +2319,8 @@ router.post("/settings/logo", logoUpload.single("logo"), async (req, res, next) 
 
 router.get("/users", async (req, res, next) => {
   try {
-    const users = await User.find({ tenantId: req.tenantId }).select("-passwordHash -resetToken -resetTokenExpiry").sort({ createdAt: -1 });
+    const users = await User.find({}).select("-passwordHash -resetToken -resetTokenExpiry").sort({ createdAt: -1 });
+    console.log("RESULT COUNT:", users.length);
     const normalized = users.map((user) => ({
       ...user.toObject(),
       role: user.role === "company_admin" ? "admin" : "employee",
@@ -2461,15 +2451,25 @@ router.post("/users/:id/reset-password", async (req, res, next) => {
 
 router.get("/dashboard/kpis", async (req, res, next) => {
   try {
-    const tenantId = req.tenantId;
-    const [leads, projects, quotations, invoices, tickets] = await Promise.all([
-      Lead.countDocuments({ tenantId, deletedAt: null }),
-      Project.countDocuments({ tenantId, deletedAt: null }),
-      Quotation.countDocuments({ tenantId, deletedAt: null }),
-      Invoice.countDocuments({ tenantId, deletedAt: null }),
-      Ticket.countDocuments({ tenantId, deletedAt: null }),
+    const [leads, clients, projects, quotations, invoices, tickets, revenueAgg] = await Promise.all([
+      Lead.countDocuments({}),
+      Client.countDocuments({}),
+      Project.countDocuments({}),
+      Quotation.countDocuments({}),
+      Invoice.countDocuments({}),
+      Ticket.countDocuments({}),
+      Invoice.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: { $ifNull: ["$total", 0] } },
+          },
+        },
+      ]),
     ]);
-    res.json({ leads, projects, quotations, invoices, tickets });
+    const totalRevenue = Number(revenueAgg?.[0]?.totalRevenue || 0);
+    console.log("RESULT COUNT:", clients);
+    res.json({ leads, clients, projects, quotations, invoices, tickets, totalRevenue });
   } catch (error) {
     next(error);
   }
