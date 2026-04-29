@@ -1,4 +1,4 @@
-import { Bell, Briefcase, LayoutDashboard, LogOut, Menu, Search, Settings, ShieldCheck, User, UserCircle2, X } from "lucide-react";
+import { Bell, Briefcase, LayoutDashboard, LogOut, Menu, Search, Settings, ShieldCheck, User, UserCircle2, Users, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
@@ -15,6 +15,9 @@ const nav = [
   { to: "/projects", label: "Projects", icon: ShieldCheck },
   { to: "/invoices", label: "Invoices", icon: Settings },
   { to: "/inventory", label: "Inventory", icon: Briefcase },
+  { to: "/users", label: "Users", icon: Users },
+  { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/profile", label: "Profile", icon: User },
 ];
 
 const resolveLogoSrc = (logoPath) => {
