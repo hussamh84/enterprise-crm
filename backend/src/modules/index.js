@@ -917,17 +917,38 @@ router.post("/visit/checkin", async (req, res, next) => {
 
     const latitude = Number(req.body?.latitude);
     const longitude = Number(req.body?.longitude);
+    const projectLatitude = Number(req.body?.projectLatitude);
+    const projectLongitude = Number(req.body?.projectLongitude);
     const checkInTime = req.body?.time ? new Date(req.body.time) : new Date();
     const taskId = String(req.body?.taskId || "").trim();
+    const getDistanceMeters = (lat1, lon1, lat2, lon2) => {
+      const R = 6371e3;
+      const phi1 = (lat1 * Math.PI) / 180;
+      const phi2 = (lat2 * Math.PI) / 180;
+      const dPhi = ((lat2 - lat1) * Math.PI) / 180;
+      const dLambda = ((lon2 - lon1) * Math.PI) / 180;
+      const a =
+        Math.sin(dPhi / 2) * Math.sin(dPhi / 2) +
+        Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda / 2) * Math.sin(dLambda / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
 
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
       return next(new AppError("Valid latitude and longitude are required", 400));
     }
+    if (!Number.isFinite(projectLatitude) || !Number.isFinite(projectLongitude)) {
+      return next(new AppError("Valid project coordinates are required", 400));
+    }
     if (Number.isNaN(checkInTime.getTime())) {
       return next(new AppError("Valid check-in time is required", 400));
     }
+    const distance = getDistanceMeters(latitude, longitude, projectLatitude, projectLongitude);
+    if (distance > 100) {
+      return next(new AppError("You are too far from the site", 403));
+    }
 
-    const report = `CHECK_IN\nTIME: ${checkInTime.toISOString()}\nLAT: ${latitude}\nLNG: ${longitude}${taskId ? `\nTASK: ${taskId}` : ""}`;
+    const report = `CHECK_IN\nTIME: ${checkInTime.toISOString()}\nLAT: ${latitude}\nLNG: ${longitude}\nPROJECT_LAT: ${projectLatitude}\nPROJECT_LNG: ${projectLongitude}\nDISTANCE_M: ${distance.toFixed(2)}${taskId ? `\nTASK: ${taskId}` : ""}`;
     const checkIn = await SiteVisit.create({
       tenantId,
       visitDate: checkInTime,
@@ -944,6 +965,9 @@ router.post("/visit/checkin", async (req, res, next) => {
       checkInId: checkIn._id,
       latitude,
       longitude,
+      projectLatitude,
+      projectLongitude,
+      distanceMeters: Number(distance.toFixed(2)),
       time: checkInTime.toISOString(),
       taskId: taskId || null,
     });

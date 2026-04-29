@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
+import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import api from "../lib/api";
+import { getTaskCoords } from "../utils/mobileTasks";
 
 export default function MobileVisitPage() {
   const { id } = useParams();
@@ -11,8 +13,30 @@ export default function MobileVisitPage() {
   const [notes, setNotes] = useState("");
   const [materials, setMaterials] = useState("");
   const [totalCost, setTotalCost] = useState("");
+  const [technicianCoords, setTechnicianCoords] = useState(null);
 
   const imageNames = useMemo(() => images.map((file) => file.name).join(", "), [images]);
+  const { data: tickets = [] } = useQuery({
+    queryKey: ["mobile-technician-tasks"],
+    queryFn: async () => (await api.get("/tickets")).data,
+  });
+  const selectedTask = useMemo(
+    () => (Array.isArray(tickets) ? tickets.find((task) => String(task?._id) === String(id)) : null),
+    [tickets, id]
+  );
+  const projectCoords = useMemo(() => getTaskCoords(selectedTask || {}, 0), [selectedTask]);
+  const mapCenter = technicianCoords || projectCoords;
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setTechnicianCoords([position.coords.latitude, position.coords.longitude]);
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }, []);
 
   const submitVisit = useMutation({
     mutationFn: async () => {
@@ -37,6 +61,22 @@ export default function MobileVisitPage() {
       <h1 className="text-base font-semibold text-gray-900">Work Order</h1>
 
       <div className="bg-white rounded-xl p-4 shadow-sm border space-y-4">
+        <div className="rounded-xl overflow-hidden border border-gray-200">
+          <div className="h-56 w-full">
+            <MapContainer center={mapCenter} zoom={13} className="h-full w-full">
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              {technicianCoords ? (
+                <Marker position={technicianCoords}>
+                  <Popup>Technician (current)</Popup>
+                </Marker>
+              ) : null}
+              <Marker position={projectCoords}>
+                <Popup>Client location</Popup>
+              </Marker>
+            </MapContainer>
+          </div>
+        </div>
+
         <div>
           <label className="text-xs text-gray-500 block mb-1">Upload Image</label>
           <input

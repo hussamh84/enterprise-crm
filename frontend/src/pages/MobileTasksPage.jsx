@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
-import { getTaskLocation, getTaskTitle, normalizeTasks } from "../utils/mobileTasks";
+import { getDistanceMeters, getTaskCoordsStrict, getTaskLocation, getTaskTitle, normalizeTasks } from "../utils/mobileTasks";
 
 export default function MobileTasksPage() {
   const navigate = useNavigate();
@@ -30,11 +30,28 @@ export default function MobileTasksPage() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
+          const projectCoords = getTaskCoordsStrict(task);
+          if (!projectCoords) {
+            alert("Project location is missing. Please contact admin.");
+            return;
+          }
+
+          const [projectLat, projectLng] = projectCoords;
+          const techLat = position.coords.latitude;
+          const techLng = position.coords.longitude;
+          const distance = getDistanceMeters(techLat, techLng, projectLat, projectLng);
+          if (distance > 100) {
+            alert("You are too far from the site ❌");
+            return;
+          }
+
           const data = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
+            latitude: techLat,
+            longitude: techLng,
             time: new Date().toISOString(),
             taskId,
+            projectLatitude: projectLat,
+            projectLongitude: projectLng,
           };
 
           await api.post("/visit/checkin", data);
