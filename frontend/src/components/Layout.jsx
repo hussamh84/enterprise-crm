@@ -11,6 +11,7 @@ console.log("CHECK PAGE:", __filename);
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/leads", label: "Leads", icon: Briefcase },
   { to: "/clients", label: "Clients", icon: UserCircle2 },
   { to: "/projects", label: "Projects", icon: ShieldCheck },
   { to: "/invoices", label: "Invoices", icon: Settings },

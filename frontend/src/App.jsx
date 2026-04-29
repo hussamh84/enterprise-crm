@@ -15,12 +15,14 @@ import InvoiceDetailPage from "./pages/InvoiceDetailPage";
 import SalesFromInventoryPage from "./pages/SalesFromInventoryPage";
 import InventoryPage from "./pages/InventoryPage";
 import InvoicePage from "./pages/InvoicePage";
+import LeadsPage from "./pages/LeadsPage";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<DashboardPage />} />
+        <Route path="/leads" element={<LeadsPage />} />
         <Route path="clients" element={<ClientsPage />} />
         <Route path="clients/new" element={<CreateClientPage />} />
         <Route path="clients/:clientId/edit" element={<EditClientPage />} />

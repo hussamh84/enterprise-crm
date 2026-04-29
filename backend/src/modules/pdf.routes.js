@@ -417,4 +417,62 @@ router.get("/invoices/:id/pdf", async (req, res, next) => {
   }
 });
 
+router.get("/projects/:id/pdf", async (req, res, next) => {
+  try {
+    const branding = await resolveBranding(req.tenantId);
+    const project = await models.Project.findOne({ _id: req.params.id, tenantId: req.tenantId, deletedAt: null });
+    if (!project) return res.status(404).json({ message: "Project not found" });
+
+    const client = project.clientId
+      ? await models.Client.findOne({ _id: project.clientId, tenantId: req.tenantId, deletedAt: null })
+      : null;
+
+    streamPdf(res, `project-${project._id}.pdf`, (doc) => {
+      addWatermark(doc, branding);
+      addHeader(doc, {
+        title: "Project",
+        docNoLabel: "Project ID:",
+        docNo: String(project._id),
+        branding,
+        issueDate: new Date(project.createdAt || Date.now()).toLocaleDateString(),
+      });
+
+      doc
+        .roundedRect(50, 250, 500, 180, 6)
+        .fillAndStroke("#ffffff", "#e2e8f0");
+
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(13)
+        .fillColor("#0f172a")
+        .text(project.name || "Project", 66, 268);
+
+      const rows = [
+        ["Client", client?.name || "—"],
+        ["Status", String(project.status || "—").toUpperCase()],
+        ["Start Date", project.startDate ? new Date(project.startDate).toLocaleDateString() : "—"],
+        ["End Date", project.endDate ? new Date(project.endDate).toLocaleDateString() : "—"],
+        ["Revenue", formatCurrency(project.totalRevenue || 0)],
+        ["Expenses", formatCurrency(project.totalExpenses || 0)],
+        ["Profit", formatCurrency(project.profit || 0)],
+      ];
+
+      let y = 300;
+      rows.forEach(([label, value]) => {
+        doc
+          .font("Helvetica-Bold")
+          .fontSize(10)
+          .fillColor("#475569")
+          .text(`${label}:`, 66, y, { width: 120 })
+          .font("Helvetica")
+          .fillColor("#0f172a")
+          .text(String(value), 188, y, { width: 340 });
+        y += 20;
+      });
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = { pdfRouter: router };

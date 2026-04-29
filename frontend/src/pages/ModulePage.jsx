@@ -144,6 +144,24 @@ export default function ModulePage({ title, endpoint }) {
     })();
   };
 
+  const handleGeneratePDF = async (id) => {
+    try {
+      const res = await api.get(`/projects/${id}/pdf`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "project.pdf");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF ERROR:", err);
+    }
+  };
+
   const downloadInventorySample = async () => {
     try {
       const response = await api.get("/inventory/sample", { responseType: "blob" });
@@ -407,7 +425,7 @@ export default function ModulePage({ title, endpoint }) {
                     <Link to={`${endpoint}/${item._id}`} className="btn-secondary btn-compact">
                       View
                     </Link>
-                    <button type="button" onClick={() => openDocumentPdf(item._id)} className="btn-primary btn-compact">
+                    <button type="button" onClick={() => handleGeneratePDF(item._id)} className="btn-primary btn-compact">
                       PDF
                     </button>
                   </div>
