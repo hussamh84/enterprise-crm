@@ -62,7 +62,7 @@ function App() {
       <Routes>
         <Route
           path="/mobile"
-          element={technician ? <MobileTechnicianLayout /> : <Navigate to="/" replace />}
+          element={<MobileTechnicianLayout />}
         >
           <Route index element={<Navigate to="/mobile/tasks" replace />} />
           <Route path="map" element={<MobileMapPage />} />
