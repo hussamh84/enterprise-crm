@@ -11,7 +11,7 @@ import { initFirebaseMessaging } from "./lib/firebaseMessaging";
 import { useAuthStore } from "./store/authStore";
 
 const queryClient = new QueryClient();
-const token = useAuthStore.getState().token;
+const token = useAuthStore.getState().token || localStorage.getItem("token");
 setAuthToken(token);
 document.documentElement.style.setProperty("--app-bg-image", "none");
 

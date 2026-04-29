@@ -1,11 +1,14 @@
 import { create } from "zustand";
 import { setAuthToken } from "../lib/api";
 
+const readStoredToken = () => localStorage.getItem("crm_token") || localStorage.getItem("token");
+
 export const useAuthStore = create((set) => ({
-  token: localStorage.getItem("crm_token"),
+  token: readStoredToken(),
   user: JSON.parse(localStorage.getItem("crm_user") || "null"),
   setSession: ({ token, user }) => {
     localStorage.setItem("crm_token", token);
+    localStorage.setItem("token", token);
     localStorage.setItem("crm_user", JSON.stringify(user));
     setAuthToken(token);
     set({ token, user });
@@ -20,6 +23,7 @@ export const useAuthStore = create((set) => ({
     }),
   clearSession: () => {
     localStorage.removeItem("crm_token");
+    localStorage.removeItem("token");
     localStorage.removeItem("crm_user");
     setAuthToken(null);
     set({ token: null, user: null });

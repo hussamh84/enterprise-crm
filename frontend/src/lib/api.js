@@ -13,7 +13,7 @@ export const setAuthToken = (token) => {
 };
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("crm_token");
+  const token = localStorage.getItem("crm_token") || localStorage.getItem("token");
   if (token) {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
@@ -26,6 +26,7 @@ api.interceptors.response.use(
   (error) => {
     if (error?.response?.status === 401) {
       localStorage.removeItem("crm_token");
+      localStorage.removeItem("token");
       localStorage.removeItem("crm_user");
       delete api.defaults.headers.common.Authorization;
       if (typeof window !== "undefined" && window.location.pathname !== "/") {
