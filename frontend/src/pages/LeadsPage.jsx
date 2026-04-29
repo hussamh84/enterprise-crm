@@ -99,13 +99,23 @@ export default function LeadsPage() {
                 <div className="col-span-3 text-sm text-slate-600">{lead?.email || "-"}</div>
                 <div className="col-span-2 text-sm text-slate-600">{lead?.phone || "-"}</div>
                 <div className="col-span-2 text-sm">{lead?.status || lead?.stage || "lead"}</div>
-                <div className="col-span-2 flex gap-2 flex-wrap">
-                  <button type="button" className="btn-secondary btn-compact" onClick={() => handleDelete(lead._id)}>
+                <div className="col-span-2">
+                  <div className="flex gap-2 items-center">
+                  <button
+                    type="button"
+                    className="bg-red-500 text-white px-3 py-1 rounded h-8 inline-flex items-center"
+                    onClick={() => handleDelete(lead._id)}
+                  >
                     Delete
                   </button>
-                  <button type="button" className="btn-primary btn-compact" onClick={() => handleConvert(lead._id)}>
+                  <button
+                    type="button"
+                    className="bg-black text-white px-3 py-1 rounded h-8 inline-flex items-center"
+                    onClick={() => handleConvert(lead._id)}
+                  >
                     Convert to Client
                   </button>
+                  </div>
                 </div>
               </div>
             ))}

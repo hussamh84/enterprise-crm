@@ -142,6 +142,12 @@ export default function Layout() {
     setIsSidebarOpen(false);
   };
 
+  const handleLogout = () => {
+    clearSession();
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+  };
+
   return (
     <div className="relative z-[1] flex min-h-screen bg-[#f8fafc] overflow-x-hidden">
       {isSidebarOpen ? (
@@ -200,7 +206,7 @@ export default function Layout() {
           </div>
         </div>
         <div className="p-3 border-t border-slate-100 dark:border-gray-700">
-          <button onClick={clearSession} className="w-full bg-gray-900 text-white py-2 rounded hover:bg-black flex items-center justify-center gap-2">
+          <button onClick={handleLogout} className="w-full bg-gray-900 text-white py-2 rounded hover:bg-black flex items-center justify-center gap-2">
               <LogOut size={14} /> Logout
             </button>
         </div>
