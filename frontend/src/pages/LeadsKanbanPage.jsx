@@ -103,7 +103,7 @@ export default function LeadsKanbanPage() {
       </div>
 
       <div className="premium-card p-5">
-        <div className="grid md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <input
             value={form.name}
             onChange={(event) => setForm((previous) => ({ ...previous, name: event.target.value }))}
@@ -139,7 +139,7 @@ export default function LeadsKanbanPage() {
               Cancel
             </button>
           </div>
-          <div className="grid md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <input
               value={editForm.name}
               onChange={(event) => setEditForm((previous) => ({ ...previous, name: event.target.value }))}
@@ -200,7 +200,7 @@ export default function LeadsKanbanPage() {
       ) : null}
 
       <div className="overflow-x-auto">
-        <div className="saas-table-shell min-w-[640px]">
+        <div className="saas-table-shell min-w-full md:min-w-[640px]">
         <div className="saas-grid-head grid grid-cols-12">
           <div className="col-span-3">Lead</div>
           <div className="col-span-2">Phone</div>
@@ -231,7 +231,7 @@ export default function LeadsKanbanPage() {
                   {status === "new" ? "New" : status === "contacted" ? "Contacted" : "Converted"}
                 </span>
               </div>
-              <div className="col-span-3 min-w-[220px]">
+              <div className="col-span-3 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <button type="button" onClick={() => startEdit(lead)} className="btn-secondary btn-compact whitespace-nowrap">
                     View

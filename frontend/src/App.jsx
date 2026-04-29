@@ -21,13 +21,27 @@ import UsersPage from "./pages/UsersPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import ReportsPage from "./pages/ReportsPage";
+import SiteVisitPage from "./pages/SiteVisitPage";
+import TechnicianTasksPage from "./pages/TechnicianTasksPage";
+import MobileTechnicianLayout from "./components/MobileTechnicianLayout";
+import MobileMapPage from "./pages/MobileMapPage";
+import MobileTasksPage from "./pages/MobileTasksPage";
+import MobileVisitPage from "./pages/MobileVisitPage";
 import { useAuthStore } from "./store/authStore";
+import { isTechnician } from "./utils/roleAccess";
 
 const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
 
+function AdminRoute({ technician, children }) {
+  if (technician) return <Navigate to="/mobile/tasks" replace />;
+  return children;
+}
+
 function App() {
   const token = useAuthStore((s) => s.token);
+  const user = useAuthStore((s) => s.user);
+  const technician = isTechnician(user?.role);
   if (!token) {
     return (
       <div className="relative z-[1]">
@@ -45,30 +59,42 @@ function App() {
   return (
     <div className="relative z-[1]">
       <Routes>
+        <Route
+          path="/mobile"
+          element={technician ? <MobileTechnicianLayout /> : <Navigate to="/" replace />}
+        >
+          <Route index element={<Navigate to="/mobile/tasks" replace />} />
+          <Route path="map" element={<MobileMapPage />} />
+          <Route path="tasks" element={<MobileTasksPage />} />
+          <Route path="visit/:id" element={<MobileVisitPage />} />
+          <Route path="visit/new" element={<MobileVisitPage />} />
+        </Route>
         <Route path="/" element={<Layout />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="leads" element={<LeadsKanbanPage />} />
-          <Route path="clients" element={<ModulePage title="Clients" endpoint="/clients" />} />
-          <Route path="clients/new" element={<CreateClientPage />} />
-          <Route path="clients/:clientId/edit" element={<EditClientPage />} />
-          <Route path="clients/:clientId" element={<ClientDetailsPage />} />
-          <Route path="quotations" element={<ModulePage title="Quotations" endpoint="/quotations" />} />
-          <Route path="quotations/new" element={<QuotationBuilderPage />} />
-          <Route path="quotations/:quotationId/edit" element={<QuotationBuilderPage />} />
-          <Route path="quotations/:id" element={<QuotationViewPage />} />
-          <Route path="projects" element={<ModulePage title="Projects" endpoint="/projects" />} />
-          <Route path="projects/new" element={<CreateProjectPage />} />
-          <Route path="sales/new" element={<SalesFromInventoryPage />} />
-          <Route path="projects/:projectId" element={<ProjectDetailsPage />} />
-          <Route path="invoices" element={<ModulePage title="Invoices" endpoint="/invoices" />} />
-          <Route path="invoices/:invoiceId" element={<InvoiceDetailPage />} />
-          <Route path="search" element={<SearchPage />} />
-          <Route path="inventory" element={<ModulePage title="Inventory" endpoint="/inventory" />} />
-          <Route path="tickets" element={<ModulePage title="Support Tickets" endpoint="/tickets" />} />
-          <Route path="users" element={<UsersPage />} />
+          <Route index element={technician ? <Navigate to="/mobile/tasks" replace /> : <DashboardPage />} />
+          <Route path="technician/tasks" element={technician ? <Navigate to="/mobile/tasks" replace /> : <TechnicianTasksPage />} />
+          <Route path="site-visit" element={technician ? <Navigate to="/mobile/tasks" replace /> : <SiteVisitPage />} />
+          <Route path="leads" element={<AdminRoute technician={technician}><LeadsKanbanPage /></AdminRoute>} />
+          <Route path="clients" element={<AdminRoute technician={technician}><ModulePage title="Clients" endpoint="/clients" /></AdminRoute>} />
+          <Route path="clients/new" element={<AdminRoute technician={technician}><CreateClientPage /></AdminRoute>} />
+          <Route path="clients/:clientId/edit" element={<AdminRoute technician={technician}><EditClientPage /></AdminRoute>} />
+          <Route path="clients/:clientId" element={<AdminRoute technician={technician}><ClientDetailsPage /></AdminRoute>} />
+          <Route path="quotations" element={<AdminRoute technician={technician}><ModulePage title="Quotations" endpoint="/quotations" /></AdminRoute>} />
+          <Route path="quotations/new" element={<AdminRoute technician={technician}><QuotationBuilderPage /></AdminRoute>} />
+          <Route path="quotations/:quotationId/edit" element={<AdminRoute technician={technician}><QuotationBuilderPage /></AdminRoute>} />
+          <Route path="quotations/:id" element={<AdminRoute technician={technician}><QuotationViewPage /></AdminRoute>} />
+          <Route path="projects" element={<AdminRoute technician={technician}><ModulePage title="Projects" endpoint="/projects" /></AdminRoute>} />
+          <Route path="projects/new" element={<AdminRoute technician={technician}><CreateProjectPage /></AdminRoute>} />
+          <Route path="sales/new" element={<AdminRoute technician={technician}><SalesFromInventoryPage /></AdminRoute>} />
+          <Route path="projects/:projectId" element={<AdminRoute technician={technician}><ProjectDetailsPage /></AdminRoute>} />
+          <Route path="invoices" element={<AdminRoute technician={technician}><ModulePage title="Invoices" endpoint="/invoices" /></AdminRoute>} />
+          <Route path="invoices/:invoiceId" element={<AdminRoute technician={technician}><InvoiceDetailPage /></AdminRoute>} />
+          <Route path="search" element={<AdminRoute technician={technician}><SearchPage /></AdminRoute>} />
+          <Route path="inventory" element={<AdminRoute technician={technician}><ModulePage title="Inventory" endpoint="/inventory" /></AdminRoute>} />
+          <Route path="tickets" element={<AdminRoute technician={technician}><ModulePage title="Support Tickets" endpoint="/tickets" /></AdminRoute>} />
+          <Route path="users" element={<AdminRoute technician={technician}><UsersPage /></AdminRoute>} />
           <Route path="profile" element={<ProfilePage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="reports" element={<ReportsPage />} />
+          <Route path="settings" element={<AdminRoute technician={technician}><SettingsPage /></AdminRoute>} />
+          <Route path="reports" element={<AdminRoute technician={technician}><ReportsPage /></AdminRoute>} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

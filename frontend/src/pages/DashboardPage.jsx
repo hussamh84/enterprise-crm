@@ -81,7 +81,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {cards.map((card) => (
           <div key={card.title} className="bg-white rounded-lg shadow-sm p-4">
             <div className="flex items-center justify-between">

@@ -135,7 +135,7 @@ export default function QuotationViewPage() {
       <div className="enterprise-doc-card">
         <div className="p-8">
           <h3 className="text-xs font-semibold uppercase tracking-[0.1em] text-[#64748b] mb-4">Client &amp; project</h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
             <InfoField label="Client" value={clientName || "—"} />
             <InfoField label="Project" value={projectName || "—"} />
             <InfoField label="Created" value={dateValue(quotation.createdAt)} />
@@ -187,7 +187,7 @@ export default function QuotationViewPage() {
                 </table>
               </div>
               <div className="flex justify-end pt-6 mt-4 border-t border-[#eee]">
-                <div className="totals-box text-right min-w-[440px]">
+                <div className="totals-box text-right w-full max-w-[440px]">
                   <div className="summary">
                     <div className="row">
                       <span>Subtotal</span>

@@ -1,10 +1,12 @@
-import { Bell, Briefcase, LayoutDashboard, LogOut, Search, Settings, ShieldCheck, User, UserCircle2, Users } from "lucide-react";
+import { Bell, Briefcase, Download, LayoutDashboard, LogOut, MapPinCheck, Menu, Search, Settings, ShieldCheck, Upload, User, UserCircle2, Users, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { syncCurrencyConfig } from "../config/currency";
+import { usePWAInstall } from "../hooks/usePWAInstall";
 import { useAuthStore } from "../store/authStore";
+import { isTechnician } from "../utils/roleAccess";
 
 const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
@@ -22,6 +24,13 @@ const nav = [
   { to: "/profile", label: "Profile", icon: User },
   { to: "/reports", label: "Reports", icon: Briefcase },
   { to: "/settings", label: "Settings", icon: Settings },
+];
+
+const technicianNav = [
+  { to: "/technician/tasks", label: "Tasks", icon: Briefcase },
+  { to: "/site-visit", label: "Site Visit", icon: MapPinCheck },
+  { to: "/site-visit?mode=upload", label: "Upload Data", icon: Upload },
+  { to: "/site-visit?mode=checkin", label: "Check-in", icon: MapPinCheck },
 ];
 
 const resolveLogoSrc = (logoPath) => {
@@ -43,10 +52,15 @@ const handleLogoError = (event) => {
 export default function Layout() {
   const navigate = useNavigate();
   const clearSession = useAuthStore((s) => s.clearSession);
+  const user = useAuthStore((s) => s.user);
   const [theme, setTheme] = useState(() => localStorage.getItem("ce_theme") || "light");
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isInstallable, promptInstall } = usePWAInstall();
+  const technician = isTechnician(user?.role);
+  const navItems = technician ? technicianNav : nav;
   const searchShellRef = useRef(null);
   const { data: settings } = useQuery({
     queryKey: ["workspace-settings"],
@@ -137,9 +151,25 @@ export default function Layout() {
     navigate(path);
   };
 
+  const handleNavItemClick = () => {
+    setIsSidebarOpen(false);
+  };
+
   return (
-    <div className="relative z-[1] flex min-h-screen bg-[#f8fafc]">
-      <aside className="sidebar shrink-0 h-screen flex flex-col justify-between overflow-hidden text-sm">
+    <div className="relative z-[1] flex min-h-screen bg-[#f8fafc] overflow-x-hidden">
+      {isSidebarOpen ? (
+        <button
+          type="button"
+          aria-label="Close sidebar overlay"
+          className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      ) : null}
+      <aside
+        className={`sidebar fixed inset-y-0 left-0 z-40 h-screen flex flex-col justify-between text-sm transform transition-transform duration-200 lg:static lg:translate-x-0 ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="min-h-0 flex-1 flex flex-col">
           <div className="pb-4 mb-2 border-b border-slate-100 dark:border-gray-700">
             <div className="flex items-center gap-3">
@@ -159,12 +189,13 @@ export default function Layout() {
           </div>
           <div className="flex-1 overflow-y-auto">
             <nav className="space-y-1">
-            {nav.map((item) => {
+            {navItems.map((item) => {
               const Icon = item.icon;
               return (
                 <NavLink
                   key={item.to}
                   to={item.to}
+                  onClick={handleNavItemClick}
                   className={({ isActive }) =>
                     `sidebar-item flex items-center gap-2 text-[14px] transition ${
                       isActive
@@ -187,24 +218,34 @@ export default function Layout() {
             </button>
         </div>
       </aside>
-      <main className="main relative z-[1] flex-1">
+      <main className="main relative z-[1] flex-1 w-full max-w-full">
         <div className="relative z-[1] card min-h-[calc(100vh-3rem)] !p-0">
-          <header className="min-h-14 px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
+          <header className="min-h-14 px-4 py-3 sm:px-5 border-b border-slate-100 flex items-center justify-between gap-3">
             <div>
-              <p className="muted-label">Operations Control Center</p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 lg:hidden"
+                  onClick={() => setIsSidebarOpen((prev) => !prev)}
+                  aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+                >
+                  {isSidebarOpen ? <X size={16} /> : <Menu size={16} />}
+                </button>
+                <p className="muted-label">Operations Control Center</p>
+              </div>
               <div className="flex items-center gap-2 text-[#0a2540] font-semibold mt-0.5">
                 <img
                   src={resolveLogoSrc(settings?.companyLogoUrl)}
                   onError={handleLogoError}
                   alt="Config Engineering Logo"
-                  className="h-7 w-auto max-w-[120px] object-contain bg-transparent border-0 shadow-none"
+                  className="hidden sm:block h-7 w-auto max-w-[120px] object-contain bg-transparent border-0 shadow-none"
                 />
-                <LayoutDashboard size={18} />
+                <LayoutDashboard size={18} className="hidden sm:block" />
                 <span className="truncate">Config Engineering Workspace</span>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div ref={searchShellRef} className="relative min-w-[240px] w-full max-w-md">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div ref={searchShellRef} className={`relative w-full max-w-md ${technician ? "hidden" : "hidden md:block"}`}>
                 <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 h-9 text-slate-500 bg-white">
                   <Search size={15} className="shrink-0" />
                   <input
@@ -277,16 +318,21 @@ export default function Layout() {
               <button type="button" className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 h-9 w-9 inline-flex items-center justify-center">
                 <Bell size={16} />
               </button>
+              {isInstallable ? (
+                <button type="button" className="button-secondary !text-slate-700 hidden sm:inline-flex" onClick={promptInstall}>
+                  <Download size={14} /> Install
+                </button>
+              ) : null}
               <button
                 type="button"
-                className="button-secondary !text-slate-600"
+                className="button-secondary !text-slate-600 hidden sm:inline-flex"
                 onClick={() => setTheme((prev) => (prev === "light" ? "dark" : "light"))}
               >
                 {theme === "light" ? "Dark Mode" : "Light Mode"}
               </button>
             </div>
           </header>
-          <section className="p-5 space-y-5">
+          <section className="w-full max-w-full px-4 py-5 sm:px-5 space-y-5 overflow-x-auto">
             <Outlet />
           </section>
         </div>

@@ -52,7 +52,7 @@ export default function ReportsPage() {
 
       {tab === "project" ? (
         <div className="overflow-x-auto">
-          <div className="saas-table-shell min-w-[640px]">
+          <div className="saas-table-shell min-w-full md:min-w-[640px]">
           <div className="saas-grid-head grid grid-cols-12">
             <div className="col-span-5">Project</div>
             <div className="col-span-2 currency-col">Revenue</div>

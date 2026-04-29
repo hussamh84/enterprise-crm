@@ -132,7 +132,7 @@ export default function ProjectDetailsPage() {
         <>
           <div className="premium-card p-5">
             <h2 className="font-semibold text-[#0a2540] mb-4">Project Overview</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <Field label="Project Name" value={project.name} />
               <Field label="Project Type" value={project.projectType || "-"} />
               <Field
@@ -176,7 +176,7 @@ export default function ProjectDetailsPage() {
           <div className="premium-card p-5">
             <h2 className="font-semibold text-[#0a2540] mb-4">Client Details</h2>
             {client ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                 <Field label="Client Name" value={client.name} />
                 <Field label="Client Status" value={client.status || "-"} />
                 <Field label="Primary Contact" value={primaryContact?.name || "-"} />
@@ -194,7 +194,7 @@ export default function ProjectDetailsPage() {
           <div className="premium-card p-5">
             <h2 className="font-semibold text-[#0a2540] mb-4">Project Expenses</h2>
             <form
-              className="grid md:grid-cols-4 gap-3"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!expenseForm.description.trim() || !expenseForm.amount) return;

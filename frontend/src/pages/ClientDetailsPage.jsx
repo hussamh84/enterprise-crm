@@ -97,7 +97,7 @@ export default function ClientDetailsPage() {
         <div className="space-y-5">
           <div className="premium-card p-5">
             <h2 className="font-semibold text-[#0a2540] mb-4">Client Info</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <Field label="Client Name" value={client.name} />
               <Field label="Status" value={client.status || "-"} />
               <Field label="Primary Contact" value={primaryContact?.name || "-"} />
@@ -108,7 +108,7 @@ export default function ClientDetailsPage() {
           </div>
           <div className="premium-card p-5">
             <h2 className="font-semibold text-[#0a2540] mb-4">Summary</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <Metric label="Total Projects" value={<span className="numeric">{String(stats?.totalProjects || 0)}</span>} />
               <Metric label="Total Quotations" value={<span className="numeric">{String(stats?.totalQuotations ?? quotations.length)}</span>} />
               <Metric label="Total Quoted" value={<span className="currency numeric">{formatCurrency(stats?.totalQuoted)}</span>} />

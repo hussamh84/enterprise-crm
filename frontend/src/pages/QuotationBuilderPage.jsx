@@ -233,7 +233,7 @@ export default function QuotationBuilderPage() {
       </div>
 
       <div className="premium-card p-5 space-y-5">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <input className="w-full" value={name} onChange={(event) => setName(event.target.value)} placeholder="Quotation title" />
           <select className="w-full" value={clientId} onChange={(event) => { setClientId(event.target.value); setProjectId(""); }}>
             <option value="">Select client</option>
@@ -312,7 +312,7 @@ export default function QuotationBuilderPage() {
           </button>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <select className="w-full" value={discountType} onChange={(event) => setDiscountType(event.target.value)}>
             <option value="fixed">Fixed Discount</option>
             <option value="percentage">Percentage Discount</option>
@@ -321,7 +321,7 @@ export default function QuotationBuilderPage() {
           <input type="number" min="0" className="w-full" value={tax} onChange={(event) => setTax(event.target.value)} placeholder="Tax amount" />
         </div>
 
-        <div className="totals-box ml-auto w-full min-w-[440px] max-w-full space-y-2 text-sm">
+        <div className="totals-box ml-auto w-full max-w-full space-y-2 text-sm">
           <div className="summary">
             <div className="row">
               <span>Subtotal</span>

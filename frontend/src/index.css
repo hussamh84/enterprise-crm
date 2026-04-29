@@ -212,9 +212,11 @@ a.btn-primary {
 
 .sidebar {
   width: 240px;
+  max-width: 85vw;
   background: #ffffff;
   border-right: 1px solid var(--border);
   padding: 20px;
+  overflow-y: auto;
 }
 
 .sidebar-item {
@@ -231,6 +233,7 @@ a.btn-primary {
 
 .main {
   padding: 25px;
+  min-width: 0;
 }
 
 .card {
@@ -350,8 +353,20 @@ td {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(1, minmax(0, 1fr));
   gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 /* Keep existing component classes mapped to new design tokens safely. */
@@ -885,8 +900,14 @@ a.btn-approve {
 }
 
 .summary {
-  width: 420px;
+  width: min(420px, 100%);
   margin-left: auto;
+}
+
+@media (max-width: 1023px) {
+  .main {
+    padding: 12px;
+  }
 }
 
 .summary .row {
