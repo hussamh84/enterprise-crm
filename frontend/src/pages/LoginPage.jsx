@@ -15,8 +15,9 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     try {
-      const { data } = await api.post("/auth/login", form);
-      setSession(data);
+      const response = await api.post("/auth/login", form);
+      localStorage.setItem("token", response?.data?.token || "");
+      setSession(response.data);
       navigate("/");
     } catch (err) {
       console.warn("Login failed", err?.response?.status || err?.message);

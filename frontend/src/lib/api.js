@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://enterprise-crm-backend-hyb0.onrender.com/api/v1",
+  baseURL: "http://localhost:5000/api/v1",
 });
 
 export const setAuthToken = (token) => {
@@ -13,7 +13,7 @@ export const setAuthToken = (token) => {
 };
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("crm_token") || localStorage.getItem("token");
+  const token = localStorage.getItem("token");
   if (token) {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
@@ -24,16 +24,13 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.log("API ERROR:", error);
     if (error?.response?.status === 401) {
-      localStorage.removeItem("crm_token");
-      localStorage.removeItem("token");
-      localStorage.removeItem("crm_user");
-      delete api.defaults.headers.common.Authorization;
-      const inMobileTestRoute =
-        typeof window !== "undefined" && window.location.pathname.startsWith("/mobile/");
-      if (typeof window !== "undefined" && window.location.pathname !== "/" && !inMobileTestRoute) {
-        window.location.assign("/");
-      }
+      // localStorage.removeItem("crm_token");
+      // localStorage.removeItem("token");
+      // localStorage.removeItem("crm_user");
+      // delete api.defaults.headers.common.Authorization;
+      // window.location.assign("/login");
     }
     return Promise.reject(error);
   }

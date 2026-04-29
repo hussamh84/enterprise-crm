@@ -11,7 +11,6 @@ const { authRouter } = require("./modules/auth/auth.routes");
 const { moduleRouter } = require("./modules");
 const { pdfRouter } = require("./modules/pdf.routes");
 
-const { authMiddleware } = require("./middlewares/authMiddleware");
 const { tenantMiddleware } = require("./middlewares/tenantMiddleware");
 const { errorHandler } = require("./middlewares/errorHandler");
 
@@ -56,6 +55,7 @@ app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
 
 /* ===================== HEALTH ===================== */
 app.get("/health", (_req, res) => res.json({ ok: true }));
+app.get("/api", (_req, res) => res.send("API is working"));
 
 /* ===================== APPLY RATE LIMIT ===================== */
 app.use("/api", apiLimiter);
@@ -65,8 +65,14 @@ app.use("/api", apiLimiter);
 app.use("/api/v1/auth/login", loginLimiter);
 
 app.use("/api/v1/auth", authRouter);
-app.use("/api/v1", authMiddleware, tenantMiddleware, moduleRouter);
-app.use("/api/v1", authMiddleware, tenantMiddleware, pdfRouter);
+app.use("/api/v1", tenantMiddleware, moduleRouter);
+app.use("/api/v1", tenantMiddleware, pdfRouter);
+
+// Backward-compatible aliases so frontend calls to /api/* continue to work.
+app.use("/api/auth/login", loginLimiter);
+app.use("/api/auth", authRouter);
+app.use("/api", tenantMiddleware, moduleRouter);
+app.use("/api", tenantMiddleware, pdfRouter);
 
 /* ===================== ERROR HANDLER ===================== */
 app.use(errorHandler);

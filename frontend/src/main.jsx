@@ -16,10 +16,13 @@ setAuthToken(token);
 document.documentElement.style.setProperty("--app-bg-image", "none");
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch((error) => {
-      console.warn("Service worker registration failed", error);
-    });
+  window.addEventListener("load", async () => {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    } catch (error) {
+      console.warn("Service worker cleanup failed", error);
+    }
   });
 }
 

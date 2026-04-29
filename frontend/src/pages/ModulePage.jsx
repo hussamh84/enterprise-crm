@@ -20,7 +20,18 @@ export default function ModulePage({ title, endpoint }) {
 
   const { data = [], isLoading } = useQuery({
     queryKey: [endpoint],
-    queryFn: async () => (await api.get(endpoint)).data,
+    queryFn: async () => {
+      let responseData = [];
+      try {
+        const res = await api.get(endpoint);
+        console.log("API RESPONSE:", res.data);
+        responseData = res.data;
+      } catch (e) {
+        console.error(e);
+        responseData = [];
+      }
+      return Array.isArray(responseData) ? responseData : [];
+    },
   });
 
   const isClients = endpoint === "/clients";

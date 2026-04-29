@@ -67,6 +67,20 @@ export default function DashboardPage() {
           <span className="text-sm text-gray-500">{today}</span>
           <button
             type="button"
+            onClick={() => navigate("/clients")}
+            className="px-3 py-1.5 rounded text-sm border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+          >
+            Clients
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/projects")}
+            className="px-3 py-1.5 rounded text-sm border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+          >
+            Projects
+          </button>
+          <button
+            type="button"
             onClick={() => navigate("/reports")}
             data-ui="generate-report-btn"
             style={{

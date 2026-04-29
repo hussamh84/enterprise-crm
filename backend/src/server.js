@@ -30,6 +30,7 @@ const start = async () => {
     console.log("MongoDB connected successfully ✅");
 
     app.listen(env.port, () => {
+      console.log(`Server running on port ${env.port}`);
       console.log(`API running on http://localhost:${env.port}`);
     });
   } catch (error) {
