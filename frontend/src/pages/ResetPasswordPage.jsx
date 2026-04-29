@@ -1,18 +1,24 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import api from "../lib/api";
 
 export default function ResetPasswordPage() {
 const { token } = useParams();
+const navigate = useNavigate();
 const [password, setPassword] = useState("");
 const [confirm, setConfirm] = useState("");
 const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
+const [success, setSuccess] = useState("");
 
 const handleSubmit = async (e) => {
 e.preventDefault();
+setError("");
+setSuccess("");
 
 if (password !== confirm) {
-  alert("Passwords do not match");
+  setError("Passwords do not match");
   return;
 }
 
@@ -23,11 +29,12 @@ try {
     password
   });
 
-  alert("Password updated successfully");
+  setSuccess("Password updated successfully. Redirecting to login...");
+  setTimeout(() => navigate("/login"), 900);
 
 } catch (err) {
   console.error(err);
-  alert("Error updating password");
+  setError("Error updating password");
 } finally {
   setLoading(false);
 }
@@ -95,6 +102,8 @@ boxShadow: "0 10px 30px rgba(0,0,0,0.1)"
       >
         {loading ? "Updating..." : "Update Password"}
       </button>
+      {error ? <p style={{ marginTop: "12px", color: "#dc2626", fontSize: "14px" }}>{error}</p> : null}
+      {success ? <p style={{ marginTop: "12px", color: "#16a34a", fontSize: "14px" }}>{success}</p> : null}
     </form>
   </div>
 </div>

@@ -4,16 +4,22 @@ import api from "../lib/api";
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
     try {
+      setLoading(true);
       await api.post("/auth/forgot-password", { email });
-      alert("Request sent");
+      setSuccess("Reset link sent. Please check your email.");
     } catch (err) {
       console.error(err);
       setError("Unable to send reset link. Try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,8 +55,9 @@ export default function ForgotPasswordPage() {
           />
 
           {error ? <p className="login-card__error">{error}</p> : null}
+          {success ? <p className="text-sm text-emerald-600">{success}</p> : null}
 
-          <button type="submit">Send Reset Link</button>
+          <button type="submit" disabled={loading}>{loading ? "Sending..." : "Send Reset Link"}</button>
         </form>
       </div>
     </div>
