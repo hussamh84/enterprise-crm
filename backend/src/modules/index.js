@@ -908,6 +908,49 @@ router.put("/clients/:id", updateClientById);
 router.patch("/clients/:id", updateClientById);
 router.use("/clients", buildCrudRouter({ model: Client, entity: "client" }));
 router.use("/activities", buildCrudRouter({ model: Activity, entity: "activity" }));
+router.post("/visit/checkin", async (req, res, next) => {
+  try {
+    const tenantId = req.tenantId || getTenantId(req);
+    if (!tenantId) {
+      return next(new AppError("Tenant context is required", 400));
+    }
+
+    const latitude = Number(req.body?.latitude);
+    const longitude = Number(req.body?.longitude);
+    const checkInTime = req.body?.time ? new Date(req.body.time) : new Date();
+    const taskId = String(req.body?.taskId || "").trim();
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return next(new AppError("Valid latitude and longitude are required", 400));
+    }
+    if (Number.isNaN(checkInTime.getTime())) {
+      return next(new AppError("Valid check-in time is required", 400));
+    }
+
+    const report = `CHECK_IN\nTIME: ${checkInTime.toISOString()}\nLAT: ${latitude}\nLNG: ${longitude}${taskId ? `\nTASK: ${taskId}` : ""}`;
+    const checkIn = await SiteVisit.create({
+      tenantId,
+      visitDate: checkInTime,
+      assignedTechnician: String(req.user?.email || req.user?.id || "technician"),
+      report,
+      images: [],
+      createdBy: req.user?.id,
+      updatedBy: req.user?.id,
+      auditLog: [{ action: "visit.checkin", by: req.user?.id, note: "Technician GPS check-in" }],
+    });
+
+    return res.status(201).json({
+      message: "Check-in saved",
+      checkInId: checkIn._id,
+      latitude,
+      longitude,
+      time: checkInTime.toISOString(),
+      taskId: taskId || null,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
 router.use("/site-visits", buildCrudRouter({ model: SiteVisit, entity: "site_visit" }));
 const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
   const rawItems = Array.isArray(payload.items) ? payload.items : [];
