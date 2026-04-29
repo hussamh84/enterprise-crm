@@ -29,7 +29,9 @@ api.interceptors.response.use(
       localStorage.removeItem("token");
       localStorage.removeItem("crm_user");
       delete api.defaults.headers.common.Authorization;
-      if (typeof window !== "undefined" && window.location.pathname !== "/") {
+      const inMobileTestRoute =
+        typeof window !== "undefined" && window.location.pathname.startsWith("/mobile/");
+      if (typeof window !== "undefined" && window.location.pathname !== "/" && !inMobileTestRoute) {
         window.location.assign("/");
       }
     }
