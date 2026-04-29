@@ -68,7 +68,13 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => navigate("/reports")}
-            className="border border-slate-300 px-3 py-1 rounded text-sm text-slate-700 hover:bg-slate-50"
+            data-ui="generate-report-btn"
+            style={{
+              backgroundColor: "#111827",
+              color: "#ffffff",
+              border: "none",
+            }}
+            className="px-3 py-1.5 rounded text-sm hover:opacity-90"
           >
             Generate Report
           </button>

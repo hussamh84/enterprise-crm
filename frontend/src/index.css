@@ -1329,3 +1329,14 @@ a[data-ui="create-project-btn"]:focus-visible {
   color: #ffffff !important;
   border-color: #111827 !important;
 }
+
+/* Production lock: dashboard Generate Report button */
+button[data-ui="generate-report-btn"],
+button[data-ui="generate-report-btn"]:hover,
+button[data-ui="generate-report-btn"]:active,
+button[data-ui="generate-report-btn"]:focus,
+button[data-ui="generate-report-btn"]:focus-visible {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
