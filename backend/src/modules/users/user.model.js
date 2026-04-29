@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema(
     role: String,
     tenantId: String,
     permissions: [String],
+    fcmTokens: [{ type: String }],
     resetToken: String,
     resetTokenExpiry: Date,
   },

@@ -10,6 +10,7 @@ const { incrementClientCounter, Counter } = require("./clients/counter.model");
 const { clientNumberField } = require("./clients/client.model");
 const { AppError } = require("../utils/appError");
 const { User } = require("./auth/auth.routes");
+const { sendMulticast } = require("../services/fcm");
 
 console.log("CHECK PAGE:", __filename);
 
@@ -918,6 +919,60 @@ router.put("/clients/:id", updateClientById);
 router.patch("/clients/:id", updateClientById);
 router.use("/clients", buildCrudRouter({ model: Client, entity: "client" }));
 router.use("/activities", buildCrudRouter({ model: Activity, entity: "activity" }));
+router.post("/notifications/register-device", async (req, res, next) => {
+  try {
+    const tenantId = req.tenantId || getTenantId(req);
+    const userId = String(req.user?.id || "").trim();
+    const token = String(req.body?.token || "").trim();
+    if (!tenantId) return next(new AppError("Tenant context is required", 400));
+    if (!userId) return next(new AppError("User context is required", 401));
+    if (!token) return next(new AppError("token is required", 400));
+
+    await User.findOneAndUpdate(
+      { _id: userId, tenantId },
+      { $addToSet: { fcmTokens: token } },
+      { new: true }
+    );
+    return res.json({ ok: true });
+  } catch (error) {
+    return next(error);
+  }
+});
+router.post("/notifications/technician-complete", async (req, res, next) => {
+  try {
+    const tenantId = req.tenantId || getTenantId(req);
+    if (!tenantId) return next(new AppError("Tenant context is required", 400));
+
+    // Fire-and-forget async delivery to admins, does not block UX
+    setImmediate(async () => {
+      try {
+        const admins = await User.find({
+          tenantId,
+          role: { $in: ["admin", "company_admin"] },
+          fcmTokens: { $exists: true, $ne: [] },
+        })
+          .select("fcmTokens")
+          .lean();
+        const adminTokens = [...new Set(admins.flatMap((admin) => admin.fcmTokens || []))];
+        await sendMulticast({
+          tokens: adminTokens,
+          title: "Visit Completed",
+          body: "Technician submitted visit report",
+          data: {
+            event: "visit_completed",
+            taskId: String(req.body?.taskId || ""),
+            projectId: String(req.body?.projectId || req.body?.taskId || ""),
+          },
+        });
+      } catch (err) {
+        console.warn("Async technician-complete notification failed", err?.message || err);
+      }
+    });
+    return res.json({ queued: true });
+  } catch (error) {
+    return next(error);
+  }
+});
 router.post("/visit/checkin", async (req, res, next) => {
   try {
     const tenantId = req.tenantId || getTenantId(req);
@@ -993,6 +1048,34 @@ router.post("/visit/checkin", async (req, res, next) => {
       updatedBy: req.user?.id,
       auditLog: [{ action: "visit.checkin", by: req.user?.id, note: "Technician GPS check-in" }],
     });
+
+    if (status === "ON_SITE") {
+      setImmediate(async () => {
+        try {
+          const admins = await User.find({
+            tenantId,
+            role: { $in: ["admin", "company_admin"] },
+            fcmTokens: { $exists: true, $ne: [] },
+          })
+            .select("fcmTokens")
+            .lean();
+          const adminTokens = [...new Set(admins.flatMap((admin) => admin.fcmTokens || []))];
+          await sendMulticast({
+            tokens: adminTokens,
+            title: "Technician Arrived",
+            body: "Technician is now on site",
+            data: {
+              event: "technician_arrived",
+              visitId: String(visit._id),
+              projectId,
+              technicianId,
+            },
+          });
+        } catch (err) {
+          console.warn("Async ON_SITE notification failed", err?.message || err);
+        }
+      });
+    }
 
     return res.status(201).json({
       message: "Check-in saved",
