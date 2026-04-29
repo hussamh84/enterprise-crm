@@ -23,11 +23,10 @@ import SettingsPage from "./pages/SettingsPage";
 import ReportsPage from "./pages/ReportsPage";
 import SiteVisitPage from "./pages/SiteVisitPage";
 import TechnicianTasksPage from "./pages/TechnicianTasksPage";
-import MobileTechnicianLayout from "./components/MobileTechnicianLayout";
 import MobileMapPage from "./pages/MobileMapPage";
-import MobileTasksPage from "./pages/MobileTasksPage";
 import MobileVisitPage from "./pages/MobileVisitPage";
 import VisitProofsPage from "./pages/VisitProofsPage";
+import TechnicianHome from "./pages/mobile/TechnicianHome";
 import { useAuthStore } from "./store/authStore";
 import { isTechnician } from "./utils/roleAccess";
 
@@ -60,16 +59,10 @@ function App() {
   return (
     <div className="relative z-[1]">
       <Routes>
-        <Route
-          path="/mobile"
-          element={<MobileTechnicianLayout />}
-        >
-          <Route index element={<Navigate to="/mobile/tasks" replace />} />
-          <Route path="map" element={<MobileMapPage />} />
-          <Route path="tasks" element={<MobileTasksPage />} />
-          <Route path="visit/:id" element={<MobileVisitPage />} />
-          <Route path="visit/new" element={<MobileVisitPage />} />
-        </Route>
+        <Route path="/mobile/tasks" element={<TechnicianHome />} />
+        <Route path="/mobile/map" element={<MobileMapPage />} />
+        <Route path="/mobile/visit/:id" element={<MobileVisitPage />} />
+        <Route path="/mobile/visit/new" element={<MobileVisitPage />} />
         <Route path="/" element={<Layout />}>
           <Route index element={technician ? <Navigate to="/mobile/tasks" replace /> : <DashboardPage />} />
           <Route path="technician/tasks" element={technician ? <Navigate to="/mobile/tasks" replace /> : <TechnicianTasksPage />} />
