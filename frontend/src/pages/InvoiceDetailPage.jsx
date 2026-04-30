@@ -60,6 +60,7 @@ export default function InvoiceDetailPage() {
       await queryClient.invalidateQueries({ queryKey: ["reports-monthly-breakdown"] });
       await queryClient.invalidateQueries({ queryKey: ["reports-yearly-breakdown"] });
       setPaymentAmount("");
+      window.open(`/api/invoices/${invoiceId}/pdf`, "_blank");
     },
   });
 

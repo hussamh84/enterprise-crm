@@ -52,6 +52,13 @@ const formatCurrency = (value = 0) =>
     maximumFractionDigits: 2,
   }).format(Number(value || 0));
 
+const getInvoiceStatusLabel = (invoice, remaining, paid) => {
+  const raw = String(invoice?.status || "").toLowerCase();
+  if (remaining <= 0 || raw === "paid") return "Paid";
+  if (paid > 0 || raw === "partial") return "Partial";
+  return "Draft";
+};
+
 const addWatermark = (doc, branding) => {
   if (!branding.companyLogoPath) return;
   doc.save();
@@ -363,7 +370,8 @@ router.get("/invoices/:id/pdf", async (req, res, next) => {
     const total = Number(invoice.total || 0);
     const paid = Number(invoice.paidAmount || 0);
     const remaining = Number(invoice.remainingAmount ?? Math.max(total - paid, 0));
-    const paidLabel = remaining <= 0 || String(invoice.status || "").toLowerCase() === "paid" ? "PAID" : "UNPAID";
+    const statusLabel = getInvoiceStatusLabel(invoice, remaining, paid);
+    const badgeLabel = statusLabel.toUpperCase();
     const invoiceItems = Array.isArray(invoice.items) ? invoice.items : [];
     const items = quotation?.items?.length
       ? quotation.items
@@ -385,7 +393,7 @@ router.get("/invoices/:id/pdf", async (req, res, next) => {
         branding,
         issueDate: new Date(invoice.createdAt || Date.now()).toLocaleDateString(),
       });
-      addStatusBadge(doc, paidLabel);
+      addStatusBadge(doc, badgeLabel);
       const tableTop = addPartyBlock(doc, printableInvoice, project);
       const { y, subtotal: lineSubtotal } = addItemsTable(doc, items, tableTop + 8);
       const summarySubtotal = quotation
@@ -405,6 +413,7 @@ router.get("/invoices/:id/pdf", async (req, res, next) => {
         .fontSize(9)
         .font("Helvetica")
         .fillColor("#0f172a")
+        .text(`Status: ${statusLabel}`, 50, totalsEndY - 8)
         .text(`Paid to date: ${formatCurrency(paid)}`, 50, totalsEndY + 8)
         .text(`Balance due: ${formatCurrency(remaining)}`, 50, totalsEndY + 24);
       doc

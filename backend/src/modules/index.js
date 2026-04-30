@@ -148,7 +148,7 @@ const Invoice = makeEntityModel("Invoice", {
   paidAmount: { type: Number, default: 0 },
   remainingAmount: { type: Number, default: 0 },
   paidAt: { type: Date, default: null },
-  status: { type: String, enum: ["unpaid", "paid"], default: "unpaid" },
+  status: { type: String, enum: ["draft", "unpaid", "partial", "paid"], default: "draft" },
   stockDeducted: { type: Boolean, default: false },
   profit: { type: Number, default: 0 },
 });
@@ -1665,7 +1665,7 @@ router.post("/invoices", async (req, res, next) => {
     const paidAmount = requestedPaid ? total : Number(req.body?.paidAmount || 0);
     const safePaidAmount = Number.isFinite(paidAmount) && paidAmount >= 0 ? Math.min(paidAmount, total) : 0;
     const remainingAmount = Math.max(total - safePaidAmount, 0);
-    const status = safePaidAmount >= total ? "paid" : "unpaid";
+    const status = safePaidAmount >= total ? "paid" : safePaidAmount > 0 ? "partial" : "draft";
     const calculatedProfit = source === "inventory"
       ? await calculateInvoiceProfitFromItems({ tenantId, items: normalizedItems })
       : await calculateInvoiceProfitFromQuotation({
@@ -1732,7 +1732,7 @@ router.patch("/invoices/:id/pay", async (req, res, next) => {
     const currentPaid = Number(invoice.paidAmount || 0);
     const nextPaidAmount = Math.min(currentPaid + amount, total);
     const remainingAmount = Math.max(total - nextPaidAmount, 0);
-    const status = remainingAmount <= 0 ? "paid" : "unpaid";
+    const status = remainingAmount <= 0 ? "paid" : nextPaidAmount > 0 ? "partial" : "draft";
 
     const session = await mongoose.startSession();
     let updatedInvoice = null;
