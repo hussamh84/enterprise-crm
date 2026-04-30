@@ -19,6 +19,9 @@ import SalesFromInventoryPage from "./pages/SalesFromInventoryPage";
 import InventoryPage from "./pages/InventoryPage";
 import InvoicePage from "./pages/InvoicePage";
 import LeadsPage from "./pages/LeadsPage";
+import QuotationsPage from "./pages/QuotationsPage";
+import QuotationBuilderPage from "./pages/QuotationBuilderPage";
+import QuotationViewPage from "./pages/QuotationViewPage";
 
 function App() {
   return (
@@ -29,6 +32,10 @@ function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<DashboardPage />} />
         <Route path="/leads" element={<LeadsPage />} />
+        <Route path="/quotations" element={<QuotationsPage />} />
+        <Route path="/quotations/new" element={<QuotationBuilderPage />} />
+        <Route path="/quotations/:quotationId/edit" element={<QuotationBuilderPage />} />
+        <Route path="/quotations/:id" element={<QuotationViewPage />} />
         <Route path="clients" element={<ClientsPage />} />
         <Route path="clients/new" element={<CreateClientPage />} />
         <Route path="clients/:clientId/edit" element={<EditClientPage />} />
