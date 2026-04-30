@@ -38,12 +38,8 @@ function App() {
         <Route path="/quotations/:id" element={<QuotationViewPage />} />
         <Route path="clients" element={<ClientsPage />} />
         <Route path="clients/new" element={<CreateClientPage />} />
-        <Route path="clients/:id" element={<ClientBaseRedirect />} />
-        <Route path="clients/:id/overview" element={<ClientOverview />} />
-        <Route path="clients/:id/projects" element={<ClientProjects />} />
-        <Route path="clients/:id/quotations" element={<ClientQuotations />} />
-        <Route path="clients/:id/invoices" element={<ClientInvoices />} />
-        <Route path="clients/:id/activity" element={<ClientActivity />} />
+        <Route path="clients/:id/:tab" element={<ClientDetailsPage />} />
+        <Route path="clients/:id" element={<ClientDetailsPage />} />
         <Route path="clients/:clientId/edit" element={<EditClientPage />} />
         <Route path="clients/:clientId" element={<ClientLegacyRedirect />} />
         <Route path="projects" element={<ModulePage title="Projects" endpoint="/projects" />} />
@@ -64,32 +60,7 @@ function App() {
 
 export default App;
 
-function ClientBaseRedirect() {
-  const { id } = useParams();
-  return <Navigate to={`/clients/${id}/overview`} replace />;
-}
-
 function ClientLegacyRedirect() {
   const { clientId } = useParams();
   return <Navigate to={`/clients/${clientId}/overview`} replace />;
-}
-
-function ClientOverview() {
-  return <ClientDetailsPage />;
-}
-
-function ClientProjects() {
-  return <ClientDetailsPage />;
-}
-
-function ClientQuotations() {
-  return <ClientDetailsPage />;
-}
-
-function ClientInvoices() {
-  return <ClientDetailsPage />;
-}
-
-function ClientActivity() {
-  return <ClientDetailsPage />;
 }
