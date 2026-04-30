@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, NavLink, useParams } from "react-router-dom";
+import { Link, NavLink, useNavigate, useParams } from "react-router-dom";
 import { Fragment } from "react";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
@@ -278,9 +278,14 @@ export default function ClientDetailsPage() {
 
 function ClientTabs() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   return (
-    <div className="flex gap-2 bg-gray-100 p-2 rounded-xl">
+    <div>
+      <button type="button" onClick={() => navigate("/clients/1/overview")}>
+        TEST NAV
+      </button>
+      <div className="flex gap-2 bg-gray-100 p-2 rounded-xl">
       <NavLink
         to={`/clients/${id}/overview`}
         className={({ isActive }) =>
@@ -335,6 +340,7 @@ function ClientTabs() {
       >
         Activity Timeline
       </NavLink>
+      </div>
     </div>
   );
 }
