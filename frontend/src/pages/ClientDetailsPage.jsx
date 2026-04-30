@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, NavLink, useParams } from "react-router-dom";
 import { Fragment } from "react";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
@@ -278,38 +278,63 @@ export default function ClientDetailsPage() {
 
 function ClientTabs() {
   const { id } = useParams();
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const tabs = [
-    { name: "Overview", path: "overview" },
-    { name: "Projects", path: "projects" },
-    { name: "Quotations", path: "quotations" },
-    { name: "Client Invoices", path: "invoices" },
-    { name: "Activity Timeline", path: "activity" },
-  ];
 
   return (
     <div className="flex gap-2 bg-gray-100 p-2 rounded-xl">
-      {tabs.map((tab) => {
-        const isActive = location.pathname.includes(tab.path);
+      <NavLink
+        to={`/clients/${id}/overview`}
+        className={({ isActive }) =>
+          `px-4 py-2 rounded-lg text-sm font-medium ${
+            isActive ? "bg-black text-white" : "bg-white text-gray-700"
+          }`
+        }
+      >
+        Overview
+      </NavLink>
 
-        return (
-          <button
-            key={tab.path}
-            type="button"
-            onClick={() => navigate(`/clients/${id}/${tab.path}`)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition
-              ${
-                isActive
-                  ? "bg-black text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-200"
-              }`}
-          >
-            {tab.name}
-          </button>
-        );
-      })}
+      <NavLink
+        to={`/clients/${id}/projects`}
+        className={({ isActive }) =>
+          `px-4 py-2 rounded-lg text-sm font-medium ${
+            isActive ? "bg-black text-white" : "bg-white text-gray-700"
+          }`
+        }
+      >
+        Projects
+      </NavLink>
+
+      <NavLink
+        to={`/clients/${id}/quotations`}
+        className={({ isActive }) =>
+          `px-4 py-2 rounded-lg text-sm font-medium ${
+            isActive ? "bg-black text-white" : "bg-white text-gray-700"
+          }`
+        }
+      >
+        Quotations
+      </NavLink>
+
+      <NavLink
+        to={`/clients/${id}/invoices`}
+        className={({ isActive }) =>
+          `px-4 py-2 rounded-lg text-sm font-medium ${
+            isActive ? "bg-black text-white" : "bg-white text-gray-700"
+          }`
+        }
+      >
+        Client Invoices
+      </NavLink>
+
+      <NavLink
+        to={`/clients/${id}/activity`}
+        className={({ isActive }) =>
+          `px-4 py-2 rounded-lg text-sm font-medium ${
+            isActive ? "bg-black text-white" : "bg-white text-gray-700"
+          }`
+        }
+      >
+        Activity Timeline
+      </NavLink>
     </div>
   );
 }
