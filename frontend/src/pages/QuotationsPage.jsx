@@ -74,13 +74,13 @@ export default function QuotationsPage() {
                   <div className="col-span-2 text-sm text-slate-600">{formatCurrency(amount)}</div>
                   <div className="col-span-2 text-sm">{status}</div>
                   <div className="col-span-2 text-sm text-slate-600">{new Date(q.createdAt || Date.now()).toLocaleDateString()}</div>
-                  <div className="col-span-3 p-2 whitespace-nowrap">
-                    <div className="flex items-center gap-1 flex-wrap">
+                  <div className="col-span-3 p-2 whitespace-nowrap text-right">
+                    <div className="flex items-center gap-1 flex-nowrap justify-end">
                       <Link to={`/quotations/${q._id}`} className="text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-700">View</Link>
                       <Link to={`/quotations/${q._id}/edit`} className="text-xs px-2 py-1 rounded-md bg-gray-100 text-gray-700">Edit</Link>
-                      <button type="button" className="text-xs px-2 py-1 rounded-md bg-red-100 text-red-600" onClick={() => handleDelete(q._id)}>Delete</button>
                       <button type="button" className="text-xs px-2 py-1 rounded-md bg-black text-white" onClick={() => handleConvertToInvoice(q._id)}>Approve</button>
                       <button type="button" className="text-xs px-2 py-1 rounded-md bg-gray-200 text-gray-800" onClick={() => openPdf(`/quotations/${q._id}/pdf`)}>PDF</button>
+                      <button type="button" className="text-xs px-2 py-1 rounded-md bg-red-100 text-red-600" onClick={() => handleDelete(q._id)}>Delete</button>
                     </div>
                   </div>
                 </div>
