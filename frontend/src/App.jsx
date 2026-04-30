@@ -13,6 +13,7 @@ import ReportsPage from "./pages/ReportsPage";
 import CreateClientPage from "./pages/CreateClientPage";
 import EditClientPage from "./pages/EditClientPage";
 import ClientDetailsPage from "./pages/ClientDetailsPage";
+import ClientInvoicesPage from "./pages/ClientInvoicesPage";
 import ProjectDetailsPage from "./pages/ProjectDetailsPage";
 import InvoiceDetailPage from "./pages/InvoiceDetailPage";
 import SalesFromInventoryPage from "./pages/SalesFromInventoryPage";
@@ -38,6 +39,8 @@ function App() {
         <Route path="/quotations/:id" element={<QuotationViewPage />} />
         <Route path="clients" element={<ClientsPage />} />
         <Route path="clients/new" element={<CreateClientPage />} />
+        <Route path="clients/:id" element={<ClientDetailsPage />} />
+        <Route path="clients/:id/invoices" element={<ClientInvoicesPage />} />
         <Route path="clients/:clientId/edit" element={<EditClientPage />} />
         <Route path="clients/:clientId" element={<ClientDetailsPage />} />
         <Route path="projects" element={<ModulePage title="Projects" endpoint="/projects" />} />

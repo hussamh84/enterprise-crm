@@ -20,9 +20,10 @@ const TABS = [
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");
 const dateTimeValue = (value) => (value ? new Date(value).toLocaleString() : "-");
 
-export default function ClientDetailsPage() {
-  const { clientId } = useParams();
-  const [activeTab, setActiveTab] = useState("overview");
+export default function ClientDetailsPage({ initialTab = "overview" }) {
+  const { id, clientId: legacyClientId } = useParams();
+  const clientId = id || legacyClientId;
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["client-details", clientId],
@@ -205,7 +206,7 @@ export default function ClientDetailsPage() {
                       <th className="px-3 py-2">Remaining</th>
                       <th className="px-3 py-2">Status</th>
                       <th className="px-3 py-2">Date</th>
-                      <th className="px-3 py-2 text-right whitespace-nowrap">Actions</th>
+                      <th className="px-3 py-2 text-right whitespace-nowrap w-[220px] max-w-[220px]">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -221,18 +222,18 @@ export default function ClientDetailsPage() {
                             <td className="px-3 py-3"><span className="currency numeric">{formatCurrency(invoice.remainingAmount || 0)}</span></td>
                             <td className="px-3 py-3">{String(invoice.status || "draft")}</td>
                             <td className="px-3 py-3">{dateValue(invoice.createdAt)}</td>
-                            <td className="px-3 py-3 whitespace-nowrap text-right">
-                              <div className="flex items-center gap-1 justify-end">
+                            <td className="px-3 py-3 whitespace-nowrap text-right w-[220px] max-w-[220px] overflow-hidden">
+                              <div className="flex gap-1 justify-end items-center max-w-full overflow-hidden">
                                 <button
                                   type="button"
-                                  className="btn-secondary btn-compact"
+                                  className="text-xs px-2 py-1 rounded-md shrink-0 bg-slate-100 text-slate-700 hover:bg-slate-200 truncate"
                                   onClick={() => window.open(`/api/invoices/${invoice._id}/pdf`, "_blank")}
                                 >
                                   PDF
                                 </button>
                                 <button
                                   type="button"
-                                  className="btn-secondary btn-compact"
+                                  className="text-xs px-2 py-1 rounded-md shrink-0 bg-slate-100 text-slate-700 hover:bg-slate-200 truncate"
                                   onClick={() => setExpandedInvoiceId(isExpanded ? null : invoice._id)}
                                 >
                                   {isExpanded ? "Hide" : "Payments"}
