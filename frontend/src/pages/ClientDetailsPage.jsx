@@ -177,14 +177,14 @@ export default function ClientDetailsPage() {
           ) : (
             <div className="space-y-2 max-w-full overflow-hidden">
               <div className="w-full">
-                <table className="w-full table-fixed">
+                <table className="w-full">
                   <thead>
                     <tr className="saas-grid-head text-left">
                       <th className="px-2 py-2">Invoice Number</th>
-                      <th className="px-2 py-2">Total</th>
-                      <th className="px-2 py-2">Paid</th>
-                      <th className="px-2 py-2">Remaining</th>
-                      <th className="px-2 py-2">Status</th>
+                      <th className="px-2 py-2 w-[140px]">Total</th>
+                      <th className="px-2 py-2 w-[140px]">Paid</th>
+                      <th className="px-2 py-2 w-[140px]">Remaining</th>
+                      <th className="px-2 py-2 w-[120px]">Status</th>
                       <th className="px-2 py-2">Date</th>
                       <th className="px-2 py-2 text-right whitespace-nowrap">Actions</th>
                     </tr>
@@ -196,13 +196,17 @@ export default function ClientDetailsPage() {
                       return (
                         <Fragment key={invoice._id}>
                           <tr key={invoice._id} className="saas-grid-row text-sm border-b border-slate-200">
-                            <td className="px-2 py-2 font-medium whitespace-nowrap">{invoice.invoiceNo || invoice.invoiceNumber || "—"}</td>
-                            <td className="px-2 py-2 whitespace-nowrap"><span className="currency numeric">{formatCurrency(invoice.total || 0)}</span></td>
-                            <td className="px-2 py-2 whitespace-nowrap"><span className="currency numeric">{formatCurrency(invoice.paidAmount || 0)}</span></td>
-                            <td className="px-2 py-2 whitespace-nowrap"><span className="currency numeric">{formatCurrency(invoice.remainingAmount || 0)}</span></td>
-                            <td className="px-2 py-2 whitespace-nowrap">{String(invoice.status || "draft")}</td>
-                            <td className="px-2 py-2 whitespace-nowrap">{dateValue(invoice.createdAt)}</td>
-                            <td className="px-2 py-2 whitespace-nowrap text-right overflow-hidden">
+                            <td className="px-3 py-2 whitespace-nowrap font-medium">{invoice.invoiceNo || invoice.invoiceNumber || "—"}</td>
+                            <td className="px-3 py-2 whitespace-nowrap"><span className="currency numeric">{formatCurrency(invoice.total || 0)}</span></td>
+                            <td className="px-3 py-2 whitespace-nowrap"><span className="currency numeric">{formatCurrency(invoice.paidAmount || 0)}</span></td>
+                            <td className="px-3 py-2 whitespace-nowrap"><span className="currency numeric">{formatCurrency(invoice.remainingAmount || 0)}</span></td>
+                            <td className="px-3 py-2 whitespace-nowrap">
+                              <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-700 text-xs">
+                                {String(invoice.status || "draft")}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 whitespace-nowrap">{dateValue(invoice.createdAt)}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-right overflow-hidden">
                               <div className="flex gap-1 items-center justify-end">
                                 <button
                                   type="button"
