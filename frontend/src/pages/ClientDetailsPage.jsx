@@ -10,20 +10,21 @@ const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
 
 const TABS = [
-  { key: "overview", label: "Overview" },
-  { key: "projects", label: "Projects" },
-  { key: "quotations", label: "Quotations" },
-  { key: "invoices", label: "Client Invoices" },
-  { key: "timeline", label: "Activity Timeline" },
+  { key: "overview", label: "Overview", segment: "overview" },
+  { key: "projects", label: "Projects", segment: "projects" },
+  { key: "quotations", label: "Quotations", segment: "quotations" },
+  { key: "invoices", label: "Client Invoices", segment: "invoices" },
+  { key: "activity", label: "Activity Timeline", segment: "activity" },
 ];
 
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");
 const dateTimeValue = (value) => (value ? new Date(value).toLocaleString() : "-");
 
-export default function ClientDetailsPage({ initialTab = "overview" }) {
-  const { id, clientId: legacyClientId } = useParams();
+export default function ClientDetailsPage() {
+  const { id, clientId: legacyClientId, tab } = useParams();
   const clientId = id || legacyClientId;
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const validTabs = new Set(TABS.map((item) => item.key));
+  const activeTab = validTabs.has(tab) ? tab : "overview";
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["client-details", clientId],
@@ -88,16 +89,15 @@ export default function ClientDetailsPage({ initialTab = "overview" }) {
       <div className="premium-card p-2">
         <div className="flex flex-wrap gap-2">
           {TABS.map((tab) => (
-            <button
+            <Link
               key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
+              to={`/clients/${encodeURIComponent(clientId)}/${tab.segment}`}
               className={`rounded-lg px-3 py-2 text-sm font-medium ${
                 activeTab === tab.key ? "bg-[#eef4ff] text-[#1f3d7a]" : "text-[#425466] hover:bg-slate-50"
               }`}
             >
               {tab.label}
-            </button>
+            </Link>
           ))}
         </div>
       </div>
@@ -196,17 +196,17 @@ export default function ClientDetailsPage({ initialTab = "overview" }) {
             <p className="text-sm text-[#6b7c93]">No invoices for this client yet.</p>
           ) : (
             <div className="space-y-2 max-w-full overflow-hidden">
-              <div className="overflow-x-auto w-full">
-                <table className="w-full min-w-[900px]">
+              <div className="w-full">
+                <table className="w-full table-fixed">
                   <thead>
                     <tr className="saas-grid-head text-left">
-                      <th className="px-3 py-2">Invoice Number</th>
-                      <th className="px-3 py-2">Total</th>
-                      <th className="px-3 py-2">Paid</th>
-                      <th className="px-3 py-2">Remaining</th>
-                      <th className="px-3 py-2">Status</th>
-                      <th className="px-3 py-2">Date</th>
-                      <th className="px-3 py-2 text-right whitespace-nowrap w-[220px] max-w-[220px]">Actions</th>
+                      <th className="px-2 py-2">Invoice Number</th>
+                      <th className="px-2 py-2">Total</th>
+                      <th className="px-2 py-2">Paid</th>
+                      <th className="px-2 py-2">Remaining</th>
+                      <th className="px-2 py-2">Status</th>
+                      <th className="px-2 py-2">Date</th>
+                      <th className="px-2 py-2 text-right whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -216,24 +216,24 @@ export default function ClientDetailsPage({ initialTab = "overview" }) {
                       return (
                         <Fragment key={invoice._id}>
                           <tr key={invoice._id} className="saas-grid-row text-sm border-b border-slate-200">
-                            <td className="px-3 py-3 font-medium">{invoice.invoiceNo || invoice.invoiceNumber || "—"}</td>
-                            <td className="px-3 py-3"><span className="currency numeric">{formatCurrency(invoice.total || 0)}</span></td>
-                            <td className="px-3 py-3"><span className="currency numeric">{formatCurrency(invoice.paidAmount || 0)}</span></td>
-                            <td className="px-3 py-3"><span className="currency numeric">{formatCurrency(invoice.remainingAmount || 0)}</span></td>
-                            <td className="px-3 py-3">{String(invoice.status || "draft")}</td>
-                            <td className="px-3 py-3">{dateValue(invoice.createdAt)}</td>
-                            <td className="px-3 py-3 whitespace-nowrap text-right w-[220px] max-w-[220px] overflow-hidden">
-                              <div className="flex gap-1 justify-end items-center max-w-full overflow-hidden">
+                            <td className="px-2 py-2 font-medium whitespace-nowrap">{invoice.invoiceNo || invoice.invoiceNumber || "—"}</td>
+                            <td className="px-2 py-2 whitespace-nowrap"><span className="currency numeric">{formatCurrency(invoice.total || 0)}</span></td>
+                            <td className="px-2 py-2 whitespace-nowrap"><span className="currency numeric">{formatCurrency(invoice.paidAmount || 0)}</span></td>
+                            <td className="px-2 py-2 whitespace-nowrap"><span className="currency numeric">{formatCurrency(invoice.remainingAmount || 0)}</span></td>
+                            <td className="px-2 py-2 whitespace-nowrap">{String(invoice.status || "draft")}</td>
+                            <td className="px-2 py-2 whitespace-nowrap">{dateValue(invoice.createdAt)}</td>
+                            <td className="px-2 py-2 whitespace-nowrap text-right overflow-hidden">
+                              <div className="flex gap-1 items-center justify-end">
                                 <button
                                   type="button"
-                                  className="text-xs px-2 py-1 rounded-md shrink-0 bg-slate-100 text-slate-700 hover:bg-slate-200 truncate"
+                                  className="text-xs px-2 py-1 rounded-md shrink-0 bg-slate-100 text-slate-700 hover:bg-slate-200"
                                   onClick={() => window.open(`/api/invoices/${invoice._id}/pdf`, "_blank")}
                                 >
                                   PDF
                                 </button>
                                 <button
                                   type="button"
-                                  className="text-xs px-2 py-1 rounded-md shrink-0 bg-slate-100 text-slate-700 hover:bg-slate-200 truncate"
+                                  className="text-xs px-2 py-1 rounded-md shrink-0 bg-slate-100 text-slate-700 hover:bg-slate-200"
                                   onClick={() => setExpandedInvoiceId(isExpanded ? null : invoice._id)}
                                 >
                                   {isExpanded ? "Hide" : "Payments"}
@@ -271,7 +271,7 @@ export default function ClientDetailsPage({ initialTab = "overview" }) {
         </div>
       )}
 
-      {activeTab === "timeline" && (
+      {activeTab === "activity" && (
         <div className="premium-card p-5">
           <h2 className="font-semibold text-[#0a2540] mb-4">Activity Timeline</h2>
           {timeline.length === 0 ? (
