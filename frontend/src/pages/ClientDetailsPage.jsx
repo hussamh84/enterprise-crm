@@ -297,7 +297,6 @@ function ClientTabs() {
           <Link
             key={tab.path}
             to={`/clients/${id}/${tab.path}`}
-            onClick={() => console.log("CLICK WORKING")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition
               ${
                 isActive
