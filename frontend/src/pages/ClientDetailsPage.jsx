@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Fragment } from "react";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
@@ -279,6 +279,7 @@ export default function ClientDetailsPage() {
 function ClientTabs() {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const tabs = [
     { name: "Overview", path: "overview" },
@@ -294,9 +295,10 @@ function ClientTabs() {
         const isActive = location.pathname.includes(tab.path);
 
         return (
-          <Link
+          <button
             key={tab.path}
-            to={`/clients/${id}/${tab.path}`}
+            type="button"
+            onClick={() => navigate(`/clients/${id}/${tab.path}`)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition
               ${
                 isActive
@@ -305,7 +307,7 @@ function ClientTabs() {
               }`}
           >
             {tab.name}
-          </Link>
+          </button>
         );
       })}
     </div>
