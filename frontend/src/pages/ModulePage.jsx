@@ -563,6 +563,9 @@ export default function ModulePage({ title, endpoint }) {
             const clientEmail = item?.clientId?.email || "no-email@client.com";
             const invoiceName = item?.invoiceNo || item?.name || "Invoice";
             const statusLabel = getInvoiceStatusLabel(item);
+            const totalAmount = Number(item?.total || 0);
+            const paidAmount = Number(item?.paidAmount || 0);
+            const remainingAmount = Number(item?.remainingAmount ?? Math.max(totalAmount - paidAmount, 0));
 
             return (
               <div
@@ -582,10 +585,12 @@ export default function ModulePage({ title, endpoint }) {
                 <div className="col-span-3 min-w-0">
                   <p className="text-sm font-semibold text-[#0a2540] truncate">{invoiceName}</p>
                   <p className="text-xs text-gray-500">
-                    Total:{" "}
-                    <span className="font-medium whitespace-nowrap text-[#374151] numeric">
-                      {formatCurrency(item?.total || 0)}
-                    </span>
+                    Remaining:{" "}
+                    <span className="font-medium whitespace-nowrap text-[#374151] numeric">{formatCurrency(remainingAmount)}</span>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Paid:{" "}
+                    <span className="font-medium whitespace-nowrap text-[#374151] numeric">{formatCurrency(paidAmount)}</span>
                   </p>
                 </div>
 

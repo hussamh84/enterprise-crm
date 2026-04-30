@@ -385,11 +385,12 @@ router.get("/invoices/:id/pdf", async (req, res, next) => {
     const grandTotal = total;
 
     streamPdf(res, `invoice-${invoice.invoiceNo || invoice._id}.pdf`, (doc) => {
+      const invoiceNumber = String(invoice.invoiceNumber || invoice.invoiceNo || "").trim() || "—";
       addWatermark(doc, branding);
       addHeader(doc, {
         title: "Invoice",
-        docNoLabel: "Invoice No:",
-        docNo: String(invoice.invoiceNo || "").trim() || "—",
+        docNoLabel: "Invoice #:",
+        docNo: invoiceNumber,
         branding,
         issueDate: new Date(invoice.createdAt || Date.now()).toLocaleDateString(),
       });
