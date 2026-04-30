@@ -289,7 +289,7 @@ function ClientTabs() {
   ];
 
   return (
-    <div className="flex gap-2 bg-gray-100 p-2 rounded-xl w-fit">
+    <div className="flex gap-2 bg-gray-100 p-2 rounded-xl w-fit relative z-50 pointer-events-auto">
       {tabs.map((tab) => {
         const isActive = location.pathname.includes(tab.path);
 
@@ -297,6 +297,7 @@ function ClientTabs() {
           <Link
             key={tab.path}
             to={`/clients/${id}/${tab.path}`}
+            onClick={() => console.log("CLICK WORKING")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition
               ${
                 isActive
