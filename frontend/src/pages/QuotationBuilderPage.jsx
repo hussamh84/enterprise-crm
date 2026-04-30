@@ -4,7 +4,6 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { CirclePlus, FileText, Trash2 } from "lucide-react";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
-import { formatClientNumber } from "../utils/formatClientNumber";
 
 const BLANK_ITEM = { productId: "", description: "", quantity: 1, unitPrice: 0, lockPrice: false };
 
@@ -239,7 +238,7 @@ export default function QuotationBuilderPage() {
             <option value="">Select client</option>
             {clients.map((client) => (
               <option key={client._id} value={client._id}>
-                {formatClientNumber(client)} — {client.name}
+                {client.name}
               </option>
             ))}
           </select>

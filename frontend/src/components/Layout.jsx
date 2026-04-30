@@ -12,9 +12,9 @@ console.log("CHECK PAGE:", __filename);
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Briefcase },
-  { to: "/quotations", label: "Quotations", icon: Settings },
   { to: "/clients", label: "Clients", icon: UserCircle2 },
   { to: "/projects", label: "Projects", icon: ShieldCheck },
+  { to: "/quotations", label: "Quotations", icon: Settings },
   { to: "/invoices", label: "Invoices", icon: Settings },
   { to: "/inventory", label: "Inventory", icon: Briefcase },
   { to: "/users", label: "Users", icon: Users },
@@ -247,7 +247,7 @@ export default function Layout() {
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     onFocus={() => setShowSearchResults(true)}
-                    className="layout-search-input !min-h-0 h-full py-0 border-0 shadow-none bg-transparent text-sm w-full placeholder:text-slate-400 outline-none"
+                    className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm w-full"
                     placeholder="Search clients, projects, inventory..."
                   />
                 </div>
