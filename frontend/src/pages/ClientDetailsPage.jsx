@@ -12,6 +12,7 @@ const TABS = [
   { key: "overview", label: "Overview" },
   { key: "projects", label: "Projects" },
   { key: "quotations", label: "Quotations" },
+  { key: "invoices", label: "Client Invoices" },
   { key: "timeline", label: "Activity Timeline" },
 ];
 
@@ -33,6 +34,12 @@ export default function ClientDetailsPage() {
   const projects = data?.projects ?? [];
   const quotations = data?.quotations ?? [];
   const timeline = data?.timeline ?? [];
+  const [expandedInvoiceId, setExpandedInvoiceId] = useState(null);
+  const { data: clientInvoices = [] } = useQuery({
+    queryKey: ["client-invoices", clientId],
+    queryFn: async () => (await api.get(`/invoices?clientId=${encodeURIComponent(clientId)}`)).data,
+    enabled: Boolean(clientId),
+  });
   const primaryContact = useMemo(() => client?.contacts?.[0], [client]);
 
   if (!clientId) return null;
@@ -175,6 +182,76 @@ export default function ClientDetailsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "invoices" && (
+        <div className="premium-card p-5">
+          <h2 className="font-semibold text-[#0a2540] mb-4">Client Invoices</h2>
+          {clientInvoices.length === 0 ? (
+            <p className="text-sm text-[#6b7c93]">No invoices for this client yet.</p>
+          ) : (
+            <div className="space-y-2">
+              <div className="saas-grid-head grid grid-cols-12">
+                <div className="col-span-2">Invoice Number</div>
+                <div className="col-span-2">Total</div>
+                <div className="col-span-2">Paid</div>
+                <div className="col-span-2">Remaining</div>
+                <div className="col-span-1">Status</div>
+                <div className="col-span-2">Date</div>
+                <div className="col-span-1">Actions</div>
+              </div>
+              {clientInvoices.map((invoice) => {
+                const isExpanded = expandedInvoiceId === invoice._id;
+                const payments = Array.isArray(invoice.payments) ? invoice.payments : [];
+                return (
+                  <div key={invoice._id} className="rounded-lg border border-slate-200 overflow-hidden">
+                    <div className="saas-grid-row grid grid-cols-12 items-center text-sm">
+                      <div className="col-span-2 font-medium">{invoice.invoiceNo || invoice.invoiceNumber || "—"}</div>
+                      <div className="col-span-2"><span className="currency numeric">{formatCurrency(invoice.total || 0)}</span></div>
+                      <div className="col-span-2"><span className="currency numeric">{formatCurrency(invoice.paidAmount || 0)}</span></div>
+                      <div className="col-span-2"><span className="currency numeric">{formatCurrency(invoice.remainingAmount || 0)}</span></div>
+                      <div className="col-span-1">{String(invoice.status || "draft")}</div>
+                      <div className="col-span-2">{dateValue(invoice.createdAt)}</div>
+                      <div className="col-span-1 flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="btn-secondary btn-compact"
+                          onClick={() => window.open(`/api/invoices/${invoice._id}/pdf`, "_blank")}
+                        >
+                          PDF
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secondary btn-compact"
+                          onClick={() => setExpandedInvoiceId(isExpanded ? null : invoice._id)}
+                        >
+                          {isExpanded ? "Hide" : "Payments"}
+                        </button>
+                      </div>
+                    </div>
+                    {isExpanded ? (
+                      <div className="px-4 py-3 bg-slate-50 border-t border-slate-200">
+                        <p className="text-xs font-semibold text-[#425466] mb-2">Payment History</p>
+                        {payments.length === 0 ? (
+                          <p className="text-sm text-[#6b7c93]">No payments recorded.</p>
+                        ) : (
+                          <div className="space-y-1">
+                            {payments.map((payment, idx) => (
+                              <div key={`${invoice._id}-payment-${idx}`} className="text-sm text-[#425466] flex items-center justify-between">
+                                <span>{dateTimeValue(payment?.date)}</span>
+                                <span className="currency numeric">{formatCurrency(payment?.amount || 0)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

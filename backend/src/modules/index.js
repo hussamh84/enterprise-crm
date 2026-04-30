@@ -147,6 +147,12 @@ const Invoice = makeEntityModel("Invoice", {
   total: { type: Number, default: 0 },
   paidAmount: { type: Number, default: 0 },
   remainingAmount: { type: Number, default: 0 },
+  payments: [
+    {
+      amount: { type: Number, default: 0 },
+      date: { type: Date, default: Date.now },
+    },
+  ],
   paidAt: { type: Date, default: null },
   status: { type: String, enum: ["draft", "unpaid", "partial", "paid"], default: "draft" },
   stockDeducted: { type: Boolean, default: false },
@@ -1555,7 +1561,9 @@ router.get("/projects", async (req, res, next) => {
 router.use("/projects", buildCrudRouter({ model: Project, entity: "project" }));
 router.get("/invoices", async (req, res, next) => {
   try {
-    const docs = await Invoice.find({}).sort({ createdAt: -1 });
+    const clientId = String(req.query?.clientId || "").trim();
+    const query = clientId ? { clientId } : {};
+    const docs = await Invoice.find(query).sort({ createdAt: -1 });
     const invoiceObjects = docs.map((doc) => (typeof doc.toObject === "function" ? doc.toObject() : doc));
 
     const clientIds = [...new Set(invoiceObjects.map((doc) => String(doc.clientId || "")).filter(Boolean))];
@@ -1754,6 +1762,10 @@ router.patch("/invoices/:id/pay", async (req, res, next) => {
         invoiceInSession.paidAmount = nextPaidAmount;
         invoiceInSession.remainingAmount = remainingAmount;
         invoiceInSession.status = status;
+        invoiceInSession.payments = [
+          ...(Array.isArray(invoiceInSession.payments) ? invoiceInSession.payments : []),
+          { amount: paymentAmount, date: new Date() },
+        ];
         invoiceInSession.paidAt = status === "paid" ? new Date() : invoiceInSession.paidAt;
         invoiceInSession.updatedBy = req.user?.id;
         invoiceInSession.auditLog = [
