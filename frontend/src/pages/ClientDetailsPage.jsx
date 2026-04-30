@@ -9,22 +9,13 @@ import { formatClientNumber } from "../utils/formatClientNumber";
 const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
 
-const TABS = [
-  { key: "overview", label: "Overview", segment: "overview" },
-  { key: "projects", label: "Projects", segment: "projects" },
-  { key: "quotations", label: "Quotations", segment: "quotations" },
-  { key: "invoices", label: "Client Invoices", segment: "invoices" },
-  { key: "activity", label: "Activity Timeline", segment: "activity" },
-];
-
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");
 const dateTimeValue = (value) => (value ? new Date(value).toLocaleString() : "-");
 
 export default function ClientDetailsPage() {
   const { id, clientId: legacyClientId, tab } = useParams();
-  const location = useLocation();
   const clientId = id || legacyClientId;
-  const validTabs = new Set(TABS.map((item) => item.key));
+  const validTabs = new Set(["overview", "projects", "quotations", "invoices", "activity"]);
   const activeTab = validTabs.has(tab) ? tab : "overview";
 
   const { data, isLoading, isError } = useQuery({
@@ -87,23 +78,7 @@ export default function ClientDetailsPage() {
         </div>
       </div>
 
-      <div className="premium-card p-2">
-        <div className="flex flex-wrap gap-2">
-          {TABS.map((tab) => (
-            <Link
-              key={tab.key}
-              to={`/clients/${encodeURIComponent(clientId)}/${tab.segment}`}
-              className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                location.pathname === `/clients/${encodeURIComponent(clientId)}/${tab.segment}`
-                  ? "bg-black text-white"
-                  : "bg-gray-100 text-gray-700"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </div>
-      </div>
+      <ClientTabs />
 
       {activeTab === "overview" && (
         <div className="space-y-5">
@@ -297,6 +272,42 @@ export default function ClientDetailsPage() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function ClientTabs() {
+  const { id } = useParams();
+  const location = useLocation();
+
+  const tabs = [
+    { name: "Overview", path: "overview" },
+    { name: "Projects", path: "projects" },
+    { name: "Quotations", path: "quotations" },
+    { name: "Client Invoices", path: "invoices" },
+    { name: "Activity Timeline", path: "activity" },
+  ];
+
+  return (
+    <div className="flex gap-2 bg-gray-100 p-2 rounded-xl w-fit">
+      {tabs.map((tab) => {
+        const isActive = location.pathname.includes(tab.path);
+
+        return (
+          <Link
+            key={tab.path}
+            to={`/clients/${id}/${tab.path}`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition
+              ${
+                isActive
+                  ? "bg-black text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-200"
+              }`}
+          >
+            {tab.name}
+          </Link>
+        );
+      })}
     </div>
   );
 }
