@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { Fragment } from "react";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
@@ -22,6 +22,7 @@ const dateTimeValue = (value) => (value ? new Date(value).toLocaleString() : "-"
 
 export default function ClientDetailsPage() {
   const { id, clientId: legacyClientId, tab } = useParams();
+  const location = useLocation();
   const clientId = id || legacyClientId;
   const validTabs = new Set(TABS.map((item) => item.key));
   const activeTab = validTabs.has(tab) ? tab : "overview";
@@ -93,7 +94,9 @@ export default function ClientDetailsPage() {
               key={tab.key}
               to={`/clients/${encodeURIComponent(clientId)}/${tab.segment}`}
               className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                activeTab === tab.key ? "bg-[#eef4ff] text-[#1f3d7a]" : "text-[#425466] hover:bg-slate-50"
+                location.pathname === `/clients/${encodeURIComponent(clientId)}/${tab.segment}`
+                  ? "bg-black text-white"
+                  : "bg-gray-100 text-gray-700"
               }`}
             >
               {tab.label}
