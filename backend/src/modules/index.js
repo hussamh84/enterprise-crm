@@ -1724,15 +1724,20 @@ router.patch("/invoices/:id/pay", async (req, res, next) => {
     const invoice = await Invoice.findOne({ _id: req.params.id, tenantId: req.tenantId, deletedAt: null });
     if (!invoice) return res.status(404).json({ message: "Invoice not found" });
 
-    const fallbackAmount = Number(invoice.remainingAmount || invoice.total || 0);
-    const amount = req.body?.amount === undefined ? fallbackAmount : Number(req.body.amount);
-    if (!Number.isFinite(amount) || amount <= 0) return res.status(400).json({ message: "amount must be greater than 0" });
+    const fallbackAmount = Number(invoice.remainingAmount || invoice.totalAmount || invoice.total || 0);
+    const paymentAmount = req.body?.amount === undefined ? fallbackAmount : Number(req.body.amount);
+    if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+      return res.status(400).json({ message: "amount must be greater than 0" });
+    }
 
-    const total = Number(invoice.total || 0);
-    const currentPaid = Number(invoice.paidAmount || 0);
-    const nextPaidAmount = Math.min(currentPaid + amount, total);
-    const remainingAmount = Math.max(total - nextPaidAmount, 0);
-    const status = remainingAmount <= 0 ? "paid" : nextPaidAmount > 0 ? "partial" : "draft";
+    const totalAmount = Number(invoice.totalAmount || invoice.total || 0);
+    const currentPaidAmount = Number(invoice.paidAmount || 0);
+    const nextPaidAmount = currentPaidAmount + paymentAmount;
+    if (nextPaidAmount > totalAmount) {
+      return res.status(400).json({ message: "Overpayment not allowed" });
+    }
+    const remainingAmount = totalAmount - nextPaidAmount;
+    const status = remainingAmount > 0 ? "partial" : "paid";
 
     const session = await mongoose.startSession();
     let updatedInvoice = null;
@@ -1745,6 +1750,7 @@ router.patch("/invoices/:id/pay", async (req, res, next) => {
         }).session(session);
         if (!invoiceInSession) throw new AppError("Invoice not found", 404);
 
+        // Accumulate payment instead of overwriting previous paid amount.
         invoiceInSession.paidAmount = nextPaidAmount;
         invoiceInSession.remainingAmount = remainingAmount;
         invoiceInSession.status = status;
@@ -1752,7 +1758,7 @@ router.patch("/invoices/:id/pay", async (req, res, next) => {
         invoiceInSession.updatedBy = req.user?.id;
         invoiceInSession.auditLog = [
           ...(Array.isArray(invoiceInSession.auditLog) ? invoiceInSession.auditLog : []),
-          { action: "invoice.pay", by: req.user?.id, note: `Payment recorded: ${amount}` },
+          { action: "invoice.pay", by: req.user?.id, note: `Payment recorded: ${paymentAmount}` },
         ];
         if (status === "paid" && !invoiceInSession.stockDeducted) {
           await deductInventoryForInvoice({
