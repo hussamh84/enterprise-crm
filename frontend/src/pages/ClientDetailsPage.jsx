@@ -197,14 +197,14 @@ export default function ClientDetailsPage() {
                         <Fragment key={invoice._id}>
                           <tr key={invoice._id} className="saas-grid-row text-sm border-b border-slate-200">
                             <td className="px-4 py-2 text-left whitespace-nowrap font-medium">{invoice.invoiceNo || invoice.invoiceNumber || "—"}</td>
-                            <td className="px-4 py-2 text-right whitespace-nowrap">
-                              <span className="currency numeric">{formatCurrency(invoice.total || 0)}</span>
+                            <td className="px-4 py-2 text-right">
+                              {formatCurrency(invoice.total || 0)}
                             </td>
-                            <td className="px-4 py-2 text-right whitespace-nowrap">
-                              <span className="currency numeric">{formatCurrency(invoice.paidAmount || 0)}</span>
+                            <td className="px-4 py-2 text-right">
+                              {formatCurrency(invoice.paidAmount || 0)}
                             </td>
-                            <td className="px-4 py-2 text-right whitespace-nowrap">
-                              <span className="currency numeric">{formatCurrency(invoice.remainingAmount || 0)}</span>
+                            <td className="px-4 py-2 text-right">
+                              {formatCurrency(invoice.remainingAmount || 0)}
                             </td>
                             <td className="px-4 py-2 text-center whitespace-nowrap">
                               <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-700 text-xs">
