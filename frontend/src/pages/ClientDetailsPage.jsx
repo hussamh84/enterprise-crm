@@ -78,7 +78,9 @@ export default function ClientDetailsPage() {
         </div>
       </div>
 
-      <ClientTabs />
+      <div onClick={(e) => e.stopPropagation()}>
+        <ClientTabs />
+      </div>
 
       {activeTab === "overview" && (
         <div className="space-y-5">
