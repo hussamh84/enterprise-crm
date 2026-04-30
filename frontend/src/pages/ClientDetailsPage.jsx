@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
+import { Fragment } from "react";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
 import { formatClientNumber } from "../utils/formatClientNumber";
@@ -193,65 +194,77 @@ export default function ClientDetailsPage() {
           {clientInvoices.length === 0 ? (
             <p className="text-sm text-[#6b7c93]">No invoices for this client yet.</p>
           ) : (
-            <div className="space-y-2">
-              <div className="saas-grid-head grid grid-cols-12">
-                <div className="col-span-2">Invoice Number</div>
-                <div className="col-span-2">Total</div>
-                <div className="col-span-2">Paid</div>
-                <div className="col-span-2">Remaining</div>
-                <div className="col-span-1">Status</div>
-                <div className="col-span-2">Date</div>
-                <div className="col-span-1">Actions</div>
-              </div>
-              {clientInvoices.map((invoice) => {
-                const isExpanded = expandedInvoiceId === invoice._id;
-                const payments = Array.isArray(invoice.payments) ? invoice.payments : [];
-                return (
-                  <div key={invoice._id} className="rounded-lg border border-slate-200 overflow-hidden">
-                    <div className="saas-grid-row grid grid-cols-12 items-center text-sm">
-                      <div className="col-span-2 font-medium">{invoice.invoiceNo || invoice.invoiceNumber || "—"}</div>
-                      <div className="col-span-2"><span className="currency numeric">{formatCurrency(invoice.total || 0)}</span></div>
-                      <div className="col-span-2"><span className="currency numeric">{formatCurrency(invoice.paidAmount || 0)}</span></div>
-                      <div className="col-span-2"><span className="currency numeric">{formatCurrency(invoice.remainingAmount || 0)}</span></div>
-                      <div className="col-span-1">{String(invoice.status || "draft")}</div>
-                      <div className="col-span-2">{dateValue(invoice.createdAt)}</div>
-                      <div className="col-span-1 flex items-center gap-2">
-                        <button
-                          type="button"
-                          className="btn-secondary btn-compact"
-                          onClick={() => window.open(`/api/invoices/${invoice._id}/pdf`, "_blank")}
-                        >
-                          PDF
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-secondary btn-compact"
-                          onClick={() => setExpandedInvoiceId(isExpanded ? null : invoice._id)}
-                        >
-                          {isExpanded ? "Hide" : "Payments"}
-                        </button>
-                      </div>
-                    </div>
-                    {isExpanded ? (
-                      <div className="px-4 py-3 bg-slate-50 border-t border-slate-200">
-                        <p className="text-xs font-semibold text-[#425466] mb-2">Payment History</p>
-                        {payments.length === 0 ? (
-                          <p className="text-sm text-[#6b7c93]">No payments recorded.</p>
-                        ) : (
-                          <div className="space-y-1">
-                            {payments.map((payment, idx) => (
-                              <div key={`${invoice._id}-payment-${idx}`} className="text-sm text-[#425466] flex items-center justify-between">
-                                <span>{dateTimeValue(payment?.date)}</span>
-                                <span className="currency numeric">{formatCurrency(payment?.amount || 0)}</span>
+            <div className="space-y-2 max-w-full overflow-hidden">
+              <div className="overflow-x-auto w-full">
+                <table className="w-full min-w-[900px]">
+                  <thead>
+                    <tr className="saas-grid-head text-left">
+                      <th className="px-3 py-2">Invoice Number</th>
+                      <th className="px-3 py-2">Total</th>
+                      <th className="px-3 py-2">Paid</th>
+                      <th className="px-3 py-2">Remaining</th>
+                      <th className="px-3 py-2">Status</th>
+                      <th className="px-3 py-2">Date</th>
+                      <th className="px-3 py-2 text-right whitespace-nowrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clientInvoices.map((invoice) => {
+                      const isExpanded = expandedInvoiceId === invoice._id;
+                      const payments = Array.isArray(invoice.payments) ? invoice.payments : [];
+                      return (
+                        <Fragment key={invoice._id}>
+                          <tr key={invoice._id} className="saas-grid-row text-sm border-b border-slate-200">
+                            <td className="px-3 py-3 font-medium">{invoice.invoiceNo || invoice.invoiceNumber || "—"}</td>
+                            <td className="px-3 py-3"><span className="currency numeric">{formatCurrency(invoice.total || 0)}</span></td>
+                            <td className="px-3 py-3"><span className="currency numeric">{formatCurrency(invoice.paidAmount || 0)}</span></td>
+                            <td className="px-3 py-3"><span className="currency numeric">{formatCurrency(invoice.remainingAmount || 0)}</span></td>
+                            <td className="px-3 py-3">{String(invoice.status || "draft")}</td>
+                            <td className="px-3 py-3">{dateValue(invoice.createdAt)}</td>
+                            <td className="px-3 py-3 whitespace-nowrap text-right">
+                              <div className="flex items-center gap-1 justify-end">
+                                <button
+                                  type="button"
+                                  className="btn-secondary btn-compact"
+                                  onClick={() => window.open(`/api/invoices/${invoice._id}/pdf`, "_blank")}
+                                >
+                                  PDF
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-secondary btn-compact"
+                                  onClick={() => setExpandedInvoiceId(isExpanded ? null : invoice._id)}
+                                >
+                                  {isExpanded ? "Hide" : "Payments"}
+                                </button>
                               </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
+                            </td>
+                          </tr>
+                          {isExpanded ? (
+                            <tr className="bg-slate-50">
+                              <td colSpan={7} className="px-4 py-3 border-b border-slate-200">
+                                <p className="text-xs font-semibold text-[#425466] mb-2">Payment History</p>
+                                {payments.length === 0 ? (
+                                  <p className="text-sm text-[#6b7c93]">No payments recorded.</p>
+                                ) : (
+                                  <div className="space-y-1">
+                                    {payments.map((payment, idx) => (
+                                      <div key={`${invoice._id}-payment-${idx}`} className="text-sm text-[#425466] flex items-center justify-between">
+                                        <span>{dateTimeValue(payment?.date)}</span>
+                                        <span className="currency numeric">{formatCurrency(payment?.amount || 0)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ) : null}
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
