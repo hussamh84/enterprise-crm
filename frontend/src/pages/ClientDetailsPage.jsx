@@ -289,7 +289,7 @@ function ClientTabs() {
   ];
 
   return (
-    <div className="flex gap-2 bg-gray-100 p-2 rounded-xl w-fit relative z-50 pointer-events-auto">
+    <div className="flex gap-2 bg-gray-100 p-2 rounded-xl">
       {tabs.map((tab) => {
         const isActive = location.pathname.includes(tab.path);
 
