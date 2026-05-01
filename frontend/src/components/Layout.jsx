@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { syncCurrencyConfig } from "../config/currency";
 import { useAuthStore } from "../store/authStore";
@@ -59,6 +59,7 @@ const handleLogoError = (event) => {
 
 export default function Layout() {
   const navigate = useNavigate();
+  const token = useAuthStore((s) => s.token);
   const clearSession = useAuthStore((s) => s.clearSession);
   const [theme, setTheme] = useState(() => localStorage.getItem("ce_theme") || "light");
   const [query, setQuery] = useState("");
@@ -161,9 +162,12 @@ export default function Layout() {
 
   const handleLogout = () => {
     clearSession();
-    localStorage.removeItem("token");
     window.location.href = "/login";
   };
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <div className="relative z-[1] flex min-h-screen bg-[#f8fafc] overflow-x-hidden">

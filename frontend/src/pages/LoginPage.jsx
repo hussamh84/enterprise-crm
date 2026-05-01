@@ -1,22 +1,26 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { useAuthStore } from "../store/authStore";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const sessionToken = useAuthStore((s) => s.token);
   const setSession = useAuthStore((s) => s.setSession);
   const [form, setForm] = useState({ email: "admin@demo.com", password: "12345678" });
   const [error, setError] = useState("");
-  const [rememberMe, setRememberMe] = useState(true);
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (sessionToken) navigate("/", { replace: true });
+  }, [sessionToken, navigate]);
 
   const onLogin = async (e) => {
     e.preventDefault();
     setError("");
     try {
       const response = await api.post("/auth/login", form);
-      localStorage.setItem("token", response?.data?.token || "");
       setSession(response.data);
       navigate("/");
     } catch (err) {

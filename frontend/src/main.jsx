@@ -10,7 +10,10 @@ import { setAuthToken } from "./lib/api";
 import { useAuthStore } from "./store/authStore";
 
 const queryClient = new QueryClient();
-const token = useAuthStore.getState().token || localStorage.getItem("token");
+const token =
+  useAuthStore.getState().token ||
+  sessionStorage.getItem("crm_token") ||
+  sessionStorage.getItem("token");
 setAuthToken(token);
 document.documentElement.style.setProperty("--app-bg-image", "none");
 

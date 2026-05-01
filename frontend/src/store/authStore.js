@@ -1,15 +1,23 @@
 import { create } from "zustand";
 import { setAuthToken } from "../lib/api";
 
-const readStoredToken = () => localStorage.getItem("crm_token") || localStorage.getItem("token");
+/** Session-only auth: cleared when the browser session ends (tab/window closed). */
+const readStoredToken = () => sessionStorage.getItem("crm_token") || sessionStorage.getItem("token");
+
+function stripLegacyAuthStorage() {
+  localStorage.removeItem("crm_token");
+  localStorage.removeItem("token");
+  localStorage.removeItem("crm_user");
+}
 
 export const useAuthStore = create((set) => ({
   token: readStoredToken(),
-  user: JSON.parse(localStorage.getItem("crm_user") || "null"),
+  user: JSON.parse(sessionStorage.getItem("crm_user") || "null"),
   setSession: ({ token, user }) => {
-    localStorage.setItem("crm_token", token);
-    localStorage.setItem("token", token);
-    localStorage.setItem("crm_user", JSON.stringify(user));
+    stripLegacyAuthStorage();
+    sessionStorage.setItem("crm_token", token);
+    sessionStorage.setItem("token", token);
+    sessionStorage.setItem("crm_user", JSON.stringify(user));
     setAuthToken(token);
     set({ token, user });
   },
@@ -17,14 +25,13 @@ export const useAuthStore = create((set) => ({
     set((state) => {
       const next = state.user ? { ...state.user, ...partial } : partial;
       if (next && typeof next === "object") {
-        localStorage.setItem("crm_user", JSON.stringify(next));
+        sessionStorage.setItem("crm_user", JSON.stringify(next));
       }
       return { user: next };
     }),
   clearSession: () => {
-    localStorage.removeItem("crm_token");
-    localStorage.removeItem("token");
-    localStorage.removeItem("crm_user");
+    stripLegacyAuthStorage();
+    sessionStorage.clear();
     setAuthToken(null);
     set({ token: null, user: null });
   },
