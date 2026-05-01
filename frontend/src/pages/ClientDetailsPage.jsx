@@ -179,14 +179,34 @@ export default function ClientDetailsPage() {
               <div className="w-full">
                 <table className="w-full">
                   <thead>
-                    <tr className="saas-grid-head text-left">
-                      <th className="px-4 py-2 text-left">Invoice Number</th>
-                      <th className="px-4 py-2 text-right">Total</th>
-                      <th className="px-4 py-2 text-right">Paid</th>
-                      <th className="px-4 py-2 text-right">Remaining</th>
-                      <th className="px-4 py-2 text-center">Status</th>
-                      <th className="px-4 py-2 text-center">Date</th>
-                      <th className="px-4 py-2 text-center">Actions</th>
+                    <tr>
+                      <th className="px-4 py-2 text-left">
+                        Invoice Number
+                      </th>
+
+                      <th className="px-4 py-2 text-center">
+                        Total
+                      </th>
+
+                      <th className="px-4 py-2 text-center">
+                        Paid
+                      </th>
+
+                      <th className="px-4 py-2 text-center">
+                        Remaining
+                      </th>
+
+                      <th className="px-4 py-2 text-center">
+                        Status
+                      </th>
+
+                      <th className="px-4 py-2 text-center">
+                        Date
+                      </th>
+
+                      <th className="px-4 py-2 text-center">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
