@@ -869,7 +869,7 @@ router.post("/clients", async (req, res, next) => {
 });
 router.get("/clients", async (req, res, next) => {
   try {
-    const clients = await Client.find({}).sort({
+    const clients = await Client.find({ isDeleted: { $ne: true } }).sort({
       clientNumber: -1,
       createdAt: -1,
     });
@@ -893,7 +893,7 @@ router.delete("/clients/:id", async (req, res, next) => {
     }
 
     const doc = await Client.findOneAndUpdate(
-      { _id: req.params.id, tenantId, deletedAt: null, isDeleted: { $ne: true } },
+      { _id: req.params.id, isDeleted: { $ne: true } },
       {
         isDeleted: true,
         deletedAt: new Date(),
@@ -931,6 +931,16 @@ const updateClientById = async (req, res, next) => {
       }
       updates.email = email || undefined;
     }
+    if (typeof req.body?.status === "string") {
+      updates.status = req.body.status.trim() || "active";
+    }
+    if (Array.isArray(req.body?.contacts)) {
+      updates.contacts = req.body.contacts.map((c) => ({
+        name: typeof c?.name === "string" ? c.name.trim() : "",
+        email: typeof c?.email === "string" ? c.email.trim().toLowerCase() : "",
+        phone: typeof c?.phone === "string" ? c.phone.trim() : "",
+      }));
+    }
     if (typeof req.body?.address === "string") {
       updates.address = req.body.address.trim();
     }
@@ -939,7 +949,7 @@ const updateClientById = async (req, res, next) => {
     }
 
     const updatedClient = await Client.findOneAndUpdate(
-      { _id: req.params.id, tenantId, deletedAt: null, isDeleted: { $ne: true } },
+      { _id: req.params.id, isDeleted: { $ne: true } },
       {
         $set: {
           ...updates,
