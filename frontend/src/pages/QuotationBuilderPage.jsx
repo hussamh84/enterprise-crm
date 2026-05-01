@@ -278,9 +278,6 @@ export default function QuotationBuilderPage() {
         }}
       >
         <div>
-          <div id="wjg6tq" style={{ color: "red", fontSize: "40px" }}>
-            REAL FILE WORKING
-          </div>
           <h1 className="section-title">{isEdit ? "Edit quotation" : "New quotation"}</h1>
           <p className="page-subtitle text-[#6b7c93]">Dynamic quotation builder with real-time totals.</p>
         </div>
@@ -299,7 +296,7 @@ export default function QuotationBuilderPage() {
       </div>
 
       <div className="premium-card p-5 space-y-5">
-        <div className="grid grid-cols-3 gap-6 mb-6">
+        <div id="pnv7vd" className="grid grid-cols-3 gap-6 mb-6">
           <div>
             <label htmlFor="quote-title" className="block mb-2 text-sm font-medium">
               Quotation Title
@@ -307,7 +304,6 @@ export default function QuotationBuilderPage() {
             <input
               id="quote-title"
               type="text"
-              placeholder="Enter quotation title"
               className="w-full h-[52px] rounded-xl border px-4"
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -320,8 +316,8 @@ export default function QuotationBuilderPage() {
                 type="button"
                 className={
                   customerMode === "existing"
-                    ? "bg-[#0B132B] text-white px-4 rounded-lg h-[40px]"
-                    : "border px-4 rounded-lg h-[40px]"
+                    ? "bg-[#0B132B] text-white px-4 h-[40px] rounded-lg"
+                    : "border px-4 h-[40px] rounded-lg"
                 }
                 onClick={() => {
                   setCustomerMode("existing");
@@ -336,8 +332,8 @@ export default function QuotationBuilderPage() {
                 type="button"
                 className={
                   customerMode === "walkin"
-                    ? "bg-[#0B132B] text-white px-4 rounded-lg h-[40px]"
-                    : "border px-4 rounded-lg h-[40px]"
+                    ? "bg-[#0B132B] text-white px-4 h-[40px] rounded-lg"
+                    : "border px-4 h-[40px] rounded-lg"
                 }
                 onClick={() => {
                   setCustomerMode("walkin");
