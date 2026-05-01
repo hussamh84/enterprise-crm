@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
+import { formatProjectTypeDisplay } from "../utils/projectTypeDisplay";
 
 const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
@@ -156,7 +157,7 @@ export default function ProjectDetailsPage() {
             <h2 className="font-semibold text-[#0a2540] mb-4">Project Overview</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <Field label="Project Name" value={project.name} />
-              <Field label="Project Type" value={project.projectType || "-"} />
+              <Field label="Project Type" value={formatProjectTypeDisplay(project)} />
               <Field
                 label="Client Name"
                 value={

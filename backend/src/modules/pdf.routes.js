@@ -109,9 +109,28 @@ const addStatusBadge = (doc, label, x = 462, y = 232) => {
   doc.restore();
 };
 
+const formatQuotationProjectTypePdf = (quotationLike, project) => {
+  const qPt = String(quotationLike?.projectType || "").trim();
+  const qCt = String(quotationLike?.cctvType || "").trim();
+  if (qPt.toLowerCase() === "cctv" && qCt) return `CCTV - ${qCt}`;
+  if (qPt) return qPt;
+  const pPt = String(project?.projectType || "").trim();
+  const pCt = String(project?.cctvType || "").trim();
+  const up = pPt.toUpperCase();
+  if (pPt.toLowerCase() === "cctv" && pCt) return `CCTV - ${pCt}`;
+  if (up === "CCTV_IP") return "CCTV - IP";
+  if (up === "CCTV_ANALOG") return "CCTV - Analog";
+  if (up === "SOLAR") return "Solar System";
+  if (up === "NETWORK" || pPt === "Network") return "Network";
+  if (pPt) return pPt;
+  return "—";
+};
+
 const addPartyBlock = (doc, record, project) => {
   const top = 250;
-  doc.roundedRect(50, top, 500, 90, 6).fillAndStroke("#ffffff", "#e2e8f0");
+  const blockH = 104;
+  doc.roundedRect(50, top, 500, blockH, 6).fillAndStroke("#ffffff", "#e2e8f0");
+  const typeLine = formatQuotationProjectTypePdf(record, project);
   doc
     .font("Helvetica-Bold")
     .fontSize(11)
@@ -123,8 +142,23 @@ const addPartyBlock = (doc, record, project) => {
     .text(record.clientName || record.name || "Client", 62, top + 30)
     .text(`Phone: ${record.clientPhone || "-"}`, 62, top + 46)
     .text(`Email: ${record.clientEmail || "-"}`, 62, top + 62)
-    .text(`Project: ${project?.name || record.projectName || "-"}`, 300, top + 30, { width: 230 });
-  return top + 100;
+    .font("Helvetica-Bold")
+    .fontSize(9)
+    .fillColor("#64748b")
+    .text("Project", 300, top + 14)
+    .font("Helvetica")
+    .fontSize(10)
+    .fillColor("#334155")
+    .text(project?.name || record.projectName || "-", 300, top + 28, { width: 230 })
+    .font("Helvetica-Bold")
+    .fontSize(9)
+    .fillColor("#64748b")
+    .text("Project Type", 300, top + 52)
+    .font("Helvetica")
+    .fontSize(10)
+    .fillColor("#334155")
+    .text(typeLine, 300, top + 66, { width: 230 });
+  return top + blockH + 10;
 };
 
 const addQuotationMetaBlock = (doc, quotation) => {

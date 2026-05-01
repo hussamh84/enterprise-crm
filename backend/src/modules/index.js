@@ -114,6 +114,8 @@ const Quotation = makeEntityModel("Quotation", {
   tax: { type: Number, default: 0 },
   subtotal: { type: Number, default: 0 },
   grandTotal: { type: Number, default: 0 },
+  projectType: { type: String, trim: true, default: "" },
+  cctvType: { type: String, trim: true, default: "" },
 });
 const Project = makeEntityModel("Project", {
   clientId: { type: String, required: true },
@@ -127,12 +129,8 @@ const Project = makeEntityModel("Project", {
   totalExpenses: { type: Number, default: 0 },
   startDate: Date,
   endDate: Date,
-  projectType: {
-    type: String,
-    enum: ["CCTV_ANALOG", "CCTV_IP", "NETWORK", "SOLAR"],
-    default: "NETWORK",
-  },
-  cctvType: { type: String, enum: ["Analog", "IP", ""], default: "" },
+  projectType: { type: String, trim: true, default: "Network" },
+  cctvType: { type: String, trim: true, default: "" },
 });
 const Invoice = makeEntityModel("Invoice", {
   clientId: { type: String, required: true },
@@ -756,6 +754,59 @@ const syncProjectFinancialsForProject = async ({ tenantId, projectId, userId }) 
   );
   const completion = await syncProjectCompletionFromInvoices({ tenantId, projectId, userId });
   return { ...snapshot, ...completion };
+};
+
+const pickQuotationProjectTypeFields = (body = {}) => {
+  const projectType = typeof body?.projectType === "string" ? body.projectType.trim() : "";
+  let cctvType = typeof body?.cctvType === "string" ? body.cctvType.trim() : "";
+  if (projectType.toLowerCase() !== "cctv") cctvType = "";
+  return { projectType, cctvType };
+};
+
+const syncProjectTypesFromQuotation = async ({ tenantId, projectId, projectType, cctvType, userId }) => {
+  const pid = String(projectId || "").trim();
+  if (!pid || !String(projectType || "").trim()) return;
+  const pt = String(projectType || "").trim();
+  const safeCctv = pt.toLowerCase() === "cctv" ? String(cctvType || "").trim() : "";
+  await Project.findOneAndUpdate(
+    { _id: pid, tenantId, deletedAt: null },
+    {
+      projectType: pt,
+      cctvType: safeCctv,
+      updatedBy: userId,
+      $push: {
+        auditLog: {
+          action: "project.type.from_quotation",
+          by: userId,
+          note: `Synced from quotation: ${pt}${safeCctv ? ` - ${safeCctv}` : ""}`,
+        },
+      },
+    }
+  );
+};
+
+const normalizeNewProjectTypePayload = (body = {}) => {
+  let projectType = typeof body?.projectType === "string" ? body.projectType.trim() : "";
+  let cctvType = typeof body?.cctvType === "string" ? body.cctvType.trim() : "";
+  const legacy = projectType.toUpperCase();
+  if (legacy === "CCTV_IP") {
+    projectType = "CCTV";
+    cctvType = cctvType || "IP";
+  } else if (legacy === "CCTV_ANALOG") {
+    projectType = "CCTV";
+    cctvType = cctvType || "Analog";
+  } else if (legacy === "SOLAR") {
+    projectType = "Solar System";
+    cctvType = "";
+  } else if (legacy === "NETWORK" || legacy === "NETWORKING") {
+    projectType = "Network";
+    cctvType = "";
+  }
+  if (projectType.toLowerCase() !== "cctv") cctvType = "";
+  return {
+    projectType: projectType || "Network",
+    cctvType,
+  };
 };
 
 const createClientFromLead = async ({ lead, req, note }) => {
@@ -1393,6 +1444,7 @@ router.post("/quotations", async (req, res, next) => {
           discount: { type: "fixed", value: 0, amount: 0 },
         }
       : await computeQuotationTotals({ tenantId, payload: req.body });
+    const typeFields = pickQuotationProjectTypeFields(req.body);
     const payload = {
       ...req.body,
       quotationNo,
@@ -1408,6 +1460,7 @@ router.post("/quotations", async (req, res, next) => {
       projectId,
       source,
       ...calculated,
+      ...typeFields,
       status: "draft",
       tenantId,
       createdBy: req.user?.id,
@@ -1416,6 +1469,15 @@ router.post("/quotations", async (req, res, next) => {
     };
     const doc = await Quotation.create(payload);
     await syncInventoryUsageForQuotation({ tenantId, quotation: doc, userId: req.user?.id });
+    if (source === "project" && doc.projectId && typeFields.projectType) {
+      await syncProjectTypesFromQuotation({
+        tenantId,
+        projectId: doc.projectId,
+        projectType: typeFields.projectType,
+        cctvType: typeFields.cctvType,
+        userId: req.user?.id,
+      });
+    }
     res.status(201).json(doc);
   } catch (error) {
     next(error);
@@ -1436,6 +1498,7 @@ router.put("/quotations/:id", async (req, res, next) => {
     }
 
     const calculated = await computeQuotationTotals({ tenantId, payload: req.body });
+    const typeFields = pickQuotationProjectTypeFields(req.body);
     const doc = await Quotation.findOneAndUpdate(
       { _id: req.params.id, tenantId, deletedAt: null },
       {
@@ -1444,6 +1507,7 @@ router.put("/quotations/:id", async (req, res, next) => {
         projectId,
         source,
         ...calculated,
+        ...typeFields,
         updatedBy: req.user?.id,
         $push: { auditLog: { action: "quotation.update", by: req.user?.id, note: "Updated quotation" } },
       },
@@ -1451,6 +1515,15 @@ router.put("/quotations/:id", async (req, res, next) => {
     );
     if (doc) {
       await syncInventoryUsageForQuotation({ tenantId, quotation: doc, userId: req.user?.id });
+      if (source === "project" && doc.projectId && typeFields.projectType) {
+        await syncProjectTypesFromQuotation({
+          tenantId,
+          projectId: doc.projectId,
+          projectType: typeFields.projectType,
+          cctvType: typeFields.cctvType,
+          userId: req.user?.id,
+        });
+      }
     }
     res.json(doc);
   } catch (error) {
@@ -1645,9 +1718,12 @@ router.post("/projects", async (req, res, next) => {
     const client = await Client.findOne({ _id: clientId, tenantId, deletedAt: null, isDeleted: { $ne: true } });
     if (!client) return res.status(404).json({ message: "Client not found" });
 
+    const { projectType: normPt, cctvType: normCctv } = normalizeNewProjectTypePayload(req.body);
     const payload = {
       ...req.body,
       clientId,
+      projectType: normPt,
+      cctvType: normCctv,
       totalRevenue: Number(req.body?.totalRevenue || 0),
       totalExpenses: Number(req.body?.totalExpenses || 0),
       profit: Number(req.body?.profit || 0),

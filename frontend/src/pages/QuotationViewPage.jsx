@@ -4,6 +4,7 @@ import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
 import { openPdf } from "../utils/pdf";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
+import { formatProjectTypeDisplay } from "../utils/projectTypeDisplay";
 
 const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
@@ -44,6 +45,10 @@ export default function QuotationViewPage() {
   const project = data?.project;
   const clientName = data?.clientName || client?.name || quotation?.clientName;
   const projectName = data?.projectName || project?.name || quotation?.projectName;
+  const projectTypeLine = formatProjectTypeDisplay({
+    projectType: quotation?.projectType || project?.projectType,
+    cctvType: quotation?.cctvType || project?.cctvType,
+  });
 
   const items = normalizeItems(quotation);
   const totalFromItems = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
@@ -138,6 +143,7 @@ export default function QuotationViewPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
             <InfoField label="Client" value={clientName || "—"} />
             <InfoField label="Project" value={projectName || "—"} />
+            <InfoField label="Project Type" value={projectTypeLine} />
             <InfoField label="Created" value={dateValue(quotation.createdAt)} />
             <InfoField label="Status" value={status} />
           </div>

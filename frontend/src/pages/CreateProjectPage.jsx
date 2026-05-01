@@ -8,10 +8,8 @@ console.log("CHECK PAGE:", __filename);
 
 const PROJECT_TYPE_CHOICES = [
   { value: "CCTV", label: "CCTV" },
-  { value: "NETWORKING", label: "Networking" },
-  { value: "SOLAR", label: "Solar" },
-  { value: "SECURITY", label: "Security" },
-  { value: "IT", label: "IT Infrastructure" },
+  { value: "Solar System", label: "Solar System" },
+  { value: "Network", label: "Network" },
 ];
 
 export default function CreateProjectPage() {
@@ -21,19 +19,8 @@ export default function CreateProjectPage() {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [clientId, setClientId] = useState(presetClientId);
-  const [projectType, setProjectType] = useState("NETWORKING");
+  const [projectType, setProjectType] = useState("Network");
   const [cctvType, setCctvType] = useState("");
-
-  const projectTypeApi = useMemo(
-    () => {
-      if (projectType === "CCTV") {
-        return cctvType === "Analog" ? "CCTV_ANALOG" : "CCTV_IP";
-      }
-      if (projectType === "SOLAR") return "SOLAR";
-      return "NETWORK";
-    },
-    [projectType, cctvType]
-  );
 
   const createProject = useMutation({
     mutationFn: async () =>
@@ -41,7 +28,7 @@ export default function CreateProjectPage() {
         await api.post("/projects", {
           name: name.trim(),
           clientId,
-          projectType: projectTypeApi,
+          projectType,
           cctvType: projectType === "CCTV" ? cctvType : "",
         })
       ).data,
@@ -161,33 +148,19 @@ export default function CreateProjectPage() {
 
         {projectType === "CCTV" ? (
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            <label htmlFor="proj-cctv-type" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
               CCTV Type
             </label>
-            <div className="flex gap-2 mt-2">
-              <button
-                type="button"
-                onClick={() => setCctvType("Analog")}
-                className={`h-8 px-3 text-sm rounded-md border ${
-                  cctvType === "Analog"
-                    ? "bg-black text-white border-black"
-                    : "border-slate-300 text-[#425466] bg-white hover:bg-slate-50"
-                }`}
-              >
-                Analog
-              </button>
-              <button
-                type="button"
-                onClick={() => setCctvType("IP")}
-                className={`h-8 px-3 text-sm rounded-md border ${
-                  cctvType === "IP"
-                    ? "bg-black text-white border-black"
-                    : "border-slate-300 text-[#425466] bg-white hover:bg-slate-50"
-                }`}
-              >
-                IP
-              </button>
-            </div>
+            <select
+              id="proj-cctv-type"
+              value={cctvType}
+              onChange={(e) => setCctvType(e.target.value)}
+              className="w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-[#0a2540] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#635bff]/25 focus:border-[#635bff]"
+            >
+              <option value="">Select CCTV type</option>
+              <option value="IP">IP</option>
+              <option value="Analog">Analog</option>
+            </select>
           </div>
         ) : null}
 

@@ -4,6 +4,13 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { CirclePlus, FileText, Trash2 } from "lucide-react";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
+import { deriveTypeFromProject } from "../utils/projectTypeDisplay";
+
+const PROJECT_TYPE_OPTIONS = [
+  { value: "CCTV", label: "CCTV" },
+  { value: "Solar System", label: "Solar System" },
+  { value: "Network", label: "Network" },
+];
 
 const BLANK_ITEM = { productId: "", description: "", quantity: 1, unitPrice: 0, lockPrice: false };
 
@@ -26,6 +33,8 @@ export default function QuotationBuilderPage() {
   const [tax, setTax] = useState(0);
   const [quoteStatus, setQuoteStatus] = useState("draft");
   const [items, setItems] = useState([{ ...BLANK_ITEM }]);
+  const [projectType, setProjectType] = useState("Network");
+  const [cctvType, setCctvType] = useState("");
   const [itemSearch, setItemSearch] = useState({});
   const [itemSuggestions, setItemSuggestions] = useState({});
   const searchTimersRef = useRef({});
@@ -62,6 +71,17 @@ export default function QuotationBuilderPage() {
     } else {
       setItems([{ ...BLANK_ITEM }]);
     }
+    if (q.projectType) {
+      setProjectType(q.projectType);
+      setCctvType(String(q.projectType).toLowerCase() === "cctv" ? String(q.cctvType || "") : "");
+    } else if (editBundle.project) {
+      const d = deriveTypeFromProject(editBundle.project);
+      setProjectType(d.primary || "Network");
+      setCctvType(d.primary === "CCTV" ? d.cctv : "");
+    } else {
+      setProjectType("Network");
+      setCctvType("");
+    }
   }, [isEdit, editBundle]);
 
   useEffect(() => () => {
@@ -77,9 +97,21 @@ export default function QuotationBuilderPage() {
     queryFn: async () => (await api.get("/projects")).data,
   });
   const clientProjects = useMemo(
-    () => projects.filter((project) => String(project.clientId) === String(clientId)),
+    () => projects.filter((project) => String(project.clientId?._id || project.clientId) === String(clientId)),
     [projects, clientId]
   );
+
+  useEffect(() => {
+    if (isEdit) return;
+    if (!projectId || !clientId) return;
+    const p = projects.find(
+      (x) => String(x._id) === String(projectId) && String(x.clientId?._id || x.clientId) === String(clientId)
+    );
+    if (!p) return;
+    const d = deriveTypeFromProject(p);
+    setProjectType(d.primary || "Network");
+    setCctvType(d.primary === "CCTV" ? d.cctv : "");
+  }, [projectId, clientId, isEdit, projects]);
 
   const calculatedItems = useMemo(
     () =>
@@ -117,6 +149,8 @@ export default function QuotationBuilderPage() {
         name,
         clientId,
         projectId,
+        projectType,
+        cctvType: projectType === "CCTV" ? cctvType : "",
         items: calculatedItems,
         discount: { type: discountType, value: toNumber(discountValue) },
         tax: toNumber(tax),
@@ -248,6 +282,46 @@ export default function QuotationBuilderPage() {
               <option key={project._id} value={project._id}>{project.name}</option>
             ))}
           </select>
+          <div className="sm:col-span-2 lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="quote-project-type" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                Project Type
+              </label>
+              <select
+                id="quote-project-type"
+                className="w-full"
+                value={projectType}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setProjectType(v);
+                  if (v !== "CCTV") setCctvType("");
+                }}
+              >
+                {PROJECT_TYPE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+            {projectType === "CCTV" ? (
+              <div>
+                <label htmlFor="quote-cctv-type" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                  CCTV Type
+                </label>
+                <select
+                  id="quote-cctv-type"
+                  className="w-full"
+                  value={cctvType}
+                  onChange={(e) => setCctvType(e.target.value)}
+                >
+                  <option value="">Select CCTV type</option>
+                  <option value="IP">IP</option>
+                  <option value="Analog">Analog</option>
+                </select>
+              </div>
+            ) : (
+              <div className="hidden sm:block" aria-hidden />
+            )}
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -368,6 +442,8 @@ export default function QuotationBuilderPage() {
               !name ||
               !clientId ||
               !projectId ||
+              !projectType ||
+              (projectType === "CCTV" && !cctvType) ||
               calculatedItems.length === 0 ||
               calculatedItems.some((item) => !item.description)
             }
