@@ -54,8 +54,13 @@ const C = {
 const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 const SUDAN_CENTER = [30.2176, 12.8628];
 /** Full-world framing (Mercator): Atlantic-centered, all continents visible. */
-const WORLD_CENTER = [0, 12];
-const WORLD_ZOOM_DEFAULT = 0.72;
+const WORLD_CENTER = [0, 14];
+const WORLD_ZOOM_DEFAULT = 0.58;
+/** Must be ≤ WORLD_ZOOM_DEFAULT — react-simple-maps defaults minZoom to 1 and clamps zoom otherwise. */
+const WORLD_MAP_MIN_ZOOM = 0.38;
+const WORLD_MAP_MAX_ZOOM = 2.4;
+const MAP_SVG_W = 1400;
+const MAP_SVG_H = 260;
 
 function projectCoordinates(project) {
   const p = project && typeof project === "object" ? project : {};
@@ -593,10 +598,10 @@ export default function DashboardPage() {
       </section>
 
       <section
-        className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start lg:gap-2"
+        className="grid grid-cols-1 gap-2.5 lg:grid-cols-12 lg:gap-2 lg:items-stretch"
         aria-label="Map and sales trend"
       >
-        <article className={`${refCard} flex min-w-0 flex-col p-3`}>
+        <article className={`${refCard} flex min-w-0 flex-col p-3 lg:col-span-8`}>
           <div className="mb-2 flex flex-wrap items-start justify-between gap-2 border-b border-gray-200 pb-2">
             <div>
               <h2 className="text-[12px] font-bold leading-tight text-[#1f3147]">Sales</h2>
@@ -658,7 +663,9 @@ export default function DashboardPage() {
                   type="button"
                   className="flex h-6 w-6 items-center justify-center rounded-sm text-white hover:bg-[#23364d]"
                   aria-label="Zoom in"
-                  onClick={() => setWorldMapZoom((z) => Math.min(2.4, Number((z + 0.1).toFixed(2))))}
+                  onClick={() =>
+                    setWorldMapZoom((z) => Math.min(WORLD_MAP_MAX_ZOOM, Number((z + 0.1).toFixed(2))))
+                  }
                 >
                   <Plus className="h-3 w-3" strokeWidth={2.5} />
                 </button>
@@ -666,20 +673,31 @@ export default function DashboardPage() {
                   type="button"
                   className="flex h-6 w-6 items-center justify-center rounded-sm text-white hover:bg-[#23364d]"
                   aria-label="Zoom out"
-                  onClick={() => setWorldMapZoom((z) => Math.max(0.42, Number((z - 0.1).toFixed(2))))}
+                  onClick={() =>
+                    setWorldMapZoom((z) => Math.max(WORLD_MAP_MIN_ZOOM, Number((z - 0.1).toFixed(2))))
+                  }
                 >
                   <Minus className="h-3 w-3" strokeWidth={2.5} />
                 </button>
               </div>
               <ComposableMap
                 projection="geoMercator"
-                projectionConfig={{ scale: 92 }}
-                width={1400}
-                height={260}
+                projectionConfig={{ scale: 78 }}
+                width={MAP_SVG_W}
+                height={MAP_SVG_H}
                 className="block !max-h-[260px] h-[260px] w-full max-w-full align-top"
                 style={{ width: "100%", height: "260px", maxHeight: "260px", display: "block", verticalAlign: "top" }}
               >
-                <ZoomableGroup center={WORLD_CENTER} zoom={worldMapZoom}>
+                <ZoomableGroup
+                  center={WORLD_CENTER}
+                  zoom={worldMapZoom}
+                  minZoom={WORLD_MAP_MIN_ZOOM}
+                  maxZoom={WORLD_MAP_MAX_ZOOM}
+                  translateExtent={[
+                    [-MAP_SVG_W * 0.85, -MAP_SVG_H * 1.25],
+                    [MAP_SVG_W * 1.85, MAP_SVG_H * 2.25],
+                  ]}
+                >
                   <rect x={-2800} y={-1400} width={5600} height={2800} fill="#ffffff" />
                   <Geographies geography={WORLD_GEO_URL}>
                     {({ geographies }) =>
@@ -727,7 +745,7 @@ export default function DashboardPage() {
           </div>
         </article>
 
-        <article className={`${refCard} flex min-h-0 flex-col p-3`}>
+        <article className={`${refCard} flex min-h-0 min-w-0 flex-col p-3 lg:col-span-4`}>
           <RefPanelHeader title="Sales" subtitle="Event 'Purchase Button'" />
           <div className="h-[320px] w-full flex-1">
             <ResponsiveContainer width="100%" height="100%">
