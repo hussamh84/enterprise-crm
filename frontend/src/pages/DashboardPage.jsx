@@ -53,10 +53,12 @@ const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m
 const SUDAN_CENTER = [30.2176, 12.8628];
 /** Full-world framing (Mercator): Atlantic-centered, all continents visible. */
 const WORLD_CENTER = [0, 14];
-/** Matches former ZoomableGroup framing — static map uses this transform only. */
-const WORLD_ZOOM_STATIC = 0.58;
-const MAP_SVG_W = 1400;
-const MAP_SVG_H = 260;
+/** Static viewport zoom (lower = slightly wider world; tuned with projection scale). */
+const WORLD_ZOOM_STATIC = 0.56;
+/** Larger canvas = bigger on-screen map; same aspect as prior 1400×260. */
+const MAP_SVG_W = 1615;
+const MAP_SVG_H = 300;
+const MAP_PROJECTION_SCALE = 86;
 
 /** Non-interactive viewport: same translate/scale math as react-simple-maps ZoomableGroup initial view. */
 function StaticWorldViewport({ center, zoom, children }) {
@@ -674,14 +676,14 @@ export default function DashboardPage() {
             >
               <ComposableMap
                 projection="geoMercator"
-                projectionConfig={{ scale: 78 }}
+                projectionConfig={{ scale: MAP_PROJECTION_SCALE }}
                 width={MAP_SVG_W}
                 height={MAP_SVG_H}
                 preserveAspectRatio="xMidYMid meet"
-                className="block h-[260px] w-full max-w-full align-top [&:focus]:outline-none"
+                className="block w-full max-w-full align-top [&:focus]:outline-none"
                 style={{
                   width: "100%",
-                  height: "260px",
+                  height: MAP_SVG_H,
                   maxWidth: "100%",
                   display: "block",
                   verticalAlign: "top",
@@ -698,7 +700,7 @@ export default function DashboardPage() {
                           geography={geo}
                           fill="#23364d"
                           stroke="#1f3147"
-                          strokeWidth={0.4}
+                          strokeWidth={0.5}
                           style={{
                             default: { outline: "none" },
                             hover: { outline: "none", fill: "#23364d" },
@@ -711,20 +713,20 @@ export default function DashboardPage() {
                   {projectGeoMarkers.map((m) => (
                     <Marker key={m.id} coordinates={m.coordinates}>
                       <circle
-                        r={4}
+                        r={4.75}
                         fill="#1abc9c"
                         stroke="rgba(255,255,255,0.85)"
-                        strokeWidth={1.25}
+                        strokeWidth={1.35}
                         style={{ filter: "drop-shadow(0 0 3px rgba(26, 188, 156, 0.9))" }}
                       />
                     </Marker>
                   ))}
                   <Marker coordinates={SUDAN_CENTER}>
                     <circle
-                      r={11}
+                      r={12.5}
                       fill="#1abc9c"
                       stroke="#ffffff"
-                      strokeWidth={2}
+                      strokeWidth={2.1}
                       style={{ filter: "drop-shadow(0 0 10px rgba(26, 188, 156, 1)) drop-shadow(0 0 4px rgba(26, 188, 156, 0.8))" }}
                     />
                   </Marker>
