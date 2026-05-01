@@ -538,8 +538,8 @@ export default function DashboardPage() {
         <div className={`${cardShell} p-3.5 lg:col-span-8`}>
           <div className="mb-2.5 flex flex-wrap items-start justify-between gap-2 border-b border-gray-100 pb-2.5">
             <div>
-              <h3 className="text-[13px] font-semibold leading-tight text-[#2c3e50]">Sales</h3>
-              <p className="mt-0.5 text-[11px] text-gray-500">Sales activity by period</p>
+              <h3 className="text-[13px] font-semibold leading-tight text-[#2c3e50]">Operations</h3>
+              <p className="mt-0.5 text-[11px] text-gray-500">Sudan hub — world map — project markers</p>
             </div>
             <span className="rounded-sm border border-gray-200 bg-gray-50 px-2 py-1 text-[10px] font-medium text-gray-600">
               {new Date().getFullYear()}
