@@ -17,6 +17,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Line,
   LineChart,
   Pie,
@@ -351,13 +352,13 @@ export default function DashboardPage() {
     ? lastPaidAt.toLocaleString(undefined, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
     : now.toLocaleString(undefined, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
-  const cardShell = "rounded-sm border border-gray-200 bg-white shadow-sm";
+  const cardShell = "rounded-sm border border-gray-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]";
 
   const ChartCardHeader = ({ title, subtitle }) => (
-    <div className="mb-3 flex items-start justify-between gap-2">
+    <div className="mb-2.5 flex items-start justify-between gap-2 border-b border-gray-100 pb-2.5">
       <div className="min-w-0">
-        <h3 className="text-sm font-medium text-[#2c3e50]">{title}</h3>
-        <p className="text-xs text-gray-500">{subtitle}</p>
+        <h3 className="text-[13px] font-semibold leading-tight text-[#2c3e50]">{title}</h3>
+        <p className="mt-0.5 text-[11px] leading-tight text-gray-500">{subtitle}</p>
       </div>
       <div className="flex shrink-0 items-center gap-1 text-gray-400">
         <button type="button" className="rounded p-1 hover:bg-gray-100" aria-label="Expand">
@@ -374,23 +375,23 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="space-y-4 bg-[#F3F4F6] p-4 text-[#2c3e50]" data-page="dashboard">
-      <div className="text-xs text-gray-500">
+    <div className="min-h-0 space-y-3 bg-[#F3F4F6] p-3 text-[#2c3e50] sm:p-4">
+      <div className="text-[11px] text-gray-500">
         <span className="text-gray-400">Home</span>
-        <span className="mx-1.5">/</span>
-        <span className="font-medium text-[#2c3e50]">Dashboard</span>
+        <span className="mx-1.5 text-gray-300">/</span>
+        <span className="font-semibold text-[#2c3e50]">Dashboard</span>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className={`relative ${cardShell} p-4`}>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-stretch">
+        <div className={`relative flex min-h-[124px] ${cardShell} p-3.5`}>
           <button type="button" className="absolute right-2 top-2 rounded p-0.5 text-gray-400 hover:bg-gray-100" aria-label="Close">
             <X className="h-3.5 w-3.5" strokeWidth={2} />
           </button>
-          <div className="flex flex-col items-center pt-1 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Total Revenue</p>
-            <p className="mt-1 text-[10px] text-gray-400">{revenueMeta}</p>
-            <p className="mt-3 text-2xl font-bold tabular-nums text-[#2c3e50]">{revenueDisplay}</p>
-            <div className="mt-4 flex gap-1.5">
+          <div className="flex w-full flex-col items-center justify-center pt-3 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500">Total Revenue</p>
+            <p className="mt-1 font-mono text-[10px] text-gray-400">{revenueMeta}</p>
+            <p className="mt-2 text-[26px] font-bold leading-none tabular-nums text-[#2c3e50]">{revenueDisplay}</p>
+            <div className="mt-3 flex gap-1.5">
               {revenueDotsActive.map((on, i) => (
                 <span
                   key={i}
@@ -401,54 +402,55 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className={`${cardShell} p-4`}>
-          <div className="flex items-center gap-3">
-            <BriefcaseBusiness className="h-14 w-14 shrink-0 text-black" strokeWidth={1.25} aria-hidden />
+        <div className={`flex min-h-[124px] ${cardShell} p-3.5`}>
+          <div className="flex w-full items-center gap-3">
+            <BriefcaseBusiness className="h-[52px] w-[52px] shrink-0 text-black" strokeWidth={1.15} aria-hidden />
             <div className="min-w-0 flex-1 text-right">
-              <p className="text-xs font-medium text-gray-500">Total Projects</p>
-              <p className="text-2xl font-bold tabular-nums text-[#2c3e50]">{totalProjects}</p>
+              <p className="text-[11px] font-medium text-gray-500">Total Projects</p>
+              <p className="text-[26px] font-bold leading-tight tabular-nums text-[#2c3e50]">{totalProjects}</p>
               <p className="text-[10px] text-gray-400">In your mailbox</p>
             </div>
           </div>
         </div>
 
-        <div className={`${cardShell} p-4`}>
-          <div className="flex items-center gap-3">
-            <UserRound className="h-14 w-14 shrink-0 text-black" strokeWidth={1.25} aria-hidden />
+        <div className={`flex min-h-[124px] ${cardShell} p-3.5`}>
+          <div className="flex w-full items-center gap-3">
+            <UserRound className="h-[52px] w-[52px] shrink-0 text-black" strokeWidth={1.15} aria-hidden />
             <div className="min-w-0 flex-1 text-right">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Registered Users</p>
-              <p className="text-2xl font-bold tabular-nums text-[#2c3e50]">{totalUsers}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Registered Users</p>
+              <p className="text-[26px] font-bold leading-tight tabular-nums text-[#2c3e50]">{totalUsers}</p>
               <p className="text-[10px] text-gray-400">On your website</p>
             </div>
           </div>
         </div>
 
         <div
-          className="rounded-sm border border-emerald-600/30 p-4 text-white shadow-sm"
+          className="flex min-h-[124px] flex-col justify-center rounded-sm border border-emerald-700/25 p-3.5 text-white shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
           style={{
-            background: "linear-gradient(135deg, #1abc9c 0%, #16a085 50%, #0d9488 100%)",
+            background: "linear-gradient(145deg, #1dd2af 0%, #1abc9c 35%, #16a085 100%)",
           }}
         >
-          <p className="text-center text-3xl font-bold tabular-nums tracking-wide">{clockTime}</p>
-          <p className="mt-2 text-center text-xs font-medium opacity-95">{clockDate}</p>
-          <div className="mt-4 flex items-center justify-center gap-6 text-white/95">
-            <Clock className="h-4 w-4" strokeWidth={2} aria-hidden />
-            <Bell className="h-4 w-4" strokeWidth={2} aria-hidden />
-            <Calendar className="h-4 w-4" strokeWidth={2} aria-hidden />
+          <p className="text-center text-[28px] font-bold tabular-nums leading-none tracking-[0.2em]">{clockTime}</p>
+          <p className="mt-2 text-center text-[11px] font-medium leading-snug opacity-95">{clockDate}</p>
+          <div className="mt-3 flex items-center justify-center gap-7 border-t border-white/25 pt-3 text-white">
+            <Clock className="h-[15px] w-[15px]" strokeWidth={2} aria-hidden />
+            <Bell className="h-[15px] w-[15px]" strokeWidth={2} aria-hidden />
+            <Calendar className="h-[15px] w-[15px]" strokeWidth={2} aria-hidden />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-        <div className={`${cardShell} p-4 lg:col-span-5`}>
+        <div className={`${cardShell} flex flex-col p-3.5 lg:col-span-4`}>
           <ChartCardHeader title="Projects Activity" subtitle="Projects vs returning" />
-          <div className="h-[220px] w-full">
+          <div className="h-[236px] w-full min-h-0 flex-1">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={projectActivityBars} margin={{ top: 4, right: 8, left: 0, bottom: 4 }} barGap={2} barCategoryGap="18%">
+              <BarChart data={projectActivityBars} margin={{ top: 2, right: 4, left: -8, bottom: 0 }} barGap={3} barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#6b7280" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} width={28} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip />
+                <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#6b7280" }} axisLine={false} tickLine={false} interval={0} angle={-12} textAnchor="end" height={46} />
+                <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} width={26} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip contentStyle={{ fontSize: 11, borderRadius: 4, border: "1px solid #e5e7eb" }} />
+                <Legend wrapperStyle={{ fontSize: 11, paddingTop: 4 }} iconType="square" iconSize={8} />
                 <Bar dataKey="projects" fill={C.navy} radius={[2, 2, 0, 0]} name="Projects" />
                 <Bar dataKey="returning" fill={C.turquoise} radius={[2, 2, 0, 0]} name="Returning" />
               </BarChart>
@@ -456,18 +458,18 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className={`${cardShell} p-4 lg:col-span-4`}>
-          <ChartCardHeader title="Inventory Value" subtitle="Value (portfolio)" />
-          <div className="relative mx-auto h-[220px] w-full max-w-[220px]">
+        <div className={`${cardShell} flex flex-col p-3.5 lg:col-span-4`}>
+          <ChartCardHeader title="Inventory Value" subtitle="Value (on hand)" />
+          <div className="relative mx-auto h-[236px] w-full max-w-[252px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={inventoryDonutData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={62}
-                  outerRadius={86}
-                  paddingAngle={1}
+                  innerRadius="58%"
+                  outerRadius="82%"
+                  paddingAngle={1.5}
                   dataKey="value"
                   stroke="none"
                 >
@@ -478,14 +480,14 @@ export default function DashboardPage() {
                 <Tooltip formatter={(v) => formatCurrency(Number(v))} />
               </PieChart>
             </ResponsiveContainer>
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pt-1 text-center">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-gray-500">Inventory Value</p>
-              <p className="text-sm font-bold tabular-nums text-[#2c3e50]">{formatCurrency(inventoryValue)}</p>
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Inventory Value</p>
+              <p className="mt-1 text-[15px] font-bold tabular-nums text-[#2c3e50]">{formatCurrency(inventoryValue)}</p>
             </div>
           </div>
         </div>
 
-        <div className={`${cardShell} p-4 lg:col-span-3`}>
+        <div className={`${cardShell} p-3.5 lg:col-span-4`}>
           <ChartCardHeader title="Projects" subtitle="Projects activity" />
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
@@ -533,18 +535,18 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-        <div className={`${cardShell} p-4 lg:col-span-8`}>
-          <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+        <div className={`${cardShell} p-3.5 lg:col-span-8`}>
+          <div className="mb-2.5 flex flex-wrap items-start justify-between gap-2 border-b border-gray-100 pb-2.5">
             <div>
-              <h3 className="text-sm font-medium text-[#2c3e50]">Sales</h3>
-              <p className="text-xs text-gray-500">Sales activity by period</p>
+              <h3 className="text-[13px] font-semibold leading-tight text-[#2c3e50]">Sales</h3>
+              <p className="mt-0.5 text-[11px] text-gray-500">Sales activity by period</p>
             </div>
-            <span className="rounded-sm border border-gray-200 bg-gray-50 px-2 py-1 text-[10px] text-gray-500">
+            <span className="rounded-sm border border-gray-200 bg-gray-50 px-2 py-1 text-[10px] font-medium text-gray-600">
               {new Date().getFullYear()}
             </span>
           </div>
-          <div className="flex flex-col gap-3 lg:flex-row">
-            <div className="flex w-full shrink-0 flex-col gap-2 border-gray-100 lg:w-[140px] lg:border-r lg:pr-3">
+          <div className="flex flex-col gap-3 pt-1 lg:flex-row">
+            <div className="flex w-full shrink-0 flex-col gap-2.5 text-[10px] text-gray-600 lg:w-[132px] lg:border-r lg:border-gray-100 lg:pr-3">
               <div>
                 <p className="text-[10px] text-gray-500">In Queue</p>
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100">
@@ -589,15 +591,15 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            <div className="min-h-[240px] min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-100 bg-white">
+            <div className="min-h-[248px] min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-200 bg-[#eef2f7]">
               <ComposableMap
                 projection="geoMercator"
-                projectionConfig={{ scale: 520 }}
-                width={720}
-                height={240}
+                projectionConfig={{ scale: 540 }}
+                width={800}
+                height={248}
                 style={{ width: "100%", maxWidth: "100%", height: "auto" }}
               >
-                <ZoomableGroup center={SUDAN_CENTER} zoom={2.25}>
+                <ZoomableGroup center={SUDAN_CENTER} zoom={2.32}>
                   <Geographies geography={WORLD_GEO_URL}>
                     {({ geographies }) =>
                       geographies.map((geo) => (
@@ -605,8 +607,8 @@ export default function DashboardPage() {
                           key={geo.rsmKey}
                           geography={geo}
                           fill="#2c3e50"
-                          stroke="#1e293b"
-                          strokeWidth={0.35}
+                          stroke="#1a252f"
+                          strokeWidth={0.4}
                           style={{
                             default: { outline: "none" },
                             hover: { outline: "none", fill: "#34495e" },
@@ -618,12 +620,12 @@ export default function DashboardPage() {
                   </Geographies>
                   <Marker coordinates={SUDAN_CENTER}>
                     <title>Company Operations - Sudan</title>
-                    <circle r={8} fill="#1abc9c" stroke="#ffffff" strokeWidth={2} />
+                    <circle r={9} fill="#1abc9c" stroke="#ffffff" strokeWidth={2} />
                   </Marker>
                   {projectGeoMarkers.map((m) => (
                     <Marker key={m.id} coordinates={m.coordinates}>
                       <title>{m.name}</title>
-                      <circle r={4} fill="#1abc9c" stroke="#ffffff" strokeWidth={1.5} />
+                      <circle r={5} fill="#1abc9c" stroke="#ffffff" strokeWidth={1.5} />
                     </Marker>
                   ))}
                 </ZoomableGroup>
@@ -632,27 +634,28 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className={`${cardShell} p-4 lg:col-span-4`}>
+        <div className={`${cardShell} p-3.5 lg:col-span-4`}>
           <ChartCardHeader title="Sales" subtitle="Sales activity" />
-          <div className="h-[280px] w-full">
+          <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={salesLineData} margin={{ top: 8, right: 4, left: 0, bottom: 4 }}>
+              <LineChart data={salesLineData} margin={{ top: 6, right: 6, left: 0, bottom: 2 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#6b7280" }} />
+                <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#6b7280" }} />
                 <YAxis
                   yAxisId="left"
-                  tick={{ fontSize: 10, fill: "#1abc9c" }}
-                  width={40}
+                  tick={{ fontSize: 10, fill: "#2c3e50" }}
+                  width={42}
                   tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : v)}
                 />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
-                  tick={{ fontSize: 10, fill: "#2c3e50" }}
-                  width={28}
+                  tick={{ fontSize: 10, fill: "#1abc9c" }}
+                  width={26}
                   allowDecimals={false}
                 />
                 <Tooltip
+                  contentStyle={{ fontSize: 11, borderRadius: 4, border: "1px solid #e5e7eb" }}
                   formatter={(value, name) =>
                     name === "Revenue" ? formatCurrency(Number(value)) : [value, "Paid invoices"]
                   }
@@ -661,18 +664,18 @@ export default function DashboardPage() {
                   yAxisId="left"
                   type="monotone"
                   dataKey="revenue"
-                  stroke={C.turquoise}
+                  stroke={C.navy}
                   strokeWidth={2}
-                  dot={{ r: 3, fill: C.turquoise }}
+                  dot={{ r: 3, fill: C.navy }}
                   name="Revenue"
                 />
                 <Line
                   yAxisId="right"
                   type="monotone"
                   dataKey="paidCount"
-                  stroke={C.navy}
+                  stroke={C.turquoise}
                   strokeWidth={2}
-                  dot={{ r: 3, fill: C.navy }}
+                  dot={{ r: 3, fill: C.turquoise }}
                   name="Paid invoices"
                 />
               </LineChart>
@@ -681,12 +684,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end pt-0.5">
         <button
           type="button"
           onClick={() => navigate("/reports")}
           data-ui="generate-report-btn"
-          className="rounded-sm border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-[#2c3e50] shadow-sm hover:bg-gray-50"
+          className="rounded-sm border border-gray-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-[#2c3e50] shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-gray-50"
         >
           Generate Report
         </button>
