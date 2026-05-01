@@ -184,7 +184,11 @@ export default function ClientDetailsPage() {
                   <th>Remaining</th>
                   <th>Status</th>
                   <th>Date</th>
-                  <th>Actions</th>
+                  <th className="px-4 py-2 text-center">
+                    <div className="flex justify-center">
+                      Actions
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
