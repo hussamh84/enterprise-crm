@@ -682,7 +682,7 @@ a.btn-approve {
   color: #fff !important;
 }
 
-.quotation-invoice-theme button:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]),
+.quotation-invoice-theme button:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]):not(.autocomplete-item),
 .quotation-invoice-theme .btn:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]),
 .quotation-invoice-theme [class*="btn"]:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]),
 .quotation-invoice-theme .actions button:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]) {
@@ -701,7 +701,7 @@ a.btn-approve {
   filter: none;
 }
 
-.quotation-invoice-theme button:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]):hover,
+.quotation-invoice-theme button:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]):not(.autocomplete-item):hover,
 .quotation-invoice-theme .btn:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]):hover,
 .quotation-invoice-theme [class*="btn"]:not(.btn-secondary):not(.btn-view):not(.btn-outline):not(.button-secondary):not([class*="outline"]):not([class*="transparent"]):hover {
   background: #000000 !important;
