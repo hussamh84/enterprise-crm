@@ -80,6 +80,13 @@ const Visit = makeEntityModel("Visit", {
 });
 const Quotation = makeEntityModel("Quotation", {
   clientId: { type: String, required: true },
+  customerName: { type: String, trim: true, default: "" },
+  customerPhone: { type: String, trim: true, default: "" },
+  customerEmail: { type: String, trim: true, default: "" },
+  saleType: { type: String, enum: ["stock", "external_purchase"], default: "stock" },
+  purchaseCost: { type: Number, min: 0, default: 0 },
+  supplierName: { type: String, trim: true, default: "" },
+  supplierPhone: { type: String, trim: true, default: "" },
   projectId: { type: String, default: null },
   source: { type: String, enum: ["project", "inventory"], default: "project" },
   quotationNo: { type: String, trim: true },
@@ -132,6 +139,10 @@ const Invoice = makeEntityModel("Invoice", {
   customerName: { type: String, trim: true, default: "" },
   customerPhone: { type: String, trim: true, default: "" },
   customerEmail: { type: String, trim: true, default: "" },
+  saleType: { type: String, enum: ["stock", "external_purchase"], default: "stock" },
+  purchaseCost: { type: Number, min: 0, default: 0 },
+  supplierName: { type: String, trim: true, default: "" },
+  supplierPhone: { type: String, trim: true, default: "" },
   projectId: { type: String, default: null },
   source: { type: String, enum: ["project", "inventory"], default: "project" },
   quotationId: { type: String },
@@ -303,20 +314,9 @@ const resolveClientForSale = async ({ req, tenantId, source, clientIdRaw, walkIn
   if (clientId) return clientId;
   if (source !== "inventory") return "";
   const name = String(walkInCustomer?.name || "").trim();
-  const phone = String(walkInCustomer?.phone || "").trim();
-  const email = String(walkInCustomer?.email || "").trim().toLowerCase();
   if (!name) return "";
-  const doc = await Client.create({
-    tenantId,
-    name,
-    phone,
-    email: email || undefined,
-    status: "active",
-    createdBy: req.user?.id,
-    updatedBy: req.user?.id,
-    auditLog: [{ action: "client.walkin_create", by: req.user?.id, note: "Created from inventory sale walk-in customer" }],
-  });
-  return String(doc._id);
+  // Keep walk-in sales independent from the client database.
+  return String(new mongoose.Types.ObjectId());
 };
 
 const calculateInvoiceProfitFromItems = async ({ tenantId, items = [] }) => {
@@ -396,6 +396,11 @@ const normalizeInventorySaleItems = async ({ tenantId, items = [], enforceInvent
 const deductInventoryForInvoice = async ({ invoice, tenantId, userId, session = null }) => {
   if (!invoice || invoice.stockDeducted) return invoice;
   const source = String(invoice.source || "project").toLowerCase();
+  const saleType = String(invoice.saleType || "stock").toLowerCase();
+  if (source === "inventory" && saleType === "external_purchase") {
+    invoice.stockDeducted = false;
+    return invoice;
+  }
   let items = [];
   if (source === "inventory") {
     items = (Array.isArray(invoice.items) ? invoice.items : []).filter(
@@ -523,6 +528,8 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
   const tenantId = getTenantId(req);
   if (!tenantId) throw new AppError("Tenant context is required", 400);
   const total = Number(quotation.grandTotal ?? quotation.subtotal ?? 0);
+  const quotationSaleType = String(quotation.saleType || "stock").toLowerCase() === "external_purchase" ? "external_purchase" : "stock";
+  const quotationPurchaseCost = Number(quotation.purchaseCost || 0);
   const calculatedProfit = await calculateInvoiceProfitFromQuotation({
     tenantId,
     quotationId: quotation._id,
@@ -599,9 +606,19 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
           clientId: String(quotation.clientId),
           projectId: quotation.projectId ? String(quotation.projectId) : null,
           source: "project",
+          saleType: quotationSaleType,
+          purchaseCost: Number.isFinite(quotationPurchaseCost) && quotationPurchaseCost >= 0 ? quotationPurchaseCost : 0,
+          supplierName: String(quotation.supplierName || ""),
+          supplierPhone: String(quotation.supplierPhone || ""),
+          customerName: String(quotation.customerName || ""),
+          customerPhone: String(quotation.customerPhone || ""),
+          customerEmail: String(quotation.customerEmail || ""),
           quotationId: String(quotation._id),
           total,
-          profit: calculatedProfit,
+          profit:
+            quotationSaleType === "external_purchase"
+              ? Number((total - (Number.isFinite(quotationPurchaseCost) && quotationPurchaseCost >= 0 ? quotationPurchaseCost : 0)).toFixed(2))
+              : calculatedProfit,
           paidAmount: 0,
           remainingAmount: total,
           status: "unpaid",
@@ -1278,6 +1295,8 @@ router.post("/quotations", async (req, res, next) => {
     const tenantId = getTenantId(req);
     if (!tenantId) return next(new AppError("Tenant context is required", 400));
     const source = String(req.body?.source || "project").toLowerCase() === "inventory" ? "inventory" : "project";
+    const saleType = String(req.body?.saleType || "stock").toLowerCase() === "external_purchase" ? "external_purchase" : "stock";
+    const purchaseCost = Number(req.body?.purchaseCost || 0);
     const clientId = await resolveClientForSale({
       req,
       tenantId,
@@ -1293,12 +1312,26 @@ router.post("/quotations", async (req, res, next) => {
     }
     const quotationNo = await generateDocumentNo({ model: Quotation, prefix: "QTN", tenantId });
 
-    const calculated = await computeQuotationTotals({ tenantId, payload: req.body });
+    const calculated = source === "inventory"
+      ? {
+          subtotal: Number(req.body?.total ?? 0),
+          grandTotal: Number(req.body?.total ?? 0),
+          tax: 0,
+          discount: { type: "fixed", value: 0, amount: 0 },
+        }
+      : await computeQuotationTotals({ tenantId, payload: req.body });
     const payload = {
       ...req.body,
       quotationNo,
       name: String(req.body?.name || "").trim() || quotationNo,
       clientId,
+      customerName: String(req.body?.walkInCustomer?.name || "").trim(),
+      customerPhone: String(req.body?.walkInCustomer?.phone || "").trim(),
+      customerEmail: String(req.body?.walkInCustomer?.email || "").trim(),
+      saleType,
+      purchaseCost: Number.isFinite(purchaseCost) && purchaseCost >= 0 ? purchaseCost : 0,
+      supplierName: String(req.body?.supplierName || "").trim(),
+      supplierPhone: String(req.body?.supplierPhone || "").trim(),
       projectId,
       source,
       ...calculated,
@@ -1635,10 +1668,12 @@ router.get("/invoices", async (req, res, next) => {
       const quotation = quotationMap[rawQuotationId] || null;
       return {
         ...invoice,
-        clientId: client ? { _id: client._id, name: client.name } : { _id: invoice.clientId, name: "" },
+        clientId: client
+          ? { _id: client._id, name: client.name }
+          : { _id: invoice.clientId, name: invoice.customerName || "" },
         projectId: project ? { _id: project._id, name: project.name } : { _id: invoice.projectId, name: "" },
         quotationNo: quotation?.quotationNo || "",
-        clientName: client?.name || "",
+        clientName: client?.name || invoice.customerName || "",
         projectName: project?.name || "",
       };
     });
@@ -1686,6 +1721,8 @@ router.post("/invoices", async (req, res, next) => {
     const tenantId = getTenantId(req);
     if (!tenantId) return next(new AppError("Tenant context is required", 400));
     const source = String(req.body?.source || "project").toLowerCase() === "inventory" ? "inventory" : "project";
+    const saleType = String(req.body?.saleType || "stock").toLowerCase() === "external_purchase" ? "external_purchase" : "stock";
+    const purchaseCost = Number(req.body?.purchaseCost || 0);
     const clientId = await resolveClientForSale({
       req,
       tenantId,
@@ -1701,7 +1738,27 @@ router.post("/invoices", async (req, res, next) => {
     }
 
     const normalizedItems = source === "inventory"
-      ? await normalizeInventorySaleItems({ tenantId, items: req.body?.items, enforceInventoryPrice: false })
+      ? (
+        saleType === "external_purchase"
+          ? (Array.isArray(req.body?.items) ? req.body.items : [])
+              .map((item) => {
+                const quantity = Number(item?.quantity || item?.qty || 0);
+                const unitPrice = Number(item?.unitPrice ?? item?.price ?? 0);
+                if (!Number.isFinite(quantity) || quantity <= 0) return null;
+                const resolvedName = String(item?.name || item?.description || "External Item").trim();
+                return {
+                  productId: "",
+                  name: resolvedName,
+                  description: resolvedName,
+                  quantity,
+                  price: unitPrice,
+                  unitPrice,
+                  total: Number((quantity * unitPrice).toFixed(2)),
+                };
+              })
+              .filter(Boolean)
+          : await normalizeInventorySaleItems({ tenantId, items: req.body?.items, enforceInventoryPrice: false })
+      )
       : [];
     const total = source === "inventory"
       ? Number(normalizedItems.reduce((sum, item) => sum + Number(item.total || 0), 0).toFixed(2))
@@ -1714,7 +1771,11 @@ router.post("/invoices", async (req, res, next) => {
     const remainingAmount = Math.max(total - safePaidAmount, 0);
     const status = safePaidAmount >= total ? "paid" : safePaidAmount > 0 ? "partial" : "draft";
     const calculatedProfit = source === "inventory"
-      ? await calculateInvoiceProfitFromItems({ tenantId, items: normalizedItems })
+      ? (
+        saleType === "external_purchase"
+          ? Number((total - (Number.isFinite(purchaseCost) && purchaseCost >= 0 ? purchaseCost : 0)).toFixed(2))
+          : await calculateInvoiceProfitFromItems({ tenantId, items: normalizedItems })
+      )
       : await calculateInvoiceProfitFromQuotation({
           tenantId,
           quotationId: req.body?.quotationId,
@@ -1734,6 +1795,10 @@ router.post("/invoices", async (req, res, next) => {
             customerName: String(req.body?.walkInCustomer?.name || "").trim(),
             customerPhone: String(req.body?.walkInCustomer?.phone || "").trim(),
             customerEmail: String(req.body?.walkInCustomer?.email || "").trim(),
+            saleType,
+            purchaseCost: Number.isFinite(purchaseCost) && purchaseCost >= 0 ? purchaseCost : 0,
+            supplierName: String(req.body?.supplierName || "").trim(),
+            supplierPhone: String(req.body?.supplierPhone || "").trim(),
             projectId,
             source,
             items: source === "inventory" ? normalizedItems : (Array.isArray(req.body?.items) ? req.body.items : []),

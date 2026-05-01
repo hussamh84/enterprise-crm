@@ -11,11 +11,15 @@ export default function SalesFromInventoryPage() {
   const [searchParams] = useSearchParams();
   const presetClientId = searchParams.get("clientId") || "";
   const [customerType, setCustomerType] = useState(presetClientId ? "existing" : "walkin");
+  const [saleType, setSaleType] = useState("stock");
   const [clientId, setClientId] = useState(presetClientId);
   const [clientSearch, setClientSearch] = useState("");
   const [walkInName, setWalkInName] = useState("");
   const [walkInPhone, setWalkInPhone] = useState("");
   const [walkInEmail, setWalkInEmail] = useState("");
+  const [purchaseCost, setPurchaseCost] = useState("");
+  const [supplierName, setSupplierName] = useState("");
+  const [supplierPhone, setSupplierPhone] = useState("");
   const [name, setName] = useState("");
   const [items, setItems] = useState([{ ...BLANK_ITEM }]);
   const [itemSearch, setItemSearch] = useState({});
@@ -91,25 +95,27 @@ export default function SalesFromInventoryPage() {
     setItemSuggestions((previous) => ({ ...previous, [index]: [] }));
   };
 
-  const normalizedItems = useMemo(
-    () =>
-      items
-        .map((item) => {
-          const quantity = Number(item.quantity || 0);
-          const unitPrice = Number(item.unitPrice || 0);
-          return {
-            productId: String(item.productId || "").trim(),
-            name: String(item.description || "").trim(),
-            description: String(item.description || "").trim(),
-            quantity,
-            price: unitPrice,
-            unitPrice,
-            total: Number((quantity * unitPrice).toFixed(2)),
-          };
-        })
-        .filter((item) => item.productId && item.quantity > 0),
-    [items]
-  );
+  const normalizedItems = useMemo(() => {
+    const allowWithoutProduct = saleType === "external_purchase";
+    return items
+      .map((item) => {
+        const quantity = Number(item.quantity || 0);
+        const unitPrice = Number(item.unitPrice || 0);
+        return {
+          productId: String(item.productId || "").trim(),
+          name: String(item.description || "").trim(),
+          description: String(item.description || "").trim(),
+          quantity,
+          price: unitPrice,
+          unitPrice,
+          total: Number((quantity * unitPrice).toFixed(2)),
+        };
+      })
+      .filter((item) => {
+        if (item.quantity <= 0) return false;
+        return allowWithoutProduct ? Boolean(item.name) : Boolean(item.productId);
+      });
+  }, [items, saleType]);
 
   const grandTotal = useMemo(
     () => Number(normalizedItems.reduce((sum, item) => sum + Number(item.total || 0), 0).toFixed(2)),
@@ -129,6 +135,10 @@ export default function SalesFromInventoryPage() {
         : undefined,
     projectId: null,
     source: "inventory",
+    saleType,
+    purchaseCost: saleType === "external_purchase" ? Number(purchaseCost || 0) : 0,
+    supplierName: saleType === "external_purchase" ? String(supplierName || "").trim() : "",
+    supplierPhone: saleType === "external_purchase" ? String(supplierPhone || "").trim() : "",
     items: normalizedItems,
     total: grandTotal,
   });
@@ -158,7 +168,9 @@ export default function SalesFromInventoryPage() {
 
   const hasValidExistingClient = customerType === "existing" ? Boolean(clientId) : false;
   const hasValidWalkIn = customerType === "walkin" ? Boolean(String(walkInName || "").trim()) : false;
-  const canSubmit = (hasValidExistingClient || hasValidWalkIn) && normalizedItems.length > 0;
+  const hasValidExternalPurchaseData =
+    saleType !== "external_purchase" || Boolean(String(supplierName || "").trim() || Number(purchaseCost || 0) >= 0);
+  const canSubmit = (hasValidExistingClient || hasValidWalkIn) && normalizedItems.length > 0 && hasValidExternalPurchaseData;
 
   return (
     <div className="space-y-5">
@@ -175,6 +187,10 @@ export default function SalesFromInventoryPage() {
       <div className="premium-card p-5 space-y-4">
         <div className="grid md:grid-cols-3 gap-3">
           <input className="w-full" value={name} onChange={(event) => setName(event.target.value)} placeholder="Sale title (optional)" />
+          <select className="w-full" value={saleType} onChange={(event) => setSaleType(event.target.value)}>
+            <option value="stock">Sell From Stock</option>
+            <option value="external_purchase">Buy &amp; Sell (External Purchase)</option>
+          </select>
           <select
             className="w-full"
             value={customerType}
@@ -234,6 +250,30 @@ export default function SalesFromInventoryPage() {
             />
           </div>
         )}
+        {saleType === "external_purchase" ? (
+          <div className="grid md:grid-cols-3 gap-3">
+            <input
+              type="number"
+              min="0"
+              className="w-full"
+              value={purchaseCost}
+              onChange={(event) => setPurchaseCost(event.target.value)}
+              placeholder="Purchase Cost"
+            />
+            <input
+              className="w-full"
+              value={supplierName}
+              onChange={(event) => setSupplierName(event.target.value)}
+              placeholder="Supplier Name"
+            />
+            <input
+              className="w-full"
+              value={supplierPhone}
+              onChange={(event) => setSupplierPhone(event.target.value)}
+              placeholder="Supplier Phone (optional)"
+            />
+          </div>
+        ) : null}
 
         <div className="space-y-3">
           {items.map((item, index) => (
