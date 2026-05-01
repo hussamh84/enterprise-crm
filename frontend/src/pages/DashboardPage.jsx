@@ -6,8 +6,6 @@ import {
   Calendar,
   Clock,
   Maximize2,
-  Minus,
-  Plus,
   RefreshCw,
   Settings,
   UserRound,
@@ -34,7 +32,7 @@ import {
   Geographies,
   Geography,
   Marker,
-  ZoomableGroup,
+  useMapContext,
 } from "react-simple-maps";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
@@ -55,12 +53,23 @@ const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m
 const SUDAN_CENTER = [30.2176, 12.8628];
 /** Full-world framing (Mercator): Atlantic-centered, all continents visible. */
 const WORLD_CENTER = [0, 14];
-const WORLD_ZOOM_DEFAULT = 0.58;
-/** Must be ≤ WORLD_ZOOM_DEFAULT — react-simple-maps defaults minZoom to 1 and clamps zoom otherwise. */
-const WORLD_MAP_MIN_ZOOM = 0.38;
-const WORLD_MAP_MAX_ZOOM = 2.4;
+/** Matches former ZoomableGroup framing — static map uses this transform only. */
+const WORLD_ZOOM_STATIC = 0.58;
 const MAP_SVG_W = 1400;
 const MAP_SVG_H = 260;
+
+/** Non-interactive viewport: same translate/scale math as react-simple-maps ZoomableGroup initial view. */
+function StaticWorldViewport({ center, zoom, children }) {
+  const { projection, width, height } = useMapContext();
+  const transform = useMemo(() => {
+    const [lon, lat] = center;
+    const coords = projection([lon, lat]);
+    const x = coords[0] * zoom;
+    const y = coords[1] * zoom;
+    return `translate(${width / 2 - x} ${height / 2 - y}) scale(${zoom})`;
+  }, [center, zoom, projection, width, height]);
+  return <g transform={transform}>{children}</g>;
+}
 
 function projectCoordinates(project) {
   const p = project && typeof project === "object" ? project : {};
@@ -115,7 +124,6 @@ function tableActivityPercent(status) {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [now, setNow] = useState(() => new Date());
-  const [worldMapZoom, setWorldMapZoom] = useState(WORLD_ZOOM_DEFAULT);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -659,129 +667,101 @@ export default function DashboardPage() {
                 </p>
               </div>
             </aside>
-            <div
-              className="relative shrink-0 overflow-hidden rounded-sm border border-gray-200 bg-white leading-[0] lg:self-start [&_svg]:block [&_svg]:max-h-none [&_svg]:max-w-none [&_svg]:h-[260px] [&_svg]:w-[1400px]"
-              style={{ width: MAP_SVG_W, height: MAP_SVG_H }}
-            >
-              <div className="pointer-events-auto absolute left-1 top-1 z-[2] flex flex-col gap-px rounded-sm border border-white/30 bg-[#1f3147] p-px shadow-md">
-                <button
-                  type="button"
-                  className="flex h-6 w-6 items-center justify-center rounded-sm text-white hover:bg-[#23364d]"
-                  aria-label="Zoom in"
-                  onClick={() =>
-                    setWorldMapZoom((z) => Math.min(WORLD_MAP_MAX_ZOOM, Number((z + 0.1).toFixed(2))))
-                  }
-                >
-                  <Plus className="h-3 w-3" strokeWidth={2.5} />
-                </button>
-                <button
-                  type="button"
-                  className="flex h-6 w-6 items-center justify-center rounded-sm text-white hover:bg-[#23364d]"
-                  aria-label="Zoom out"
-                  onClick={() =>
-                    setWorldMapZoom((z) => Math.max(WORLD_MAP_MIN_ZOOM, Number((z - 0.1).toFixed(2))))
-                  }
-                >
-                  <Minus className="h-3 w-3" strokeWidth={2.5} />
-                </button>
-              </div>
-              <ComposableMap
-                projection="geoMercator"
-                projectionConfig={{ scale: 78 }}
-                width={MAP_SVG_W}
-                height={MAP_SVG_H}
-                className="block align-top"
-                style={{
-                  width: MAP_SVG_W,
-                  height: MAP_SVG_H,
-                  display: "block",
-                  verticalAlign: "top",
-                  maxWidth: MAP_SVG_W,
-                  maxHeight: MAP_SVG_H,
-                }}
+            <div className="flex min-w-0 flex-1 justify-center lg:self-start">
+              <div
+                className="relative shrink-0 overflow-hidden rounded-sm border border-gray-200 bg-white leading-[0] pointer-events-none select-none [&_svg]:block [&_svg]:max-h-none [&_svg]:max-w-none [&_svg]:h-[260px] [&_svg]:w-[1400px]"
+                style={{ width: MAP_SVG_W, height: MAP_SVG_H }}
+                role="img"
+                aria-label="World map"
               >
-                <ZoomableGroup
-                  center={WORLD_CENTER}
-                  zoom={worldMapZoom}
-                  minZoom={WORLD_MAP_MIN_ZOOM}
-                  maxZoom={WORLD_MAP_MAX_ZOOM}
-                  translateExtent={[
-                    [-MAP_SVG_W * 0.85, -MAP_SVG_H * 1.25],
-                    [MAP_SVG_W * 1.85, MAP_SVG_H * 2.25],
-                  ]}
+                <ComposableMap
+                  projection="geoMercator"
+                  projectionConfig={{ scale: 78 }}
+                  width={MAP_SVG_W}
+                  height={MAP_SVG_H}
+                  className="block align-top"
+                  style={{
+                    width: MAP_SVG_W,
+                    height: MAP_SVG_H,
+                    display: "block",
+                    verticalAlign: "top",
+                    maxWidth: MAP_SVG_W,
+                    maxHeight: MAP_SVG_H,
+                    pointerEvents: "none",
+                  }}
                 >
-                  <rect x={-2800} y={-1400} width={5600} height={2800} fill="#ffffff" />
-                  <Geographies geography={WORLD_GEO_URL}>
-                    {({ geographies }) =>
-                      geographies.map((geo) => (
-                        <Geography
-                          key={geo.rsmKey}
-                          geography={geo}
-                          fill="#23364d"
-                          stroke="#1f3147"
-                          strokeWidth={0.4}
-                          style={{
-                            default: { outline: "none" },
-                            hover: { outline: "none", fill: "#2a4260" },
-                            pressed: { outline: "none" },
-                          }}
+                  <StaticWorldViewport center={WORLD_CENTER} zoom={WORLD_ZOOM_STATIC}>
+                    <rect x={-2800} y={-1400} width={5600} height={2800} fill="#ffffff" />
+                    <Geographies geography={WORLD_GEO_URL}>
+                      {({ geographies }) =>
+                        geographies.map((geo) => (
+                          <Geography
+                            key={geo.rsmKey}
+                            geography={geo}
+                            fill="#23364d"
+                            stroke="#1f3147"
+                            strokeWidth={0.4}
+                            style={{
+                              default: { outline: "none" },
+                              hover: { outline: "none", fill: "#23364d" },
+                              pressed: { outline: "none" },
+                            }}
+                          />
+                        ))
+                      }
+                    </Geographies>
+                    {projectGeoMarkers.map((m) => (
+                      <Marker key={m.id} coordinates={m.coordinates}>
+                        <circle
+                          r={4}
+                          fill="#1abc9c"
+                          stroke="rgba(255,255,255,0.85)"
+                          strokeWidth={1.25}
+                          style={{ filter: "drop-shadow(0 0 3px rgba(26, 188, 156, 0.9))" }}
                         />
-                      ))
-                    }
-                  </Geographies>
-                  {projectGeoMarkers.map((m) => (
-                    <Marker key={m.id} coordinates={m.coordinates}>
-                      <title>{m.name}</title>
+                      </Marker>
+                    ))}
+                    <Marker coordinates={SUDAN_CENTER}>
                       <circle
-                        r={4}
+                        r={11}
                         fill="#1abc9c"
-                        stroke="rgba(255,255,255,0.85)"
-                        strokeWidth={1.25}
-                        style={{ filter: "drop-shadow(0 0 3px rgba(26, 188, 156, 0.9))" }}
+                        stroke="#ffffff"
+                        strokeWidth={2}
+                        style={{ filter: "drop-shadow(0 0 10px rgba(26, 188, 156, 1)) drop-shadow(0 0 4px rgba(26, 188, 156, 0.8))" }}
                       />
                     </Marker>
-                  ))}
-                  <Marker coordinates={SUDAN_CENTER}>
-                    <title>Company Operations - Sudan</title>
-                    <circle
-                      r={11}
-                      fill="#1abc9c"
-                      stroke="#ffffff"
-                      strokeWidth={2}
-                      style={{ filter: "drop-shadow(0 0 10px rgba(26, 188, 156, 1)) drop-shadow(0 0 4px rgba(26, 188, 156, 0.8))" }}
-                    />
-                  </Marker>
-                </ZoomableGroup>
-              </ComposableMap>
+                  </StaticWorldViewport>
+                </ComposableMap>
+              </div>
             </div>
           </div>
         </article>
 
         <article className={`${refCard} flex min-h-0 min-w-0 flex-col p-2 lg:col-span-4`}>
           <RefPanelHeader compact title="Sales" subtitle="Event 'Purchase Button'" />
-          <div className="min-h-[400px] w-full min-w-0 flex-1">
+          <div className="mx-auto min-h-[340px] w-[94%] min-w-0 max-w-[520px] flex-1">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={salesLineData} margin={{ top: 8, right: 4, left: 0, bottom: 4 }}>
+              <LineChart data={salesLineData} margin={{ top: 6, right: 2, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 10, fill: "#64748b" }}
+                  tick={{ fontSize: 9, fill: "#64748b" }}
                   interval={0}
                   angle={-20}
                   textAnchor="end"
-                  height={44}
+                  height={40}
                 />
                 <YAxis
                   yAxisId="left"
-                  tick={{ fontSize: 10, fill: "#1f3147" }}
-                  width={42}
+                  tick={{ fontSize: 9, fill: "#1f3147" }}
+                  width={38}
                   tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : v)}
                 />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
-                  tick={{ fontSize: 10, fill: "#1abc9c" }}
-                  width={28}
+                  tick={{ fontSize: 9, fill: "#1abc9c" }}
+                  width={24}
                   allowDecimals={false}
                 />
                 <Tooltip
