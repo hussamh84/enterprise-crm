@@ -47,7 +47,7 @@ export default function QuotationBuilderPage() {
   const [tax, setTax] = useState(0);
   const [quoteStatus, setQuoteStatus] = useState("draft");
   const [items, setItems] = useState([{ ...BLANK_ITEM }]);
-  const [projectType, setProjectType] = useState("Network");
+  const [projectType, setProjectType] = useState("");
   const [cctvType, setCctvType] = useState("");
   const [itemSearch, setItemSearch] = useState({});
   const [itemSuggestions, setItemSuggestions] = useState({});
@@ -305,154 +305,151 @@ export default function QuotationBuilderPage() {
       </div>
 
       <div className="premium-card p-5 space-y-5">
-        <div style={QUOTE_HEADER_GRID}>
-          <div className="min-w-0">
-            <label htmlFor="quote-title" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-              Quotation title
-            </label>
-            <input
-              id="quote-title"
-              style={HEADER_CONTROL}
-              className="w-full"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Quotation title"
-            />
-          </div>
-
-          <div className="flex flex-col gap-3 min-w-0" style={{ maxWidth: "100%" }}>
-            <div
-              className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 w-full"
-              style={{ height: 52, boxSizing: "border-box" }}
-            >
-              <button
-                type="button"
-                className={`flex-1 text-sm rounded-md ${customerMode === "existing" ? "bg-white shadow text-[#0a2540] font-medium" : "text-[#64748b]"}`}
-                style={{ height: "100%", minHeight: 0 }}
-                onClick={() => {
-                  setCustomerMode("existing");
-                  setWalkInName("");
-                  setWalkInPhone("");
-                  setWalkInEmail("");
-                }}
-              >
-                Existing Client
-              </button>
-              <button
-                type="button"
-                className={`flex-1 text-sm rounded-md ${customerMode === "walkin" ? "bg-white shadow text-[#0a2540] font-medium" : "text-[#64748b]"}`}
-                style={{ height: "100%", minHeight: 0 }}
-                onClick={() => {
-                  setCustomerMode("walkin");
-                  setClientId("");
-                  setProjectId("");
-                  setClientSearch("");
-                }}
-              >
-                Walk-in Customer
-              </button>
-            </div>
-            {customerMode === "existing" ? (
-              <>
-                <input
-                  style={HEADER_CONTROL}
-                  className="w-full"
-                  value={clientSearch}
-                  onChange={(e) => setClientSearch(e.target.value)}
-                  placeholder="Search clients…"
-                />
-                <select
-                  style={HEADER_CONTROL}
-                  className="w-full"
-                  value={clientId}
-                  onChange={(event) => {
-                    setClientId(event.target.value);
-                    setProjectId("");
-                  }}
-                >
-                  <option value="">Select client</option>
-                  {filteredClients.map((client) => (
-                    <option key={client._id} value={client._id}>
-                      {client.name}
-                    </option>
-                  ))}
-                </select>
-              </>
-            ) : (
-              <>
-                <input
-                  style={HEADER_CONTROL}
-                  className="w-full"
-                  value={walkInName}
-                  onChange={(e) => setWalkInName(e.target.value)}
-                  placeholder="Customer name"
-                />
-                <input
-                  style={HEADER_CONTROL}
-                  className="w-full"
-                  value={walkInPhone}
-                  onChange={(e) => setWalkInPhone(e.target.value)}
-                  placeholder="Phone"
-                />
-                <input
-                  style={HEADER_CONTROL}
-                  className="w-full"
-                  type="email"
-                  value={walkInEmail}
-                  onChange={(e) => setWalkInEmail(e.target.value)}
-                  placeholder="Email (optional)"
-                />
-              </>
-            )}
-          </div>
-
-          <div className="min-w-0">
-            <label htmlFor="quote-project-type" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-              PROJECT TYPE
-            </label>
-            <select
-              id="quote-project-type"
-              style={HEADER_CONTROL}
-              className="w-full"
-              value={projectType}
-              onChange={(e) => {
-                const v = e.target.value;
-                setProjectType(v);
-                if (v !== "CCTV") setCctvType("");
-              }}
-            >
-              {PROJECT_TYPE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div aria-hidden className="min-w-0" />
-
-          <div className="min-w-0 flex flex-col gap-3">
-            {customerMode === "existing" ? (
-              <select
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div style={QUOTE_HEADER_GRID}>
+            <div className="min-w-0">
+              <label htmlFor="quote-title" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                Quotation Title
+              </label>
+              <input
+                id="quote-title"
                 style={HEADER_CONTROL}
                 className="w-full"
-                value={projectId}
-                onChange={(event) => setProjectId(event.target.value)}
-                disabled={!clientId}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Enter quotation title"
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 min-w-0">
+              <div
+                className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 w-full"
+                style={{ height: 52, boxSizing: "border-box" }}
               >
-                <option value="">Select project</option>
-                {clientProjects.map((project) => (
-                  <option key={project._id} value={project._id}>{project.name}</option>
+                <button
+                  type="button"
+                  className={`flex-1 text-sm rounded-md ${customerMode === "existing" ? "bg-white shadow text-[#0a2540] font-medium" : "text-[#64748b]"}`}
+                  style={{ height: "100%", minHeight: 0 }}
+                  onClick={() => {
+                    setCustomerMode("existing");
+                    setWalkInName("");
+                    setWalkInPhone("");
+                    setWalkInEmail("");
+                  }}
+                >
+                  Existing Client
+                </button>
+                <button
+                  type="button"
+                  className={`flex-1 text-sm rounded-md ${customerMode === "walkin" ? "bg-white shadow text-[#0a2540] font-medium" : "text-[#64748b]"}`}
+                  style={{ height: "100%", minHeight: 0 }}
+                  onClick={() => {
+                    setCustomerMode("walkin");
+                    setClientId("");
+                    setProjectId("");
+                    setClientSearch("");
+                  }}
+                >
+                  Walk-in Customer
+                </button>
+              </div>
+              {customerMode === "existing" ? (
+                <>
+                  <input
+                    style={HEADER_CONTROL}
+                    className="w-full"
+                    value={clientSearch}
+                    onChange={(e) => setClientSearch(e.target.value)}
+                    placeholder="Search clients..."
+                  />
+                  <select
+                    style={HEADER_CONTROL}
+                    className="w-full"
+                    value={clientId}
+                    onChange={(event) => {
+                      setClientId(event.target.value);
+                      setProjectId("");
+                    }}
+                  >
+                    <option value="">Select client</option>
+                    {filteredClients.map((client) => (
+                      <option key={client._id} value={client._id}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    style={HEADER_CONTROL}
+                    className="w-full"
+                    value={projectId}
+                    onChange={(event) => setProjectId(event.target.value)}
+                    disabled={!clientId}
+                  >
+                    <option value="">Select project</option>
+                    {clientProjects.map((project) => (
+                      <option key={project._id} value={project._id}>{project.name}</option>
+                    ))}
+                  </select>
+                </>
+              ) : (
+                <>
+                  <input
+                    style={HEADER_CONTROL}
+                    className="w-full"
+                    value={walkInName}
+                    onChange={(e) => setWalkInName(e.target.value)}
+                    placeholder="Customer name"
+                  />
+                  <input
+                    style={HEADER_CONTROL}
+                    className="w-full"
+                    value={walkInPhone}
+                    onChange={(e) => setWalkInPhone(e.target.value)}
+                    placeholder="Phone"
+                  />
+                  <input
+                    style={HEADER_CONTROL}
+                    className="w-full"
+                    type="email"
+                    value={walkInEmail}
+                    onChange={(e) => setWalkInEmail(e.target.value)}
+                    placeholder="Email (optional)"
+                  />
+                </>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <label htmlFor="quote-project-type" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                PROJECT TYPE
+              </label>
+              <select
+                id="quote-project-type"
+                style={HEADER_CONTROL}
+                className="w-full"
+                value={projectType}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setProjectType(v);
+                  if (v !== "CCTV") setCctvType("");
+                }}
+              >
+                <option value="">Select project type</option>
+                {PROJECT_TYPE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>
-            ) : (
-              <p className="text-xs text-[#64748b]" style={{ minHeight: 52, display: "flex", alignItems: "center", margin: 0 }}>
-                No project link for walk-in quotes.
+              <p className="text-xs text-[#635bff] mt-2 mb-0 leading-snug">
+                * If you select CCTV, you will be asked to choose IP or Analog.
               </p>
-            )}
+            </div>
           </div>
 
-          <div className="min-w-0">
-            {projectType === "CCTV" ? (
-              <>
+          {projectType === "CCTV" ? (
+            <div style={QUOTE_HEADER_GRID}>
+              <div className="min-w-0" />
+              <div className="min-w-0" />
+              <div className="min-w-0">
                 <label htmlFor="quote-cctv-type" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
                   CCTV Type
                 </label>
@@ -467,9 +464,9 @@ export default function QuotationBuilderPage() {
                   <option value="IP">IP</option>
                   <option value="Analog">Analog</option>
                 </select>
-              </>
-            ) : null}
-          </div>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="space-y-3">
