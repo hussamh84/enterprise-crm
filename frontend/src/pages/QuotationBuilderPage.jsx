@@ -114,11 +114,6 @@ export default function QuotationBuilderPage() {
     return clients.filter((c) => String(c.name || "").toLowerCase().includes(q) || String(c.email || "").toLowerCase().includes(q));
   }, [clients, clientSearch]);
 
-  const clientProjects = useMemo(
-    () => projects.filter((project) => String(project.clientId?._id || project.clientId) === String(clientId)),
-    [projects, clientId]
-  );
-
   useEffect(() => {
     if (isEdit || customerMode !== "existing") return;
     if (!projectId || !clientId) return;
@@ -198,8 +193,8 @@ export default function QuotationBuilderPage() {
     if (!name.trim() || !projectType || (projectType === "CCTV" && !cctvType)) return false;
     if (calculatedItems.length === 0 || calculatedItems.some((item) => !item.description)) return false;
     if (customerMode === "walkin") return Boolean(walkInName.trim());
-    return Boolean(clientId && projectId);
-  }, [name, projectType, cctvType, calculatedItems, customerMode, walkInName, clientId, projectId]);
+    return Boolean(clientId);
+  }, [name, projectType, cctvType, calculatedItems, customerMode, walkInName, clientId]);
 
   const updateItem = (index, key, value) => {
     setItems((previous) => previous.map((item, itemIndex) => (itemIndex === index ? { ...item, [key]: value } : item)));
@@ -271,8 +266,8 @@ export default function QuotationBuilderPage() {
   return (
     <div className="space-y-5 quotation-invoice-theme">
       <div className="premium-card p-5 space-y-5">
-        <div id="qz26zf" className="grid grid-cols-3 gap-6 mb-8">
-          <div>
+        <div id="qz26zf" className="grid grid-cols-3 gap-6 mb-8 items-start">
+          <div className="min-w-0">
             <label htmlFor="quote-title" className="block text-sm font-medium mb-2">
               Quotation Title
             </label>
@@ -286,7 +281,7 @@ export default function QuotationBuilderPage() {
             />
           </div>
 
-          <div>
+          <div className="min-w-0">
             <div className="flex gap-2 mb-2">
               <button
                 type="button"
@@ -323,38 +318,22 @@ export default function QuotationBuilderPage() {
             </div>
 
             {customerMode === "existing" ? (
-              <div className="space-y-2">
-                <select
-                  id="quote-client"
-                  className="w-full h-12 border rounded-xl px-4"
-                  value={clientId}
-                  onChange={(event) => {
-                    setClientId(event.target.value);
-                    setProjectId("");
-                  }}
-                >
-                  <option value="">Select Client</option>
-                  {filteredClients.map((client) => (
-                    <option key={client._id} value={client._id}>
-                      {client.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  id="quote-project-id"
-                  className="w-full h-12 border rounded-xl px-4"
-                  value={projectId}
-                  onChange={(event) => setProjectId(event.target.value)}
-                  disabled={!clientId}
-                >
-                  <option value="">Select project</option>
-                  {clientProjects.map((project) => (
-                    <option key={project._id} value={project._id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                id="quote-client"
+                className="w-full h-12 border rounded-xl px-4"
+                value={clientId}
+                onChange={(event) => {
+                  setClientId(event.target.value);
+                  setProjectId("");
+                }}
+              >
+                <option value="">Select Client</option>
+                {filteredClients.map((client) => (
+                  <option key={client._id} value={client._id}>
+                    {client.name}
+                  </option>
+                ))}
+              </select>
             ) : (
               <div className="space-y-2">
                 <input
@@ -382,7 +361,7 @@ export default function QuotationBuilderPage() {
             )}
           </div>
 
-          <div>
+          <div className="min-w-0">
             <label htmlFor="quote-project-type" className="block text-sm font-medium mb-2">
               Project Type
             </label>
