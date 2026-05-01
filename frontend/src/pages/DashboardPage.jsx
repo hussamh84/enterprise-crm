@@ -611,7 +611,7 @@ export default function DashboardPage() {
         className="grid grid-cols-1 gap-2.5 lg:grid-cols-12 lg:gap-2 lg:items-stretch"
         aria-label="Map and sales trend"
       >
-        <article className={`${refCard} flex min-w-0 flex-col p-3 lg:col-span-8`}>
+        <article className={`${refCard} flex min-w-0 flex-col overflow-hidden p-3 lg:col-span-8`}>
           <div className="mb-2 flex flex-wrap items-start justify-between gap-2 border-b border-gray-200 pb-2">
             <div>
               <h2 className="text-[12px] font-bold leading-tight text-[#1f3147]">Sales</h2>
@@ -621,8 +621,8 @@ export default function DashboardPage() {
               {mapRangeLabel}
             </span>
           </div>
-          <div className="flex max-w-full flex-col gap-2 overflow-x-auto lg:flex-row lg:items-start lg:gap-0">
-            <aside className="flex w-full shrink-0 flex-col justify-center gap-2 border-gray-200 text-[9px] text-gray-600 lg:w-[24%] lg:max-w-[140px] lg:min-w-[112px] lg:border-r lg:pr-2.5 lg:shrink-0">
+          <div className="flex min-w-0 flex-col gap-2 overflow-hidden lg:flex-row lg:items-stretch lg:gap-0">
+            <aside className="relative z-[1] flex w-full shrink-0 flex-col justify-center gap-2 border-gray-200 bg-white text-[9px] text-gray-600 lg:w-[24%] lg:max-w-[140px] lg:min-w-[112px] lg:border-r lg:pr-2.5 lg:shrink-0">
               <div>
                 <p className="font-bold text-[#1f3147]">In Queue</p>
                 <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-200/90">
@@ -667,72 +667,69 @@ export default function DashboardPage() {
                 </p>
               </div>
             </aside>
-            <div className="flex min-w-0 flex-1 justify-center lg:self-start">
-              <div
-                className="relative shrink-0 overflow-hidden rounded-sm border border-gray-200 bg-white leading-[0] pointer-events-none select-none [&_svg]:block [&_svg]:max-h-none [&_svg]:max-w-none [&_svg]:h-[260px] [&_svg]:w-[1400px]"
-                style={{ width: MAP_SVG_W, height: MAP_SVG_H }}
-                role="img"
-                aria-label="World map"
+            <div
+              className="relative isolate min-h-0 min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-200 bg-white leading-[0] pointer-events-none select-none"
+              role="img"
+              aria-label="World map"
+            >
+              <ComposableMap
+                projection="geoMercator"
+                projectionConfig={{ scale: 78 }}
+                width={MAP_SVG_W}
+                height={MAP_SVG_H}
+                preserveAspectRatio="xMidYMid meet"
+                className="block h-[260px] w-full max-w-full align-top [&:focus]:outline-none"
+                style={{
+                  width: "100%",
+                  height: "260px",
+                  maxWidth: "100%",
+                  display: "block",
+                  verticalAlign: "top",
+                  pointerEvents: "none",
+                }}
               >
-                <ComposableMap
-                  projection="geoMercator"
-                  projectionConfig={{ scale: 78 }}
-                  width={MAP_SVG_W}
-                  height={MAP_SVG_H}
-                  className="block align-top"
-                  style={{
-                    width: MAP_SVG_W,
-                    height: MAP_SVG_H,
-                    display: "block",
-                    verticalAlign: "top",
-                    maxWidth: MAP_SVG_W,
-                    maxHeight: MAP_SVG_H,
-                    pointerEvents: "none",
-                  }}
-                >
-                  <StaticWorldViewport center={WORLD_CENTER} zoom={WORLD_ZOOM_STATIC}>
-                    <rect x={-2800} y={-1400} width={5600} height={2800} fill="#ffffff" />
-                    <Geographies geography={WORLD_GEO_URL}>
-                      {({ geographies }) =>
-                        geographies.map((geo) => (
-                          <Geography
-                            key={geo.rsmKey}
-                            geography={geo}
-                            fill="#23364d"
-                            stroke="#1f3147"
-                            strokeWidth={0.4}
-                            style={{
-                              default: { outline: "none" },
-                              hover: { outline: "none", fill: "#23364d" },
-                              pressed: { outline: "none" },
-                            }}
-                          />
-                        ))
-                      }
-                    </Geographies>
-                    {projectGeoMarkers.map((m) => (
-                      <Marker key={m.id} coordinates={m.coordinates}>
-                        <circle
-                          r={4}
-                          fill="#1abc9c"
-                          stroke="rgba(255,255,255,0.85)"
-                          strokeWidth={1.25}
-                          style={{ filter: "drop-shadow(0 0 3px rgba(26, 188, 156, 0.9))" }}
+                <StaticWorldViewport center={WORLD_CENTER} zoom={WORLD_ZOOM_STATIC}>
+                  <rect x={-2800} y={-1400} width={5600} height={2800} fill="#ffffff" />
+                  <Geographies geography={WORLD_GEO_URL}>
+                    {({ geographies }) =>
+                      geographies.map((geo) => (
+                        <Geography
+                          key={geo.rsmKey}
+                          geography={geo}
+                          fill="#23364d"
+                          stroke="#1f3147"
+                          strokeWidth={0.4}
+                          style={{
+                            default: { outline: "none" },
+                            hover: { outline: "none", fill: "#23364d" },
+                            pressed: { outline: "none" },
+                          }}
                         />
-                      </Marker>
-                    ))}
-                    <Marker coordinates={SUDAN_CENTER}>
+                      ))
+                    }
+                  </Geographies>
+                  {projectGeoMarkers.map((m) => (
+                    <Marker key={m.id} coordinates={m.coordinates}>
                       <circle
-                        r={11}
+                        r={4}
                         fill="#1abc9c"
-                        stroke="#ffffff"
-                        strokeWidth={2}
-                        style={{ filter: "drop-shadow(0 0 10px rgba(26, 188, 156, 1)) drop-shadow(0 0 4px rgba(26, 188, 156, 0.8))" }}
+                        stroke="rgba(255,255,255,0.85)"
+                        strokeWidth={1.25}
+                        style={{ filter: "drop-shadow(0 0 3px rgba(26, 188, 156, 0.9))" }}
                       />
                     </Marker>
-                  </StaticWorldViewport>
-                </ComposableMap>
-              </div>
+                  ))}
+                  <Marker coordinates={SUDAN_CENTER}>
+                    <circle
+                      r={11}
+                      fill="#1abc9c"
+                      stroke="#ffffff"
+                      strokeWidth={2}
+                      style={{ filter: "drop-shadow(0 0 10px rgba(26, 188, 156, 1)) drop-shadow(0 0 4px rgba(26, 188, 156, 0.8))" }}
+                    />
+                  </Marker>
+                </StaticWorldViewport>
+              </ComposableMap>
             </div>
           </div>
         </article>
