@@ -14,7 +14,8 @@ export default function ModulePage({ title, endpoint }) {
   const isInventory = endpoint === "/inventory";
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
-  const [price, setPrice] = useState("");
+  const [costPrice, setCostPrice] = useState("");
+  const [sellingPrice, setSellingPrice] = useState("");
   const [quantity, setQuantity] = useState("");
   const [editingId, setEditingId] = useState(null);
 
@@ -218,7 +219,8 @@ export default function ModulePage({ title, endpoint }) {
   const resetInventoryForm = () => {
     setName("");
     setSku("");
-    setPrice("");
+    setCostPrice("");
+    setSellingPrice("");
     setQuantity("");
     setEditingId(null);
   };
@@ -234,7 +236,8 @@ export default function ModulePage({ title, endpoint }) {
   const handleEdit = (item) => {
     setName(String(item?.name || ""));
     setSku(String(item?.sku || ""));
-    setPrice(String(item?.price ?? ""));
+    setCostPrice(String(item?.costPrice ?? item?.cost ?? 0));
+    setSellingPrice(String(item?.sellingPrice ?? item?.price ?? 0));
     setQuantity(String(item?.quantity ?? ""));
     setEditingId(item?._id || null);
   };
@@ -246,19 +249,30 @@ export default function ModulePage({ title, endpoint }) {
       alert("Name and SKU are required.");
       return;
     }
-    const normalizedPrice = Number(price || 0);
+    const normalizedCostPrice = Number(costPrice || 0);
+    const normalizedSellingPrice = Number(sellingPrice || 0);
     const normalizedQuantity = Number(quantity || 0);
-    if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0 || !Number.isFinite(normalizedQuantity) || normalizedQuantity < 0) {
-      alert("Price and Quantity must be valid numbers >= 0.");
+    if (
+      !Number.isFinite(normalizedCostPrice) ||
+      normalizedCostPrice < 0 ||
+      !Number.isFinite(normalizedSellingPrice) ||
+      normalizedSellingPrice < 0 ||
+      !Number.isFinite(normalizedQuantity) ||
+      normalizedQuantity < 0
+    ) {
+      alert("Cost Price, Selling Price and Quantity must be valid numbers >= 0.");
       return;
     }
     const payload = {
       name: name.trim(),
       sku: sku.trim(),
-      price: normalizedPrice,
+      // Keep backward compatibility with existing backend usage.
+      price: normalizedSellingPrice,
+      sellingPrice: normalizedSellingPrice,
+      cost: normalizedCostPrice,
+      costPrice: normalizedCostPrice,
       quantity: normalizedQuantity,
       category: "General",
-      cost: 0,
       minQuantity: 0,
       unit: "pcs",
       status: "active",
@@ -656,7 +670,7 @@ export default function ModulePage({ title, endpoint }) {
           </div>
         </div>
 
-        <form onSubmit={handleAddItem} className="card grid md:grid-cols-5 gap-3 items-end">
+        <form onSubmit={handleAddItem} className="card grid md:grid-cols-6 gap-3 items-end">
           <input
             className="input-field"
             placeholder="Name"
@@ -672,9 +686,16 @@ export default function ModulePage({ title, endpoint }) {
           <input
             type="number"
             className="input-field"
-            placeholder="Price"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            placeholder="Cost Price"
+            value={costPrice}
+            onChange={(e) => setCostPrice(e.target.value)}
+          />
+          <input
+            type="number"
+            className="input-field"
+            placeholder="Selling Price"
+            value={sellingPrice}
+            onChange={(e) => setSellingPrice(e.target.value)}
           />
           <input
             type="number"
@@ -702,7 +723,8 @@ export default function ModulePage({ title, endpoint }) {
                 <tr>
                   <th>Name</th>
                   <th>SKU</th>
-                  <th>Price</th>
+                  <th>Cost Price</th>
+                  <th>Selling Price</th>
                   <th>Quantity</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -713,7 +735,8 @@ export default function ModulePage({ title, endpoint }) {
                   <tr key={item._id} className={item?.lowStock ? "bg-rose-50" : ""}>
                     <td>{item.name}</td>
                     <td>{item.sku}</td>
-                    <td className="numeric">{formatCurrency(item.price || 0)}</td>
+                    <td className="numeric">{formatCurrency(item.costPrice ?? item.cost ?? 0)}</td>
+                    <td className="numeric">{formatCurrency(item.sellingPrice ?? item.price ?? 0)}</td>
                     <td>{item.quantity}</td>
                     <td>
                       {item?.lowStock ? (

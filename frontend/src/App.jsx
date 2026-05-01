@@ -17,6 +17,7 @@ import ProjectDetailsPage from "./pages/ProjectDetailsPage";
 import InvoiceDetailPage from "./pages/InvoiceDetailPage";
 import SalesFromInventoryPage from "./pages/SalesFromInventoryPage";
 import InventoryPage from "./pages/InventoryPage";
+import InventoryDetailsPage from "./pages/InventoryDetailsPage";
 import InvoicePage from "./pages/InvoicePage";
 import LeadsPage from "./pages/LeadsPage";
 import QuotationsPage from "./pages/QuotationsPage";
@@ -47,6 +48,7 @@ function App() {
         <Route path="invoices" element={<InvoicePage />} />
         <Route path="invoices/:invoiceId" element={<InvoiceDetailPage />} />
         <Route path="inventory" element={<InventoryPage />} />
+        <Route path="inventory/:inventoryId" element={<InventoryDetailsPage />} />
         <Route path="sales/new" element={<SalesFromInventoryPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<SettingsPage />} />

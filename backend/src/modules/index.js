@@ -199,7 +199,9 @@ const InventoryItemSchema = new mongoose.Schema(
     sku: { type: String, required: true, trim: true, uppercase: true },
     category: { type: String, required: true, trim: true },
     price: { type: Number, required: true, min: 0, default: 0 },
-    cost: { type: Number, min: 0, default: null },
+    sellingPrice: { type: Number, min: 0, default: 0 },
+    cost: { type: Number, min: 0, default: 0 },
+    costPrice: { type: Number, min: 0, default: 0 },
     quantity: { type: Number, required: true, min: 0, default: 0 },
     minQuantity: { type: Number, required: true, min: 0, default: 0 },
     unit: { type: String, required: true, trim: true, default: "pcs" },
@@ -2146,6 +2148,9 @@ router.post("/inventory/import", inventoryImportUpload.single("file"), async (re
         existing.name = name;
         existing.category = category;
         existing.price = price;
+        existing.sellingPrice = price;
+        existing.cost = Number(existing.costPrice ?? existing.cost ?? 0);
+        existing.costPrice = Number(existing.costPrice ?? existing.cost ?? 0);
         existing.quantity = quantity;
         existing.updatedBy = req.user?.id;
         existing.auditLog = [
@@ -2161,6 +2166,9 @@ router.post("/inventory/import", inventoryImportUpload.single("file"), async (re
           sku,
           category,
           price,
+          sellingPrice: price,
+          cost: 0,
+          costPrice: 0,
           quantity,
           unit: "pcs",
           createdBy: req.user?.id,
@@ -2228,8 +2236,16 @@ router.get("/inventory", async (req, res, next) => {
     const enriched = docs.map((item) => {
       const quantity = Number(item.quantity || 0);
       const minQuantity = Number(item.minQuantity || 0);
+      const sellingPrice = Number(item.sellingPrice ?? item.price ?? 0);
+      const costPrice = Number(item.costPrice ?? item.cost ?? 0);
       return {
         ...item,
+        sellingPrice,
+        costPrice,
+        profitMargin: sellingPrice - costPrice,
+        // Backward-compatible aliases for existing frontend flows.
+        price: sellingPrice,
+        cost: costPrice,
         lowStock: quantity <= minQuantity,
       };
     });
