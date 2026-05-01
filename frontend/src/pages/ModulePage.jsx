@@ -50,6 +50,7 @@ export default function ModulePage({ title, endpoint }) {
   const getProjectStatusBadge = (status) => {
     const value = String(status || "").toLowerCase();
     if (value === "active") return "bg-green-100 text-green-700";
+    if (value === "partial") return "bg-amber-100 text-amber-800 border border-amber-200";
     if (value === "in progress" || value === "in_progress" || value === "pending") {
       return "bg-yellow-100 text-yellow-700";
     }
@@ -61,7 +62,10 @@ export default function ModulePage({ title, endpoint }) {
   const getProjectStatusLabel = (status) => {
     const value = String(status || "").toLowerCase();
     if (value === "in_progress") return "In Progress";
-    if (!value) return "In Progress";
+    if (value === "partial") return "Partial";
+    if (value === "completed") return "Completed";
+    if (value === "active") return "Active";
+    if (!value) return "Active";
     return value
       .split(" ")
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))

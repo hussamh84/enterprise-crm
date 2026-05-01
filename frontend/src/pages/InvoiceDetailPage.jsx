@@ -15,6 +15,7 @@ export default function InvoiceDetailPage() {
   const { invoiceId } = useParams();
   const queryClient = useQueryClient();
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [projectCompletedToast, setProjectCompletedToast] = useState(false);
 
   const { data: settings } = useQuery({
     queryKey: ["workspace-settings"],
@@ -48,9 +49,14 @@ export default function InvoiceDetailPage() {
 
   const payMutation = useMutation({
     mutationFn: async (amount) => (await api.patch(`/invoices/${invoiceId}/pay`, { amount })).data,
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      if (data?.projectAutoCompleted) {
+        setProjectCompletedToast(true);
+        window.setTimeout(() => setProjectCompletedToast(false), 6000);
+      }
       await queryClient.invalidateQueries({ queryKey: ["invoice-detail", invoiceId] });
       await queryClient.invalidateQueries({ queryKey: ["/invoices"] });
+      await queryClient.invalidateQueries({ queryKey: ["/projects"] });
       if (projectId) {
         await queryClient.invalidateQueries({ queryKey: ["project-details", projectId] });
         await queryClient.invalidateQueries({ queryKey: ["project-report", projectId] });
@@ -81,7 +87,15 @@ export default function InvoiceDetailPage() {
   const summaryTax = Number(data.summaryTax ?? 0);
 
   return (
-    <div className="enterprise-doc p-6 pb-10 max-w-5xl mx-auto quotation-invoice-theme">
+    <div className="enterprise-doc p-6 pb-10 max-w-5xl mx-auto quotation-invoice-theme relative">
+      {projectCompletedToast ? (
+        <div
+          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-[#0B132B] text-white px-4 py-3 text-sm shadow-lg max-w-md text-center"
+          role="status"
+        >
+          Project automatically marked as completed
+        </div>
+      ) : null}
       <div className="flex justify-end gap-2 flex-wrap enterprise-doc-section">
         <button
           type="button"

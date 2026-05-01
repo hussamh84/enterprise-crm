@@ -117,7 +117,7 @@ const Quotation = makeEntityModel("Quotation", {
 });
 const Project = makeEntityModel("Project", {
   clientId: { type: String, required: true },
-  status: { type: String, enum: ["active", "completed"], default: "active" },
+  status: { type: String, enum: ["active", "partial", "completed"], default: "active" },
   milestone: String,
   progress: Number,
   budget: Number,
@@ -590,6 +590,13 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
         },
       }
     );
+    if (existing.projectId) {
+      await syncProjectFinancialsForProject({
+        tenantId,
+        projectId: String(existing.projectId),
+        userId: req.user?.id,
+      });
+    }
     return existing;
   }
   const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV", tenantId });
@@ -654,6 +661,13 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
       },
     }
   );
+  if (invoice?.projectId) {
+    await syncProjectFinancialsForProject({
+      tenantId,
+      projectId: String(invoice.projectId),
+      userId: req.user?.id,
+    });
+  }
   return invoice;
 };
 
@@ -674,6 +688,54 @@ const calculateProjectFinancials = async ({ tenantId, projectId }) => {
   return { totalRevenue, totalExpenses, profit };
 };
 
+const normalizeInvoiceStatus = (inv) => String(inv?.status || "").toLowerCase();
+
+const deriveProjectStatusFromInvoices = (invoices) => {
+  if (!invoices.length) return null;
+  const allPaid = invoices.every((inv) => normalizeInvoiceStatus(inv) === "paid");
+  if (allPaid) return "completed";
+  const anyPaidOrPartial = invoices.some((inv) => {
+    const s = normalizeInvoiceStatus(inv);
+    return s === "paid" || s === "partial" || Number(inv.paidAmount || 0) > 0;
+  });
+  const anyNotFullyPaid = invoices.some((inv) => normalizeInvoiceStatus(inv) !== "paid");
+  if (anyPaidOrPartial && anyNotFullyPaid) return "partial";
+  return "active";
+};
+
+const syncProjectCompletionFromInvoices = async ({ tenantId, projectId, userId }) => {
+  const pid = String(projectId);
+  const invoices = await Invoice.find({ tenantId, projectId: pid, deletedAt: null }).lean();
+  if (!invoices.length) {
+    return { projectAutoCompleted: false, projectStatus: null };
+  }
+  const nextStatus = deriveProjectStatusFromInvoices(invoices);
+  const project = await Project.findOne({ _id: pid, tenantId, deletedAt: null }).lean();
+  if (!project) {
+    return { projectAutoCompleted: false, projectStatus: null };
+  }
+  const prev = String(project.status || "active").toLowerCase();
+  if (prev === nextStatus) {
+    return { projectAutoCompleted: false, projectStatus: nextStatus };
+  }
+  await Project.findOneAndUpdate(
+    { _id: pid, tenantId, deletedAt: null },
+    {
+      status: nextStatus,
+      updatedBy: userId,
+      $push: {
+        auditLog: {
+          action: "project.status.sync",
+          by: userId,
+          note: `Auto status from invoices: ${nextStatus}`,
+        },
+      },
+    }
+  );
+  const projectAutoCompleted = nextStatus === "completed" && prev !== "completed";
+  return { projectAutoCompleted, projectStatus: nextStatus };
+};
+
 const syncProjectFinancialsForProject = async ({ tenantId, projectId, userId }) => {
   const snapshot = await calculateProjectFinancials({ tenantId, projectId });
   await Project.findOneAndUpdate(
@@ -692,7 +754,8 @@ const syncProjectFinancialsForProject = async ({ tenantId, projectId, userId }) 
       },
     }
   );
-  return snapshot;
+  const completion = await syncProjectCompletionFromInvoices({ tenantId, projectId, userId });
+  return { ...snapshot, ...completion };
 };
 
 const createClientFromLead = async ({ lead, req, note }) => {
@@ -1634,6 +1697,37 @@ router.get("/projects", async (req, res, next) => {
   }
 });
 
+router.put("/projects/:id", async (req, res, next) => {
+  try {
+    const tenantId = req.tenantId;
+    const wantCompleted = String(req.body?.status || "").toLowerCase() === "completed";
+    if (wantCompleted) {
+      const invoices = await Invoice.find({ tenantId, projectId: String(req.params.id), deletedAt: null }).lean();
+      if (
+        invoices.length &&
+        !invoices.every((inv) => String(inv.status || "").toLowerCase() === "paid")
+      ) {
+        return res.status(400).json({
+          message: "Cannot mark project completed until all invoices are fully paid.",
+        });
+      }
+    }
+    const doc = await Project.findOneAndUpdate(
+      { _id: req.params.id, tenantId, deletedAt: null },
+      {
+        ...req.body,
+        updatedBy: req.user?.id,
+        $push: { auditLog: { action: "project.update", by: req.user?.id, note: "Updated record" } },
+      },
+      { new: true, runValidators: true }
+    );
+    if (!doc) return res.status(404).json({ message: "Project not found" });
+    return res.json(doc);
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.use("/projects", buildCrudRouter({ model: Project, entity: "project" }));
 router.get("/invoices", async (req, res, next) => {
   try {
@@ -1905,14 +1999,25 @@ router.patch("/invoices/:id/pay", async (req, res, next) => {
       await session.endSession();
     }
 
+    let syncResult = null;
     if (invoice.projectId) {
-      await syncProjectFinancialsForProject({
+      syncResult = await syncProjectFinancialsForProject({
         tenantId: req.tenantId,
         projectId: invoice.projectId,
         userId: req.user?.id,
       });
     }
-    res.json(updatedInvoice || invoice);
+    const paidDoc = updatedInvoice || invoice;
+    const out =
+      paidDoc && typeof paidDoc.toObject === "function"
+        ? paidDoc.toObject()
+        : paidDoc
+          ? { ...paidDoc }
+          : {};
+    if (syncResult?.projectAutoCompleted) {
+      out.projectAutoCompleted = true;
+    }
+    res.json(out);
   } catch (error) {
     next(error);
   }

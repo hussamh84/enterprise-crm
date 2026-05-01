@@ -9,6 +9,23 @@ console.log("CHECK PAGE:", __filename);
 
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");
 
+const projectStatusBadgeClass = (status) => {
+  const value = String(status || "").toLowerCase();
+  if (value === "active") return "bg-green-100 text-green-700 border border-green-200";
+  if (value === "partial") return "bg-amber-100 text-amber-800 border border-amber-200";
+  if (value === "completed") return "bg-teal-100 text-teal-700 border border-teal-200";
+  return "bg-slate-100 text-slate-700 border border-slate-200";
+};
+
+const projectStatusLabel = (status) => {
+  const value = String(status || "").toLowerCase();
+  if (value === "partial") return "Partial";
+  if (value === "completed") return "Completed";
+  if (value === "active") return "Active";
+  if (!value) return "Active";
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
 export default function ProjectDetailsPage() {
   const { projectId } = useParams();
   const queryClient = useQueryClient();
@@ -95,7 +112,12 @@ export default function ProjectDetailsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="section-title">{project.name}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="section-title">{project.name}</h1>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${projectStatusBadgeClass(project.status)}`}>
+              {projectStatusLabel(project.status)}
+            </span>
+          </div>
           <p className="text-[#6b7c93] mt-1">Project-level financial and delivery visibility.</p>
         </div>
         <div className="flex items-center gap-2">
