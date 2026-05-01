@@ -1,13 +1,26 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BriefcaseBusiness, DollarSign, Search, TrendingUp, Users } from "lucide-react";
+import {
+  Bell,
+  BriefcaseBusiness,
+  Calendar,
+  Clock,
+  Maximize2,
+  RefreshCw,
+  Settings,
+  UserRound,
+  X,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Line,
   LineChart,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -25,7 +38,15 @@ import { formatCurrency } from "../utils/format";
 
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** World TopoJSON (static CDN, no API key). Center: [longitude, latitude] — Sudan focus. */
+const C = {
+  navy: "#2c3e50",
+  turquoise: "#1abc9c",
+  orange: "#f39c12",
+  red: "#e74c3c",
+  green: "#95c11f",
+};
+
+/** World TopoJSON (static CDN). Center: [longitude, latitude] — Sudan. */
 const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 const SUDAN_CENTER = [30.2176, 12.8628];
 
@@ -54,8 +75,40 @@ function paidInvoiceAmount(inv) {
   return Number(inv?.paidAmount ?? inv?.total ?? inv?.grandTotal ?? inv?.summarySubtotal ?? 0);
 }
 
+function clientKey(project) {
+  const c = project?.clientId;
+  if (c && typeof c === "object") return String(c._id || c.id || "");
+  return String(c || "");
+}
+
+/** Reference-style status row for table (red / yellow / green) */
+function tableStatusPresentation(status) {
+  const s = String(status || "").toLowerCase();
+  if (s === "completed" || s === "paid") {
+    return { label: "Support", badgeClass: "bg-[#95c11f]/20 text-[#95c11f]", barClass: "bg-[#95c11f]" };
+  }
+  if (s === "pending" || s === "in_progress" || s === "in progress") {
+    return { label: "Updating", badgeClass: "bg-amber-100 text-amber-700", barClass: "bg-amber-500" };
+  }
+  return { label: "Developing", badgeClass: "bg-[#e74c3c]/15 text-[#e74c3c]", barClass: "bg-[#e74c3c]" };
+}
+
+function tableActivityPercent(status) {
+  const s = String(status || "").toLowerCase();
+  if (s === "completed" || s === "paid") return 100;
+  if (s === "pending" || s === "in_progress" || s === "in progress") return 55;
+  return 72;
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
   const { data } = useQuery({
     queryKey: ["kpis"],
     queryFn: async () => (await api.get("/dashboard/kpis")).data,
@@ -63,10 +116,6 @@ export default function DashboardPage() {
   const { data: inventoryItems = [] } = useQuery({
     queryKey: ["inventory-low-stock-dashboard"],
     queryFn: async () => (await api.get("/inventory")).data,
-  });
-  const { data: clients = [] } = useQuery({
-    queryKey: ["/clients", "dashboard-recent"],
-    queryFn: async () => (await api.get("/clients")).data,
   });
   const { data: invoices = [] } = useQuery({
     queryKey: ["/invoices", "dashboard-kpi-paid-revenue"],
@@ -100,7 +149,39 @@ export default function DashboardPage() {
     return total;
   }, [invoices]);
 
-  const revenueTrendData = useMemo(() => {
+  const salesLineData = useMemo(() => {
+    const year = new Date().getFullYear();
+    const totals = new Array(12).fill(0);
+    const counts = new Array(12).fill(0);
+    for (const inv of invoices) {
+      if (!invoiceIsPaid(inv)) continue;
+      const raw = inv?.paidAt || inv?.updatedAt || inv?.createdAt;
+      const d = raw ? new Date(raw) : null;
+      if (!d || Number.isNaN(d.getTime()) || d.getFullYear() !== year) continue;
+      const m = d.getMonth();
+      totals[m] += paidInvoiceAmount(inv);
+      counts[m] += 1;
+    }
+    return MONTH_SHORT.map((label, i) => ({
+      label,
+      revenue: totals[i],
+      paidCount: counts[i],
+    }));
+  }, [invoices]);
+
+  const lastPaidAt = useMemo(() => {
+    let latest = null;
+    for (const inv of invoices) {
+      if (!invoiceIsPaid(inv)) continue;
+      const raw = inv?.paidAt || inv?.updatedAt || inv?.createdAt;
+      const d = raw ? new Date(raw) : null;
+      if (!d || Number.isNaN(d.getTime())) continue;
+      if (!latest || d > latest) latest = d;
+    }
+    return latest;
+  }, [invoices]);
+
+  const revenueDotsActive = useMemo(() => {
     const year = new Date().getFullYear();
     const totals = new Array(12).fill(0);
     for (const inv of invoices) {
@@ -110,38 +191,84 @@ export default function DashboardPage() {
       if (!d || Number.isNaN(d.getTime()) || d.getFullYear() !== year) continue;
       totals[d.getMonth()] += paidInvoiceAmount(inv);
     }
-    return MONTH_SHORT.map((month, i) => ({ month, revenue: totals[i] }));
+    const cur = new Date().getMonth();
+    return [cur - 2, cur - 1, cur].map((m) => (m >= 0 ? totals[m] > 0 : false));
   }, [invoices]);
 
-  const projectsStatusData = useMemo(() => {
-    let active = 0;
-    let completed = 0;
-    for (const p of projectsList) {
-      const s = String(p?.status || "").toLowerCase();
-      if (s === "completed" || s === "paid") completed += 1;
-      else active += 1;
+  const projectActivityBars = useMemo(() => {
+    const sorted = [...projectsList].sort(
+      (a, b) => new Date(a?.createdAt || 0).getTime() - new Date(b?.createdAt || 0).getTime()
+    );
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    const nowMs = Date.now();
+    const buckets = [];
+    for (let i = 5; i >= 0; i -= 1) {
+      const end = nowMs - i * weekMs;
+      const start = end - weekMs;
+      const d = new Date(start);
+      buckets.push({
+        start,
+        end,
+        label: `${MONTH_SHORT[d.getMonth()]} ${d.getDate()}`,
+        projects: 0,
+        returning: 0,
+      });
     }
-    return [
-      { segment: "Active", count: active },
-      { segment: "Completed", count: completed },
-    ];
+    const clientsSeen = new Set();
+    for (const p of sorted) {
+      const cid = clientKey(p);
+      const created = new Date(p?.createdAt || 0).getTime();
+      if (Number.isNaN(created)) continue;
+      const isReturning = Boolean(cid && clientsSeen.has(cid));
+      for (const b of buckets) {
+        if (created >= b.start && created < b.end) {
+          b.projects += 1;
+          if (isReturning) b.returning += 1;
+          break;
+        }
+      }
+      if (cid) clientsSeen.add(cid);
+    }
+    return buckets;
   }, [projectsList]);
 
-  const recentProjects = useMemo(
-    () =>
-      [...projectsList]
-        .sort((a, b) => new Date(b?.createdAt || 0).getTime() - new Date(a?.createdAt || 0).getTime())
-        .slice(0, 5),
-    [projectsList]
-  );
-
-  const recentInvoices = useMemo(
-    () =>
-      [...invoices]
-        .sort((a, b) => new Date(b?.createdAt || 0).getTime() - new Date(a?.createdAt || 0).getTime())
-        .slice(0, 5),
-    [invoices]
-  );
+  const inventoryDonutData = useMemo(() => {
+    if (!Array.isArray(inventoryItems) || inventoryItems.length === 0) {
+      return [{ name: "Stock", value: Math.max(inventoryValue, 1), color: C.navy }];
+    }
+    const lines = inventoryItems
+      .map((item) => ({
+        v: Number(item?.price || 0) * Number(item?.quantity || 0),
+      }))
+      .filter((x) => x.v > 0)
+      .sort((a, b) => b.v - a.v);
+    if (lines.length === 0) {
+      return [{ name: "Stock", value: 1, color: C.navy }];
+    }
+    const total = lines.reduce((s, x) => s + x.v, 0);
+    const n = lines.length;
+    let a = 0;
+    let b = 0;
+    let c = 0;
+    if (n === 1) {
+      a = total;
+    } else if (n === 2) {
+      a = lines[0].v;
+      b = lines[1].v;
+    } else {
+      const i = Math.max(1, Math.floor(n * 0.45));
+      const j = Math.max(i + 1, Math.floor(n * 0.8));
+      a = lines.slice(0, i).reduce((s, x) => s + x.v, 0);
+      b = lines.slice(i, j).reduce((s, x) => s + x.v, 0);
+      c = lines.slice(j).reduce((s, x) => s + x.v, 0);
+    }
+    const out = [];
+    if (a > 0) out.push({ name: "Core", value: a, color: C.navy });
+    if (b > 0) out.push({ name: "Mid", value: b, color: C.turquoise });
+    if (c > 0) out.push({ name: "Tail", value: c, color: C.orange });
+    if (out.length === 0) out.push({ name: "Stock", value: Math.max(total, 1), color: C.navy });
+    return out;
+  }, [inventoryItems, inventoryValue]);
 
   const projectGeoMarkers = useMemo(() => {
     const out = [];
@@ -161,313 +288,408 @@ export default function DashboardPage() {
     return out;
   }, [projectsList]);
 
-  const projectStatusMeta = (status) => {
-    const s = String(status || "").toLowerCase();
-    if (s === "completed" || s === "paid") {
-      return { label: "Completed", className: "bg-green-100 text-green-700" };
-    }
-    if (s === "pending" || s === "in_progress" || s === "in progress") {
-      return { label: "Pending", className: "bg-yellow-100 text-yellow-700" };
-    }
-    return { label: "Active", className: "bg-blue-100 text-blue-700" };
-  };
+  const tableProjects = useMemo(
+    () =>
+      [...projectsList]
+        .sort((a, b) => new Date(b?.createdAt || 0).getTime() - new Date(a?.createdAt || 0).getTime())
+        .slice(0, 5),
+    [projectsList]
+  );
 
-  const projectProgress = (status) => {
-    const s = String(status || "").toLowerCase();
-    if (s === "completed" || s === "paid") return 100;
-    if (s === "pending" || s === "in_progress" || s === "in progress") return 45;
-    return 70;
-  };
+  const mapSidebarStats = useMemo(() => {
+    const totalP = projectsList.length;
+    const pending = projectsList.filter((p) => {
+      const s = String(p?.status || "").toLowerCase();
+      return s === "pending" || s === "in_progress" || s === "in progress";
+    }).length;
+    const queuePct = totalP ? Math.round((pending / totalP) * 100) : 0;
 
-  const invoicePaymentMeta = (invoice) => {
-    const total = Number(invoice?.total ?? invoice?.grandTotal ?? 0);
-    const paid = Number(invoice?.paidAmount ?? 0);
-    const remaining = Number(invoice?.remainingAmount ?? Math.max(total - paid, 0));
-    const status = String(invoice?.status || "").toLowerCase();
-    if (status === "paid" || remaining <= 0) {
-      return { label: "Paid", className: "bg-green-100 text-green-700" };
-    }
-    if (paid > 0 || status === "partial") {
-      return { label: "Partial", className: "bg-yellow-100 text-yellow-700" };
-    }
-    return { label: "Unpaid", className: "bg-red-100 text-red-700" };
-  };
+    const paidCount = invoices.filter(invoiceIsPaid).length;
+    const invTotal = invoices.length;
+    const shipCap = Math.max(invTotal, 1);
+    const shipped = paidCount;
 
-  const cards = [
-    {
-      title: "Total Revenue",
-      value: formatCurrency(paidInvoicesTotal),
-      subtitle: "Paid invoices",
-      icon: DollarSign,
-    },
-    {
-      title: "Total Projects",
-      value: String(Number(data?.projects ?? 0)),
-      subtitle: "Active + completed",
-      icon: BriefcaseBusiness,
-    },
-    {
-      title: "Total Clients",
-      value: String(Number(data?.clients ?? 0)),
-      subtitle: "Registered customers",
-      icon: Users,
-    },
-    {
-      title: "Inventory Value",
-      value: formatCurrency(inventoryValue),
-      subtitle: "Current stock value",
-      icon: TrendingUp,
-    },
-  ];
-  const recentClients = [...(Array.isArray(clients) ? clients : [])]
-    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-    .slice(0, 6);
-  const today = new Date().toLocaleDateString(undefined, {
-    weekday: "short",
+    const lowStock = Array.isArray(inventoryItems)
+      ? inventoryItems.filter((it) => Number(it?.quantity || 0) <= Number(it?.reorderLevel ?? 5)).length
+      : 0;
+    const retCap = Math.max(inventoryItems.length, 1);
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const todayPaid = invoices.filter((inv) => {
+      if (!invoiceIsPaid(inv)) return false;
+      const raw = inv?.paidAt || inv?.updatedAt || inv?.createdAt;
+      const d = raw ? new Date(raw) : null;
+      return d && !Number.isNaN(d.getTime()) && d >= startOfDay;
+    }).length;
+    const dayGoal = 150;
+
+    return {
+      queuePct,
+      shipped,
+      shipCap,
+      lowStock,
+      retCap,
+      todayPaid,
+      dayGoal,
+    };
+  }, [projectsList, invoices, inventoryItems]);
+
+  const totalProjects = Number(data?.projects ?? projectsList.length);
+  const totalUsers = Number(data?.clients ?? 0);
+
+  const clockTime = `${String(now.getHours()).padStart(2, "0")} ${String(now.getMinutes()).padStart(2, "0")}`;
+  const clockDate = now.toLocaleDateString(undefined, {
+    weekday: "long",
     year: "numeric",
-    month: "short",
+    month: "long",
     day: "numeric",
   });
 
+  const revenueDisplay = formatCurrency(paidInvoicesTotal);
+  const revenueMeta = lastPaidAt
+    ? lastPaidAt.toLocaleString(undefined, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : now.toLocaleString(undefined, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+  const cardShell = "rounded-sm border border-gray-200 bg-white shadow-sm";
+
+  const ChartCardHeader = ({ title, subtitle }) => (
+    <div className="mb-3 flex items-start justify-between gap-2">
+      <div className="min-w-0">
+        <h3 className="text-sm font-medium text-[#2c3e50]">{title}</h3>
+        <p className="text-xs text-gray-500">{subtitle}</p>
+      </div>
+      <div className="flex shrink-0 items-center gap-1 text-gray-400">
+        <button type="button" className="rounded p-1 hover:bg-gray-100" aria-label="Expand">
+          <Maximize2 className="h-3.5 w-3.5" strokeWidth={2} />
+        </button>
+        <button type="button" className="rounded p-1 hover:bg-gray-100" aria-label="Refresh">
+          <RefreshCw className="h-3.5 w-3.5" strokeWidth={2} />
+        </button>
+        <button type="button" className="rounded p-1 hover:bg-gray-100" aria-label="Settings">
+          <Settings className="h-3.5 w-3.5" strokeWidth={2} />
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="space-y-4 bg-gray-50 rounded-lg p-2">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">{today}</span>
-          <button
-            type="button"
-            onClick={() => navigate("/reports")}
-            data-ui="generate-report-btn"
-            style={{
-              backgroundColor: "#111827",
-              color: "#ffffff",
-              border: "none",
-            }}
-            className="px-3 py-1.5 rounded text-sm hover:opacity-90"
-          >
-            Generate Report
+    <div className="space-y-4 bg-[#F3F4F6] p-4 text-[#2c3e50]">
+      <div className="text-xs text-gray-500">
+        <span className="text-gray-400">Home</span>
+        <span className="mx-1.5">/</span>
+        <span className="font-medium text-[#2c3e50]">Dashboard</span>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={`relative ${cardShell} p-4`}>
+          <button type="button" className="absolute right-2 top-2 rounded p-0.5 text-gray-400 hover:bg-gray-100" aria-label="Close">
+            <X className="h-3.5 w-3.5" strokeWidth={2} />
           </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-        {cards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div key={card.title} className="rounded-2xl bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-500">{card.title}</p>
-                  <p className="mt-3 truncate text-3xl font-semibold tracking-tight text-slate-900">{card.value}</p>
-                  <p className="mt-2 text-xs text-slate-500">{card.subtitle}</p>
-                </div>
-                <div
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#0B132B]/10 text-[#0B132B]"
-                  aria-hidden
-                >
-                  <Icon className="h-5 w-5" strokeWidth={2} />
-                </div>
-              </div>
+          <div className="flex flex-col items-center pt-1 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Total Revenue</p>
+            <p className="mt-1 text-[10px] text-gray-400">{revenueMeta}</p>
+            <p className="mt-3 text-2xl font-bold tabular-nums text-[#2c3e50]">{revenueDisplay}</p>
+            <div className="mt-4 flex gap-1.5">
+              {revenueDotsActive.map((on, i) => (
+                <span
+                  key={i}
+                  className={`h-1.5 w-1.5 rounded-full ${on ? "bg-[#2c3e50]" : "bg-gray-300"}`}
+                />
+              ))}
             </div>
-          );
-        })}
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h3 className="mb-6 text-lg font-semibold text-slate-900">Revenue Overview</h3>
-          <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={revenueTrendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="month" tick={{ fill: "#64748b", fontSize: 12 }} />
-                <YAxis tick={{ fill: "#64748b", fontSize: 12 }} tickFormatter={(v) => formatCurrency(v)} width={72} />
-                <Tooltip formatter={(value) => formatCurrency(value)} labelFormatter={(label) => String(label)} />
-                <Line type="monotone" dataKey="revenue" stroke="#0B132B" strokeWidth={2} dot={{ r: 3, fill: "#0B132B" }} />
-              </LineChart>
-            </ResponsiveContainer>
           </div>
         </div>
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h3 className="mb-6 text-lg font-semibold text-slate-900">Projects Overview</h3>
-          <div className="h-72 w-full">
+
+        <div className={`${cardShell} p-4`}>
+          <div className="flex items-center gap-3">
+            <BriefcaseBusiness className="h-14 w-14 shrink-0 text-black" strokeWidth={1.25} aria-hidden />
+            <div className="min-w-0 flex-1 text-right">
+              <p className="text-xs font-medium text-gray-500">Total Projects</p>
+              <p className="text-2xl font-bold tabular-nums text-[#2c3e50]">{totalProjects}</p>
+              <p className="text-[10px] text-gray-400">In your mailbox</p>
+            </div>
+          </div>
+        </div>
+
+        <div className={`${cardShell} p-4`}>
+          <div className="flex items-center gap-3">
+            <UserRound className="h-14 w-14 shrink-0 text-black" strokeWidth={1.25} aria-hidden />
+            <div className="min-w-0 flex-1 text-right">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Registered Users</p>
+              <p className="text-2xl font-bold tabular-nums text-[#2c3e50]">{totalUsers}</p>
+              <p className="text-[10px] text-gray-400">On your website</p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="rounded-sm border border-emerald-600/30 p-4 text-white shadow-sm"
+          style={{
+            background: "linear-gradient(135deg, #1abc9c 0%, #16a085 50%, #0d9488 100%)",
+          }}
+        >
+          <p className="text-center text-3xl font-bold tabular-nums tracking-wide">{clockTime}</p>
+          <p className="mt-2 text-center text-xs font-medium opacity-95">{clockDate}</p>
+          <div className="mt-4 flex items-center justify-center gap-6 text-white/95">
+            <Clock className="h-4 w-4" strokeWidth={2} aria-hidden />
+            <Bell className="h-4 w-4" strokeWidth={2} aria-hidden />
+            <Calendar className="h-4 w-4" strokeWidth={2} aria-hidden />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+        <div className={`${cardShell} p-4 lg:col-span-5`}>
+          <ChartCardHeader title="Projects Activity" subtitle="Projects vs returning" />
+          <div className="h-[220px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={projectsStatusData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="segment" tick={{ fill: "#64748b", fontSize: 12 }} />
-                <YAxis tick={{ fill: "#64748b", fontSize: 12 }} allowDecimals={false} width={40} />
-                <Tooltip formatter={(value) => [value, "Projects"]} />
-                <Bar dataKey="count" fill="#0B132B" radius={[6, 6, 0, 0]} name="Projects" />
+              <BarChart data={projectActivityBars} margin={{ top: 4, right: 8, left: 0, bottom: 4 }} barGap={2} barCategoryGap="18%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#6b7280" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} width={28} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="projects" fill={C.navy} radius={[2, 2, 0, 0]} name="Projects" />
+                <Bar dataKey="returning" fill={C.turquoise} radius={[2, 2, 0, 0]} name="Returning" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-semibold text-slate-900">Recent Projects</h3>
-          <div className="space-y-3">
-            {recentProjects.length === 0 ? (
-              <p className="text-sm text-slate-500">No projects available.</p>
-            ) : (
-              recentProjects.map((project) => {
-                const meta = projectStatusMeta(project?.status);
-                const progress = projectProgress(project?.status);
-                return (
-                  <div key={project?._id} className="rounded-xl border border-slate-100 p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-slate-900">{project?.name || "Project"}</p>
-                        <p className="truncate text-xs text-slate-500">
-                          {project?.clientId?.name || "No client"} •{" "}
-                          {new Date(project?.createdAt || Date.now()).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${meta.className}`}>
-                        {meta.label}
-                      </span>
-                    </div>
-                    <div className="mt-2 flex items-center gap-2">
-                      <div className="h-2 flex-1 rounded-full bg-slate-100">
-                        <div
-                          className="h-2 rounded-full bg-[#0B132B]"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium text-slate-600">{progress}%</span>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-semibold text-slate-900">Recent Invoices</h3>
-          <div className="space-y-3">
-            {recentInvoices.length === 0 ? (
-              <p className="text-sm text-slate-500">No invoices available.</p>
-            ) : (
-              recentInvoices.map((invoice) => {
-                const meta = invoicePaymentMeta(invoice);
-                return (
-                  <div key={invoice?._id} className="rounded-xl border border-slate-100 p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-slate-900">
-                          {invoice?.invoiceNo || invoice?.invoiceNumber || `INV-${String(invoice?._id || "").slice(-6)}`}
-                        </p>
-                        <p className="truncate text-xs text-slate-500">
-                          {invoice?.clientId?.name || invoice?.clientName || "No client"} •{" "}
-                          {new Date(invoice?.createdAt || Date.now()).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${meta.className}`}>
-                        {meta.label}
-                      </span>
-                    </div>
-                    <div className="mt-2 text-sm font-semibold text-slate-900">
-                      {formatCurrency(
-                        Number(invoice?.total ?? invoice?.grandTotal ?? invoice?.paidAmount ?? 0)
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-2xl bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-lg font-semibold text-slate-900">Operations Coverage</h3>
-        <div className="h-[320px] w-full overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
-          <ComposableMap
-            projection="geoMercator"
-            projectionConfig={{ scale: 520 }}
-            width={960}
-            height={320}
-            style={{ width: "100%", maxWidth: "100%", height: "auto" }}
-          >
-            <ZoomableGroup center={SUDAN_CENTER} zoom={2.35}>
-              <Geographies geography={WORLD_GEO_URL}>
-                {({ geographies }) =>
-                  geographies.map((geo) => (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      fill="#e2e8f0"
-                      stroke="#cbd5e1"
-                      strokeWidth={0.4}
-                      style={{
-                        default: { outline: "none" },
-                        hover: { outline: "none", fill: "#cbd5e1" },
-                        pressed: { outline: "none" },
-                      }}
-                    />
-                  ))
-                }
-              </Geographies>
-              <Marker coordinates={SUDAN_CENTER}>
-                <title>Company Operations - Sudan</title>
-                <circle r={9} fill="#0B132B" stroke="#ffffff" strokeWidth={2.5} />
-                <text
-                  textAnchor="middle"
-                  y={-14}
-                  style={{ fontSize: 11, fill: "#0B132B", fontWeight: 600 }}
+        <div className={`${cardShell} p-4 lg:col-span-4`}>
+          <ChartCardHeader title="Inventory Value" subtitle="Value (portfolio)" />
+          <div className="relative mx-auto h-[220px] w-full max-w-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={inventoryDonutData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={62}
+                  outerRadius={86}
+                  paddingAngle={1}
+                  dataKey="value"
+                  stroke="none"
                 >
-                  Sudan
-                </text>
-              </Marker>
-              {projectGeoMarkers.map((m) => (
-                <Marker key={m.id} coordinates={m.coordinates}>
-                  <title>{m.name}</title>
-                  <circle r={4} fill="#0d9488" stroke="#ffffff" strokeWidth={1.5} />
-                </Marker>
-              ))}
-            </ZoomableGroup>
-          </ComposableMap>
+                  {inventoryDonutData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v) => formatCurrency(Number(v))} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pt-1 text-center">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-gray-500">Inventory Value</p>
+              <p className="text-sm font-bold tabular-nums text-[#2c3e50]">{formatCurrency(inventoryValue)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className={`${cardShell} p-4 lg:col-span-3`}>
+          <ChartCardHeader title="Projects" subtitle="Projects activity" />
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-gray-200 text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                  <th className="pb-2 pr-2 font-medium">Project</th>
+                  <th className="pb-2 pr-2 font-medium">Status</th>
+                  <th className="pb-2 font-medium">Activity</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tableProjects.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="py-4 text-center text-gray-400">
+                      No projects yet.
+                    </td>
+                  </tr>
+                ) : (
+                  tableProjects.map((project) => {
+                    const pres = tableStatusPresentation(project?.status);
+                    const pct = tableActivityPercent(project?.status);
+                    return (
+                      <tr key={project?._id} className="border-b border-gray-100 last:border-0">
+                        <td className="max-w-[100px] truncate py-2 pr-2 font-medium text-[#2c3e50]">
+                          {project?.name || "—"}
+                        </td>
+                        <td className="py-2 pr-2">
+                          <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${pres.badgeClass}`}>
+                            {pres.label}
+                          </span>
+                        </td>
+                        <td className="py-2">
+                          <div className="h-1.5 w-full max-w-[72px] overflow-hidden rounded-full bg-gray-100">
+                            <div className={`h-full rounded-full ${pres.barClass}`} style={{ width: `${pct}%` }} />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-900">Recent Clients</h2>
-          <Search size={14} className="text-slate-400" />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+        <div className={`${cardShell} p-4 lg:col-span-8`}>
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-medium text-[#2c3e50]">Sales</h3>
+              <p className="text-xs text-gray-500">Sales activity by period</p>
+            </div>
+            <span className="rounded-sm border border-gray-200 bg-gray-50 px-2 py-1 text-[10px] text-gray-500">
+              {new Date().getFullYear()}
+            </span>
+          </div>
+          <div className="flex flex-col gap-3 lg:flex-row">
+            <div className="flex w-full shrink-0 flex-col gap-2 border-gray-100 lg:w-[140px] lg:border-r lg:pr-3">
+              <div>
+                <p className="text-[10px] text-gray-500">In Queue</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100">
+                  <div className="h-full bg-[#2c3e50]" style={{ width: `${mapSidebarStats.queuePct}%` }} />
+                </div>
+                <p className="mt-0.5 text-[10px] font-medium tabular-nums text-[#2c3e50]">{mapSidebarStats.queuePct}%</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500">Shipped Products</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100">
+                  <div
+                    className="h-full bg-[#2c3e50]"
+                    style={{ width: `${Math.min(100, (mapSidebarStats.shipped / mapSidebarStats.shipCap) * 100)}%` }}
+                  />
+                </div>
+                <p className="mt-0.5 text-[10px] font-medium tabular-nums text-[#2c3e50]">
+                  {mapSidebarStats.shipped}/{mapSidebarStats.shipCap}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500">Low stock SKUs</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100">
+                  <div
+                    className="h-full bg-[#e74c3c]"
+                    style={{ width: `${Math.min(100, (mapSidebarStats.lowStock / mapSidebarStats.retCap) * 100)}%` }}
+                  />
+                </div>
+                <p className="mt-0.5 text-[10px] font-medium tabular-nums text-[#e74c3c]">
+                  {mapSidebarStats.lowStock}/{mapSidebarStats.retCap}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500">Paid today</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100">
+                  <div
+                    className="h-full bg-[#1abc9c]"
+                    style={{ width: `${Math.min(100, (mapSidebarStats.todayPaid / mapSidebarStats.dayGoal) * 100)}%` }}
+                  />
+                </div>
+                <p className="mt-0.5 text-[10px] font-medium tabular-nums text-[#1abc9c]">
+                  {mapSidebarStats.todayPaid}/{mapSidebarStats.dayGoal}
+                </p>
+              </div>
+            </div>
+            <div className="min-h-[240px] min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-100 bg-white">
+              <ComposableMap
+                projection="geoMercator"
+                projectionConfig={{ scale: 520 }}
+                width={720}
+                height={240}
+                style={{ width: "100%", maxWidth: "100%", height: "auto" }}
+              >
+                <ZoomableGroup center={SUDAN_CENTER} zoom={2.25}>
+                  <Geographies geography={WORLD_GEO_URL}>
+                    {({ geographies }) =>
+                      geographies.map((geo) => (
+                        <Geography
+                          key={geo.rsmKey}
+                          geography={geo}
+                          fill="#2c3e50"
+                          stroke="#1e293b"
+                          strokeWidth={0.35}
+                          style={{
+                            default: { outline: "none" },
+                            hover: { outline: "none", fill: "#34495e" },
+                            pressed: { outline: "none" },
+                          }}
+                        />
+                      ))
+                    }
+                  </Geographies>
+                  <Marker coordinates={SUDAN_CENTER}>
+                    <title>Company Operations - Sudan</title>
+                    <circle r={8} fill="#1abc9c" stroke="#ffffff" strokeWidth={2} />
+                  </Marker>
+                  {projectGeoMarkers.map((m) => (
+                    <Marker key={m.id} coordinates={m.coordinates}>
+                      <title>{m.name}</title>
+                      <circle r={4} fill="#1abc9c" stroke="#ffffff" strokeWidth={1.5} />
+                    </Marker>
+                  ))}
+                </ZoomableGroup>
+              </ComposableMap>
+            </div>
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Added On</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentClients.length ? (
-                recentClients.map((client) => (
-                  <tr key={client._id}>
-                    <td>{client.name || "-"}</td>
-                    <td>{client.email || "-"}</td>
-                    <td>{client.phone || "-"}</td>
-                    <td>{new Date(client.createdAt || Date.now()).toLocaleDateString()}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={4} className="text-sm text-slate-500">
-                    No client records available.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+
+        <div className={`${cardShell} p-4 lg:col-span-4`}>
+          <ChartCardHeader title="Sales" subtitle="Sales activity" />
+          <div className="h-[280px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={salesLineData} margin={{ top: 8, right: 4, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#6b7280" }} />
+                <YAxis
+                  yAxisId="left"
+                  tick={{ fontSize: 10, fill: "#1abc9c" }}
+                  width={40}
+                  tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : v)}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  tick={{ fontSize: 10, fill: "#2c3e50" }}
+                  width={28}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  formatter={(value, name) =>
+                    name === "Revenue" ? formatCurrency(Number(value)) : [value, "Paid invoices"]
+                  }
+                />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke={C.turquoise}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: C.turquoise }}
+                  name="Revenue"
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="paidCount"
+                  stroke={C.navy}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: C.navy }}
+                  name="Paid invoices"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => navigate("/reports")}
+          data-ui="generate-report-btn"
+          className="rounded-sm border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-[#2c3e50] shadow-sm hover:bg-gray-50"
+        >
+          Generate Report
+        </button>
       </div>
     </div>
   );
