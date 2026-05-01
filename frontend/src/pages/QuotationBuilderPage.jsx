@@ -16,6 +16,13 @@ const BLANK_ITEM = { productId: "", description: "", quantity: 1, unitPrice: 0, 
 
 const toNumber = (value) => Number(value || 0);
 
+const QUOTE_HEADER_GRID = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr 320px",
+  gap: 24,
+  alignItems: "start",
+};
+
 const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
 
@@ -296,21 +303,23 @@ export default function QuotationBuilderPage() {
       </div>
 
       <div className="premium-card p-5 space-y-5">
-        <div id="pnv7vd" className="grid grid-cols-3 gap-6 mb-6">
-          <div>
+        <div style={QUOTE_HEADER_GRID} className="mb-6">
+          <div className="min-w-0">
             <label htmlFor="quote-title" className="block mb-2 text-sm font-medium">
               Quotation Title
             </label>
             <input
               id="quote-title"
               type="text"
-              className="w-full h-[52px] rounded-xl border px-4"
+              placeholder="Enter quotation title"
+              className="w-full rounded-xl border px-4"
+              style={{ height: 52, boxSizing: "border-box" }}
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
           </div>
 
-          <div>
+          <div className="min-w-0">
             <div className="flex gap-2 mb-2">
               <button
                 type="button"
@@ -351,35 +360,24 @@ export default function QuotationBuilderPage() {
                 <input
                   type="text"
                   placeholder="Search clients..."
-                  className="w-full h-[52px] rounded-xl border px-4"
+                  className="w-full rounded-xl border px-4"
+                  style={{ height: 52, boxSizing: "border-box" }}
                   value={clientSearch}
                   onChange={(e) => setClientSearch(e.target.value)}
                 />
                 <select
-                  className="w-full h-[52px] rounded-xl border px-4"
+                  className="w-full rounded-xl border px-4"
+                  style={{ height: 52, boxSizing: "border-box" }}
                   value={clientId}
                   onChange={(event) => {
                     setClientId(event.target.value);
                     setProjectId("");
                   }}
                 >
-                  <option value="">Select Client</option>
+                  <option value="">Select client</option>
                   {filteredClients.map((client) => (
                     <option key={client._id} value={client._id}>
                       {client.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="w-full h-[52px] rounded-xl border px-4"
-                  value={projectId}
-                  onChange={(event) => setProjectId(event.target.value)}
-                  disabled={!clientId}
-                >
-                  <option value="">Select project</option>
-                  {clientProjects.map((project) => (
-                    <option key={project._id} value={project._id}>
-                      {project.name}
                     </option>
                   ))}
                 </select>
@@ -389,21 +387,24 @@ export default function QuotationBuilderPage() {
                 <input
                   type="text"
                   placeholder="Customer name"
-                  className="w-full h-[52px] rounded-xl border px-4"
+                  className="w-full rounded-xl border px-4"
+                  style={{ height: 52, boxSizing: "border-box" }}
                   value={walkInName}
                   onChange={(e) => setWalkInName(e.target.value)}
                 />
                 <input
                   type="text"
                   placeholder="Phone"
-                  className="w-full h-[52px] rounded-xl border px-4"
+                  className="w-full rounded-xl border px-4"
+                  style={{ height: 52, boxSizing: "border-box" }}
                   value={walkInPhone}
                   onChange={(e) => setWalkInPhone(e.target.value)}
                 />
                 <input
                   type="email"
                   placeholder="Email (optional)"
-                  className="w-full h-[52px] rounded-xl border px-4"
+                  className="w-full rounded-xl border px-4"
+                  style={{ height: 52, boxSizing: "border-box" }}
                   value={walkInEmail}
                   onChange={(e) => setWalkInEmail(e.target.value)}
                 />
@@ -411,13 +412,14 @@ export default function QuotationBuilderPage() {
             )}
           </div>
 
-          <div>
-            <label htmlFor="quote-project-type" className="block mb-2 text-sm font-medium">
-              Project Type
+          <div className="min-w-0">
+            <label htmlFor="quote-project-type" className="block mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">
+              PROJECT TYPE
             </label>
             <select
               id="quote-project-type"
-              className="w-full h-[52px] rounded-xl border px-4"
+              className="w-full rounded-xl border px-4"
+              style={{ height: 52, boxSizing: "border-box" }}
               value={projectType}
               onChange={(e) => {
                 const v = e.target.value;
@@ -432,6 +434,9 @@ export default function QuotationBuilderPage() {
                 </option>
               ))}
             </select>
+            <p className="text-xs text-[#635bff] mt-2 mb-0 leading-snug">
+              • If you select CCTV, you will be asked to choose IP or Analog.
+            </p>
             {projectType === "CCTV" ? (
               <>
                 <label htmlFor="quote-cctv-type" className="block mb-2 mt-3 text-sm font-medium">
@@ -439,7 +444,8 @@ export default function QuotationBuilderPage() {
                 </label>
                 <select
                   id="quote-cctv-type"
-                  className="w-full h-[52px] rounded-xl border px-4"
+                  className="w-full rounded-xl border px-4"
+                  style={{ height: 52, boxSizing: "border-box" }}
                   value={cctvType}
                   onChange={(e) => setCctvType(e.target.value)}
                 >
@@ -451,6 +457,30 @@ export default function QuotationBuilderPage() {
             ) : null}
           </div>
         </div>
+
+        {customerMode === "existing" ? (
+          <div style={QUOTE_HEADER_GRID} className="mb-6">
+            <div className="min-w-0" />
+            <div className="min-w-0">
+              <select
+                id="quote-project-id"
+                className="w-full rounded-xl border px-4"
+                style={{ height: 52, boxSizing: "border-box" }}
+                value={projectId}
+                onChange={(event) => setProjectId(event.target.value)}
+                disabled={!clientId}
+              >
+                <option value="">Select project</option>
+                {clientProjects.map((project) => (
+                  <option key={project._id} value={project._id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="min-w-0" />
+          </div>
+        ) : null}
 
         <div className="space-y-3">
           {items.map((item, index) => (
