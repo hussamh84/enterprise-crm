@@ -411,16 +411,18 @@ export default function QuotationBuilderPage() {
                 {Array.isArray(itemSuggestions[index]) && itemSuggestions[index].length > 0 ? (
                   <div
                     className="autocomplete-dropdown absolute left-0 right-0 top-[calc(100%+4px)] z-20 bg-white text-black border border-gray-200 rounded-xl shadow-lg"
+                    style={{ background: "#fff", color: "#000" }}
                   >
                     {itemSuggestions[index].map((suggestion) => (
                       <button
                         key={suggestion._id}
                         type="button"
-                        className={`autocomplete-item w-full text-left bg-white text-black hover:bg-gray-100 ${item.productId === suggestion._id ? "active" : ""}`}
+                        className={`autocomplete-item hover:bg-gray-100 text-black ${item.productId === suggestion._id ? "active" : ""}`}
+                        style={{ background: "#fff", color: "#000" }}
                         onClick={() => handleProductSelect(index, suggestion)}
                       >
-                        <span className="font-medium text-black">{suggestion.name}</span>
-                        <span className="ml-2 text-xs text-gray-600">{suggestion.sku || "N/A"} - {formatCurrency(suggestion.price || 0)}</span>
+                        <span className="font-medium text-slate-800">{suggestion.name}</span>
+                        <span className="ml-2 text-xs text-slate-500">{suggestion.sku || "N/A"} - {formatCurrency(suggestion.price || 0)}</span>
                       </button>
                     ))}
                   </div>
