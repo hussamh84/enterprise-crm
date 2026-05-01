@@ -352,46 +352,54 @@ export default function DashboardPage() {
     ? lastPaidAt.toLocaleString(undefined, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
     : now.toLocaleString(undefined, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
-  const cardShell = "rounded-sm border border-gray-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]";
+  const refCard =
+    "rounded-sm border border-gray-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]";
 
-  const ChartCardHeader = ({ title, subtitle }) => (
-    <div className="mb-2.5 flex items-start justify-between gap-2 border-b border-gray-100 pb-2.5">
-      <div className="min-w-0">
-        <h3 className="text-[13px] font-semibold leading-tight text-[#2c3e50]">{title}</h3>
-        <p className="mt-0.5 text-[11px] leading-tight text-gray-500">{subtitle}</p>
-      </div>
-      <div className="flex shrink-0 items-center gap-1 text-gray-400">
-        <button type="button" className="rounded p-1 hover:bg-gray-100" aria-label="Expand">
-          <Maximize2 className="h-3.5 w-3.5" strokeWidth={2} />
-        </button>
-        <button type="button" className="rounded p-1 hover:bg-gray-100" aria-label="Refresh">
-          <RefreshCw className="h-3.5 w-3.5" strokeWidth={2} />
-        </button>
-        <button type="button" className="rounded p-1 hover:bg-gray-100" aria-label="Settings">
-          <Settings className="h-3.5 w-3.5" strokeWidth={2} />
-        </button>
-      </div>
-    </div>
-  );
+  function RefPanelHeader({ title, subtitle }) {
+    return (
+      <header className="mb-2.5 flex items-start justify-between gap-2 border-b border-gray-100 pb-2.5">
+        <div className="min-w-0">
+          <h2 className="text-[13px] font-semibold leading-tight text-[#2c3e50]">{title}</h2>
+          <p className="mt-0.5 text-[11px] leading-tight text-gray-500">{subtitle}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-0.5 text-gray-400">
+          <button type="button" className="rounded p-1 hover:bg-gray-100" aria-label="Expand">
+            <Maximize2 className="h-3.5 w-3.5" strokeWidth={2} />
+          </button>
+          <button type="button" className="rounded p-1 hover:bg-gray-100" aria-label="Refresh">
+            <RefreshCw className="h-3.5 w-3.5" strokeWidth={2} />
+          </button>
+          <button type="button" className="rounded p-1 hover:bg-gray-100" aria-label="Settings">
+            <Settings className="h-3.5 w-3.5" strokeWidth={2} />
+          </button>
+        </div>
+      </header>
+    );
+  }
 
+  /* Layout sidebar lives in <Layout />; this is the Outlet page shell only. */
   return (
-    <div className="min-h-0 space-y-3 bg-[#F3F4F6] p-3 text-[#2c3e50] sm:p-4">
-      <div className="text-[11px] text-gray-500">
+    <div
+      className="ce-dashboard-reference w-full max-w-full min-h-0 bg-[#F3F4F6] -mx-4 -my-5 px-4 py-5 sm:-mx-5 sm:px-5 text-[#2c3e50]"
+      data-ce-dashboard="reference-v2"
+    >
+      <nav className="mb-4 text-[11px] text-gray-500" aria-label="Breadcrumb">
         <span className="text-gray-400">Home</span>
         <span className="mx-1.5 text-gray-300">/</span>
         <span className="font-semibold text-[#2c3e50]">Dashboard</span>
-      </div>
+      </nav>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-stretch">
-        <div className={`relative flex min-h-[124px] ${cardShell} p-3.5`}>
-          <button type="button" className="absolute right-2 top-2 rounded p-0.5 text-gray-400 hover:bg-gray-100" aria-label="Close">
+      {/* —— Row 1: KPI strip —— */}
+      <section className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:items-stretch" aria-label="Summary metrics">
+        <article className={`relative flex min-h-[128px] ${refCard} p-4`}>
+          <button type="button" className="absolute right-2 top-2 rounded p-0.5 text-gray-400 hover:bg-gray-100" aria-label="Dismiss">
             <X className="h-3.5 w-3.5" strokeWidth={2} />
           </button>
-          <div className="flex w-full flex-col items-center justify-center pt-3 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500">TOTAL REVENUE TEST 999</p>
+          <div className="flex w-full flex-col items-center justify-center pt-2 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500">Total Revenue</p>
             <p className="mt-1 font-mono text-[10px] text-gray-400">{revenueMeta}</p>
-            <p className="mt-2 text-[26px] font-bold leading-none tabular-nums text-[#2c3e50]">{revenueDisplay}</p>
-            <div className="mt-3 flex gap-1.5">
+            <p className="mt-2.5 text-[28px] font-bold leading-none tabular-nums text-[#2c3e50]">{revenueDisplay}</p>
+            <div className="mt-3.5 flex gap-1.5" role="presentation">
               {revenueDotsActive.map((on, i) => (
                 <span
                   key={i}
@@ -400,81 +408,91 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-        </div>
+        </article>
 
-        <div className={`flex min-h-[124px] ${cardShell} p-3.5`}>
-          <div className="flex w-full items-center gap-3">
-            <BriefcaseBusiness className="h-[52px] w-[52px] shrink-0 text-black" strokeWidth={1.15} aria-hidden />
+        <article className={`flex min-h-[128px] ${refCard} p-4`}>
+          <div className="flex w-full items-center gap-4">
+            <BriefcaseBusiness className="h-14 w-14 shrink-0 text-black" strokeWidth={1.1} aria-hidden />
             <div className="min-w-0 flex-1 text-right">
               <p className="text-[11px] font-medium text-gray-500">Total Projects</p>
-              <p className="text-[26px] font-bold leading-tight tabular-nums text-[#2c3e50]">{totalProjects}</p>
+              <p className="text-[28px] font-bold leading-tight tabular-nums text-[#2c3e50]">{totalProjects}</p>
               <p className="text-[10px] text-gray-400">In your mailbox</p>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div className={`flex min-h-[124px] ${cardShell} p-3.5`}>
-          <div className="flex w-full items-center gap-3">
-            <UserRound className="h-[52px] w-[52px] shrink-0 text-black" strokeWidth={1.15} aria-hidden />
+        <article className={`flex min-h-[128px] ${refCard} p-4`}>
+          <div className="flex w-full items-center gap-4">
+            <UserRound className="h-14 w-14 shrink-0 text-black" strokeWidth={1.1} aria-hidden />
             <div className="min-w-0 flex-1 text-right">
-              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Registered Users</p>
-              <p className="text-[26px] font-bold leading-tight tabular-nums text-[#2c3e50]">{totalUsers}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-500">Registered Users</p>
+              <p className="text-[28px] font-bold leading-tight tabular-nums text-[#2c3e50]">{totalUsers}</p>
               <p className="text-[10px] text-gray-400">On your website</p>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div
-          className="flex min-h-[124px] flex-col justify-center rounded-sm border border-emerald-700/25 p-3.5 text-white shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+        <article
+          className="flex min-h-[128px] flex-col justify-center rounded-sm border border-emerald-700/25 p-4 text-white shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
           style={{
-            background: "linear-gradient(145deg, #1dd2af 0%, #1abc9c 35%, #16a085 100%)",
+            background: "linear-gradient(148deg, #1dd2af 0%, #1abc9c 40%, #138d75 100%)",
           }}
         >
-          <p className="text-center text-[28px] font-bold tabular-nums leading-none tracking-[0.2em]">{clockTime}</p>
-          <p className="mt-2 text-center text-[11px] font-medium leading-snug opacity-95">{clockDate}</p>
-          <div className="mt-3 flex items-center justify-center gap-7 border-t border-white/25 pt-3 text-white">
-            <Clock className="h-[15px] w-[15px]" strokeWidth={2} aria-hidden />
-            <Bell className="h-[15px] w-[15px]" strokeWidth={2} aria-hidden />
-            <Calendar className="h-[15px] w-[15px]" strokeWidth={2} aria-hidden />
+          <p className="text-center text-[30px] font-bold tabular-nums leading-none tracking-[0.18em]">{clockTime}</p>
+          <p className="mt-2 text-center text-[11px] font-medium leading-snug text-white/95">{clockDate}</p>
+          <div className="mt-3.5 flex items-center justify-center gap-8 border-t border-white/30 pt-3">
+            <Clock className="h-4 w-4 text-white" strokeWidth={2} aria-hidden />
+            <Bell className="h-4 w-4 text-white" strokeWidth={2} aria-hidden />
+            <Calendar className="h-4 w-4 text-white" strokeWidth={2} aria-hidden />
           </div>
-        </div>
-      </div>
+        </article>
+      </section>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-        <div className={`${cardShell} flex flex-col p-3.5 lg:col-span-4`}>
-          <ChartCardHeader title="Projects Activity" subtitle="Projects vs returning" />
-          <div className="h-[236px] w-full min-h-0 flex-1">
+      {/* —— Row 2: activity / inventory / status —— */}
+      <section className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-12" aria-label="Charts and project status">
+        <article className={`${refCard} flex flex-col p-4 lg:col-span-4`}>
+          <RefPanelHeader title="Projects Activity" subtitle="Projects vs returning" />
+          <div className="h-[240px] w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={projectActivityBars} margin={{ top: 2, right: 4, left: -8, bottom: 0 }} barGap={3} barCategoryGap="20%">
+              <BarChart data={projectActivityBars} margin={{ top: 4, right: 6, left: -6, bottom: 2 }} barGap={4} barCategoryGap="22%">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#6b7280" }} axisLine={false} tickLine={false} interval={0} angle={-12} textAnchor="end" height={46} />
-                <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} width={26} axisLine={false} tickLine={false} allowDecimals={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 9, fill: "#6b7280" }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={0}
+                  angle={-14}
+                  textAnchor="end"
+                  height={48}
+                />
+                <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} width={28} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip contentStyle={{ fontSize: 11, borderRadius: 4, border: "1px solid #e5e7eb" }} />
-                <Legend wrapperStyle={{ fontSize: 11, paddingTop: 4 }} iconType="square" iconSize={8} />
-                <Bar dataKey="projects" fill={C.navy} radius={[2, 2, 0, 0]} name="Projects" />
-                <Bar dataKey="returning" fill={C.turquoise} radius={[2, 2, 0, 0]} name="Returning" />
+                <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} iconType="square" iconSize={8} />
+                <Bar dataKey="projects" fill={C.navy} radius={[3, 3, 0, 0]} name="Projects" />
+                <Bar dataKey="returning" fill={C.turquoise} radius={[3, 3, 0, 0]} name="Returning" />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </article>
 
-        <div className={`${cardShell} flex flex-col p-3.5 lg:col-span-4`}>
-          <ChartCardHeader title="Inventory Value" subtitle="Value (on hand)" />
-          <div className="relative mx-auto h-[236px] w-full max-w-[252px]">
+        <article className={`${refCard} flex flex-col p-4 lg:col-span-4`}>
+          <RefPanelHeader title="Inventory Value" subtitle="Value (on hand)" />
+          <div className="relative mx-auto h-[240px] w-full max-w-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={inventoryDonutData}
                   cx="50%"
                   cy="50%"
-                  innerRadius="58%"
-                  outerRadius="82%"
-                  paddingAngle={1.5}
+                  innerRadius="56%"
+                  outerRadius="84%"
+                  paddingAngle={2}
                   dataKey="value"
                   stroke="none"
                 >
                   {inventoryDonutData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={`inv-${index}-${entry.name}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(v) => formatCurrency(Number(v))} />
@@ -482,13 +500,13 @@ export default function DashboardPage() {
             </ResponsiveContainer>
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Inventory Value</p>
-              <p className="mt-1 text-[15px] font-bold tabular-nums text-[#2c3e50]">{formatCurrency(inventoryValue)}</p>
+              <p className="mt-1 text-base font-bold tabular-nums text-[#2c3e50]">{formatCurrency(inventoryValue)}</p>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div className={`${cardShell} p-3.5 lg:col-span-4`}>
-          <ChartCardHeader title="Projects" subtitle="Projects activity" />
+        <article className={`${refCard} p-4 lg:col-span-4`}>
+          <RefPanelHeader title="Projects" subtitle="Projects activity" />
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
@@ -501,7 +519,7 @@ export default function DashboardPage() {
               <tbody>
                 {tableProjects.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-4 text-center text-gray-400">
+                    <td colSpan={3} className="py-6 text-center text-gray-400">
                       No projects yet.
                     </td>
                   </tr>
@@ -511,16 +529,16 @@ export default function DashboardPage() {
                     const pct = tableActivityPercent(project?.status);
                     return (
                       <tr key={project?._id} className="border-b border-gray-100 last:border-0">
-                        <td className="max-w-[100px] truncate py-2 pr-2 font-medium text-[#2c3e50]">
+                        <td className="max-w-[120px] truncate py-2.5 pr-2 font-medium text-[#2c3e50]">
                           {project?.name || "—"}
                         </td>
-                        <td className="py-2 pr-2">
-                          <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${pres.badgeClass}`}>
+                        <td className="py-2.5 pr-2">
+                          <span className={`inline-block rounded px-2 py-0.5 text-[10px] font-medium ${pres.badgeClass}`}>
                             {pres.label}
                           </span>
                         </td>
-                        <td className="py-2">
-                          <div className="h-1.5 w-full max-w-[72px] overflow-hidden rounded-full bg-gray-100">
+                        <td className="py-2.5">
+                          <div className="h-2 w-full max-w-[80px] overflow-hidden rounded-full bg-gray-100">
                             <div className={`h-full rounded-full ${pres.barClass}`} style={{ width: `${pct}%` }} />
                           </div>
                         </td>
@@ -531,75 +549,76 @@ export default function DashboardPage() {
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
+        </article>
+      </section>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-        <div className={`${cardShell} p-3.5 lg:col-span-8`}>
+      {/* —— Row 3: Sudan / world map + sales —— */}
+      <section className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-12" aria-label="Operations map and sales trend">
+        <article className={`${refCard} p-4 lg:col-span-8`}>
           <div className="mb-2.5 flex flex-wrap items-start justify-between gap-2 border-b border-gray-100 pb-2.5">
             <div>
-              <h3 className="text-[13px] font-semibold leading-tight text-[#2c3e50]">Operations</h3>
-              <p className="mt-0.5 text-[11px] text-gray-500">Sudan hub — world map — project markers</p>
+              <h2 className="text-[13px] font-semibold leading-tight text-[#2c3e50]">Operations</h2>
+              <p className="mt-0.5 text-[11px] text-gray-500">Sudan-centered map — turquoise project markers</p>
             </div>
             <span className="rounded-sm border border-gray-200 bg-gray-50 px-2 py-1 text-[10px] font-medium text-gray-600">
               {new Date().getFullYear()}
             </span>
           </div>
-          <div className="flex flex-col gap-3 pt-1 lg:flex-row">
-            <div className="flex w-full shrink-0 flex-col gap-2.5 text-[10px] text-gray-600 lg:w-[132px] lg:border-r lg:border-gray-100 lg:pr-3">
+          <div className="flex flex-col gap-4 pt-1 lg:flex-row">
+            <aside className="flex w-full shrink-0 flex-col gap-3 text-[10px] text-gray-600 lg:w-[140px] lg:border-r lg:border-gray-100 lg:pr-4">
               <div>
-                <p className="text-[10px] text-gray-500">In Queue</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100">
-                  <div className="h-full bg-[#2c3e50]" style={{ width: `${mapSidebarStats.queuePct}%` }} />
+                <p className="font-medium text-gray-500">In Queue</p>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-gray-100">
+                  <div className="h-full rounded-full bg-[#2c3e50]" style={{ width: `${mapSidebarStats.queuePct}%` }} />
                 </div>
-                <p className="mt-0.5 text-[10px] font-medium tabular-nums text-[#2c3e50]">{mapSidebarStats.queuePct}%</p>
+                <p className="mt-1 font-semibold tabular-nums text-[#2c3e50]">{mapSidebarStats.queuePct}%</p>
               </div>
               <div>
-                <p className="text-[10px] text-gray-500">Shipped Products</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100">
+                <p className="font-medium text-gray-500">Shipped Products</p>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-gray-100">
                   <div
-                    className="h-full bg-[#2c3e50]"
+                    className="h-full rounded-full bg-[#2c3e50]"
                     style={{ width: `${Math.min(100, (mapSidebarStats.shipped / mapSidebarStats.shipCap) * 100)}%` }}
                   />
                 </div>
-                <p className="mt-0.5 text-[10px] font-medium tabular-nums text-[#2c3e50]">
+                <p className="mt-1 font-semibold tabular-nums text-[#2c3e50]">
                   {mapSidebarStats.shipped}/{mapSidebarStats.shipCap}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] text-gray-500">Low stock SKUs</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100">
+                <p className="font-medium text-gray-500">Low stock SKUs</p>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-gray-100">
                   <div
-                    className="h-full bg-[#e74c3c]"
+                    className="h-full rounded-full bg-[#e74c3c]"
                     style={{ width: `${Math.min(100, (mapSidebarStats.lowStock / mapSidebarStats.retCap) * 100)}%` }}
                   />
                 </div>
-                <p className="mt-0.5 text-[10px] font-medium tabular-nums text-[#e74c3c]">
+                <p className="mt-1 font-semibold tabular-nums text-[#e74c3c]">
                   {mapSidebarStats.lowStock}/{mapSidebarStats.retCap}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] text-gray-500">Paid today</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100">
+                <p className="font-medium text-gray-500">Paid today</p>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-gray-100">
                   <div
-                    className="h-full bg-[#1abc9c]"
+                    className="h-full rounded-full bg-[#1abc9c]"
                     style={{ width: `${Math.min(100, (mapSidebarStats.todayPaid / mapSidebarStats.dayGoal) * 100)}%` }}
                   />
                 </div>
-                <p className="mt-0.5 text-[10px] font-medium tabular-nums text-[#1abc9c]">
+                <p className="mt-1 font-semibold tabular-nums text-[#1abc9c]">
                   {mapSidebarStats.todayPaid}/{mapSidebarStats.dayGoal}
                 </p>
               </div>
-            </div>
-            <div className="min-h-[248px] min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-200 bg-[#eef2f7]">
+            </aside>
+            <div className="min-h-[260px] min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-200 bg-[#e8edf3]">
               <ComposableMap
                 projection="geoMercator"
-                projectionConfig={{ scale: 540 }}
-                width={800}
-                height={248}
+                projectionConfig={{ scale: 550 }}
+                width={840}
+                height={260}
                 style={{ width: "100%", maxWidth: "100%", height: "auto" }}
               >
-                <ZoomableGroup center={SUDAN_CENTER} zoom={2.32}>
+                <ZoomableGroup center={SUDAN_CENTER} zoom={2.35}>
                   <Geographies geography={WORLD_GEO_URL}>
                     {({ geographies }) =>
                       geographies.map((geo) => (
@@ -607,11 +626,11 @@ export default function DashboardPage() {
                           key={geo.rsmKey}
                           geography={geo}
                           fill="#2c3e50"
-                          stroke="#1a252f"
-                          strokeWidth={0.4}
+                          stroke="#152028"
+                          strokeWidth={0.45}
                           style={{
                             default: { outline: "none" },
-                            hover: { outline: "none", fill: "#34495e" },
+                            hover: { outline: "none", fill: "#3d566e" },
                             pressed: { outline: "none" },
                           }}
                         />
@@ -620,7 +639,7 @@ export default function DashboardPage() {
                   </Geographies>
                   <Marker coordinates={SUDAN_CENTER}>
                     <title>Company Operations - Sudan</title>
-                    <circle r={9} fill="#1abc9c" stroke="#ffffff" strokeWidth={2} />
+                    <circle r={10} fill="#1abc9c" stroke="#ffffff" strokeWidth={2} />
                   </Marker>
                   {projectGeoMarkers.map((m) => (
                     <Marker key={m.id} coordinates={m.coordinates}>
@@ -632,26 +651,26 @@ export default function DashboardPage() {
               </ComposableMap>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div className={`${cardShell} p-3.5 lg:col-span-4`}>
-          <ChartCardHeader title="Sales" subtitle="Sales activity" />
-          <div className="h-[300px] w-full">
+        <article className={`${refCard} p-4 lg:col-span-4`}>
+          <RefPanelHeader title="Sales" subtitle="Sales activity" />
+          <div className="h-[308px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={salesLineData} margin={{ top: 6, right: 6, left: 0, bottom: 2 }}>
+              <LineChart data={salesLineData} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#6b7280" }} />
                 <YAxis
                   yAxisId="left"
                   tick={{ fontSize: 10, fill: "#2c3e50" }}
-                  width={42}
+                  width={44}
                   tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : v)}
                 />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
                   tick={{ fontSize: 10, fill: "#1abc9c" }}
-                  width={26}
+                  width={28}
                   allowDecimals={false}
                 />
                 <Tooltip
@@ -665,7 +684,7 @@ export default function DashboardPage() {
                   type="monotone"
                   dataKey="revenue"
                   stroke={C.navy}
-                  strokeWidth={2}
+                  strokeWidth={2.5}
                   dot={{ r: 3, fill: C.navy }}
                   name="Revenue"
                 />
@@ -674,26 +693,26 @@ export default function DashboardPage() {
                   type="monotone"
                   dataKey="paidCount"
                   stroke={C.turquoise}
-                  strokeWidth={2}
+                  strokeWidth={2.5}
                   dot={{ r: 3, fill: C.turquoise }}
                   name="Paid invoices"
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
-        </div>
-      </div>
+        </article>
+      </section>
 
-      <div className="flex justify-end pt-0.5">
+      <footer className="flex justify-end border-t border-transparent pt-1">
         <button
           type="button"
           onClick={() => navigate("/reports")}
           data-ui="generate-report-btn"
-          className="rounded-sm border border-gray-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-[#2c3e50] shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-gray-50"
+          className="rounded-sm border border-gray-200 bg-white px-4 py-2 text-[11px] font-semibold text-[#2c3e50] shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-gray-50"
         >
           Generate Report
         </button>
-      </div>
+      </footer>
     </div>
   );
 }
