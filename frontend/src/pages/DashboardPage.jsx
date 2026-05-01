@@ -2,8 +2,31 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BriefcaseBusiness, DollarSign, Search, TrendingUp, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
+
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function invoiceIsPaid(inv) {
+  const status = String(inv?.status || "").toLowerCase();
+  const remaining = Number(inv?.remainingAmount ?? NaN);
+  return status === "paid" || (Number.isFinite(remaining) && remaining <= 0);
+}
+
+function paidInvoiceAmount(inv) {
+  return Number(inv?.paidAmount ?? inv?.total ?? inv?.grandTotal ?? inv?.summarySubtotal ?? 0);
+}
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -26,6 +49,13 @@ export default function DashboardPage() {
       return Array.isArray(raw) ? raw : [];
     },
   });
+  const { data: projectsList = [] } = useQuery({
+    queryKey: ["/projects", "dashboard-charts"],
+    queryFn: async () => {
+      const raw = (await api.get("/projects")).data;
+      return Array.isArray(raw) ? raw : [];
+    },
+  });
 
   const inventoryValue = useMemo(
     () =>
@@ -38,17 +68,38 @@ export default function DashboardPage() {
   const paidInvoicesTotal = useMemo(() => {
     let total = 0;
     for (const inv of invoices) {
-      const status = String(inv?.status || "").toLowerCase();
-      const remaining = Number(inv?.remainingAmount ?? NaN);
-      const isPaid = status === "paid" || (Number.isFinite(remaining) && remaining <= 0);
-      if (!isPaid) continue;
-      const amount = Number(
-        inv?.paidAmount ?? inv?.total ?? inv?.grandTotal ?? inv?.summarySubtotal ?? 0
-      );
-      total += amount;
+      if (!invoiceIsPaid(inv)) continue;
+      total += paidInvoiceAmount(inv);
     }
     return total;
   }, [invoices]);
+
+  const revenueTrendData = useMemo(() => {
+    const year = new Date().getFullYear();
+    const totals = new Array(12).fill(0);
+    for (const inv of invoices) {
+      if (!invoiceIsPaid(inv)) continue;
+      const raw = inv?.paidAt || inv?.updatedAt || inv?.createdAt;
+      const d = raw ? new Date(raw) : null;
+      if (!d || Number.isNaN(d.getTime()) || d.getFullYear() !== year) continue;
+      totals[d.getMonth()] += paidInvoiceAmount(inv);
+    }
+    return MONTH_SHORT.map((month, i) => ({ month, revenue: totals[i] }));
+  }, [invoices]);
+
+  const projectsStatusData = useMemo(() => {
+    let active = 0;
+    let completed = 0;
+    for (const p of projectsList) {
+      const s = String(p?.status || "").toLowerCase();
+      if (s === "completed" || s === "paid") completed += 1;
+      else active += 1;
+    }
+    return [
+      { segment: "Active", count: active },
+      { segment: "Completed", count: completed },
+    ];
+  }, [projectsList]);
 
   const cards = [
     {
@@ -129,6 +180,37 @@ export default function DashboardPage() {
             </div>
           );
         })}
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <h3 className="mb-6 text-lg font-semibold text-slate-900">Revenue Overview</h3>
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={revenueTrendData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="month" tick={{ fill: "#64748b", fontSize: 12 }} />
+                <YAxis tick={{ fill: "#64748b", fontSize: 12 }} tickFormatter={(v) => formatCurrency(v)} width={72} />
+                <Tooltip formatter={(value) => formatCurrency(value)} labelFormatter={(label) => String(label)} />
+                <Line type="monotone" dataKey="revenue" stroke="#0B132B" strokeWidth={2} dot={{ r: 3, fill: "#0B132B" }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <h3 className="mb-6 text-lg font-semibold text-slate-900">Projects Overview</h3>
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={projectsStatusData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="segment" tick={{ fill: "#64748b", fontSize: 12 }} />
+                <YAxis tick={{ fill: "#64748b", fontSize: 12 }} allowDecimals={false} width={40} />
+                <Tooltip formatter={(value) => [value, "Projects"]} />
+                <Bar dataKey="count" fill="#0B132B" radius={[6, 6, 0, 0]} name="Projects" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm p-4">
