@@ -198,6 +198,7 @@ const InventoryItemSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     sku: { type: String, required: true, trim: true, uppercase: true },
     category: { type: String, required: true, trim: true },
+    supplier: { type: String, trim: true, default: "" },
     price: { type: Number, required: true, min: 0, default: 0 },
     sellingPrice: { type: Number, min: 0, default: 0 },
     cost: { type: Number, min: 0, default: 0 },
@@ -2064,18 +2065,68 @@ router.get("/inventory/search", async (req, res, next) => {
 router.get("/inventory/sample", async (_req, res, next) => {
   try {
     const sampleRows = [
-      { Name: "Camera 2MP", SKU: "CAM-001", Category: "CCTV", Price: 65000, Quantity: 10 },
-      { Name: "Analog cam", SKU: "CAM-002", Category: "CCTV", Price: 54000, Quantity: 6 },
-      { Name: "Cam cable", SKU: "CAB-001", Category: "Accessories", Price: 8000, Quantity: 100 },
+      {
+        "Product Name": "Camera 2MP",
+        SKU: "CAM-001",
+        Quantity: 10,
+        "Cost Price": 50000,
+        "Selling Price": 65000,
+        Category: "CCTV",
+        Supplier: "Default Supplier",
+      },
+      {
+        "Product Name": "Analog cam",
+        SKU: "CAM-002",
+        Quantity: 6,
+        "Cost Price": 42000,
+        "Selling Price": 54000,
+        Category: "CCTV",
+        Supplier: "Default Supplier",
+      },
+      {
+        "Product Name": "Cam cable",
+        SKU: "CAB-001",
+        Quantity: 100,
+        "Cost Price": 6000,
+        "Selling Price": 8000,
+        Category: "Accessories",
+        Supplier: "Default Supplier",
+      },
     ];
     const worksheet = XLSX.utils.json_to_sheet(sampleRows, {
-      header: ["Name", "SKU", "Category", "Price", "Quantity"],
+      header: ["Product Name", "SKU", "Quantity", "Cost Price", "Selling Price", "Category", "Supplier"],
     });
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
     const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", 'attachment; filename="inventory-import-sample.xlsx"');
+    res.send(buffer);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/inventory/export", async (req, res, next) => {
+  try {
+    const docs = await InventoryItem.find({ tenantId: req.tenantId, deletedAt: null }).sort({ createdAt: -1 }).lean();
+    const rows = docs.map((item) => ({
+      "Product Name": String(item?.name || ""),
+      SKU: String(item?.sku || ""),
+      Quantity: Number(item?.quantity || 0),
+      "Cost Price": Number(item?.costPrice ?? item?.cost ?? 0),
+      "Selling Price": Number(item?.sellingPrice ?? item?.price ?? 0),
+      Category: String(item?.category || ""),
+      Supplier: String(item?.supplier || ""),
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(rows, {
+      header: ["Product Name", "SKU", "Quantity", "Cost Price", "Selling Price", "Category", "Supplier"],
+    });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", 'attachment; filename="inventory-export.xlsx"');
     res.send(buffer);
   } catch (error) {
     next(error);
@@ -2098,7 +2149,7 @@ router.post("/inventory/import", inventoryImportUpload.single("file"), async (re
     if (!firstSheetName) return res.status(400).json({ message: "Wrong format. File has no sheet." });
     const worksheet = workbook.Sheets[firstSheetName];
     const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-    const requiredColumns = ["Name", "SKU", "Category", "Price", "Quantity"];
+    const requiredColumns = ["Product Name", "SKU", "Quantity", "Selling Price", "Category"];
     const headerRow = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 0 })?.[0] || [];
     const missingColumns = requiredColumns.filter((column) => !headerRow.includes(column));
     if (missingColumns.length > 0) {
@@ -2114,43 +2165,55 @@ router.post("/inventory/import", inventoryImportUpload.single("file"), async (re
     const validRows = [];
     jsonRows.forEach((row, idx) => {
       const rowNumber = idx + 2; // +1 for 0-index and +1 for header
-      const name = String(row.Name || "").trim();
+      const name = String(row["Product Name"] || row.Name || "").trim();
       const sku = String(row.SKU || "").trim().toUpperCase();
       const category = String(row.Category || "").trim();
-      const price = Number(row.Price);
+      const sellingPriceRaw = row["Selling Price"] === "" || row["Selling Price"] === undefined
+        ? row.Price
+        : row["Selling Price"];
+      const sellingPrice = Number(sellingPriceRaw);
+      const costPriceRaw = row["Cost Price"];
+      const costPrice = costPriceRaw === "" || costPriceRaw === undefined ? 0 : Number(costPriceRaw);
       const quantity = Number(row.Quantity);
+      const supplier = String(row.Supplier || "").trim();
 
-      if (!name || !sku || !category || !Number.isFinite(price) || !Number.isFinite(quantity)) {
+      if (!name || !sku || !category || !Number.isFinite(sellingPrice) || !Number.isFinite(quantity) || !Number.isFinite(costPrice)) {
         rowErrors.push({
           row: rowNumber,
           sku: sku || null,
-          reason: "Each row must include valid Name, SKU, Category, Price, Quantity.",
+          reason: "Each row must include valid Product Name, SKU, Category, Selling Price, Quantity, and numeric Cost Price.",
         });
       }
-      if (Number.isFinite(price) && Number.isFinite(quantity) && (price < 0 || quantity < 0)) {
+      if (
+        Number.isFinite(sellingPrice) &&
+        Number.isFinite(costPrice) &&
+        Number.isFinite(quantity) &&
+        (sellingPrice < 0 || costPrice < 0 || quantity < 0)
+      ) {
         rowErrors.push({
           row: rowNumber,
           sku: sku || null,
-          reason: "Price and Quantity must be >= 0.",
+          reason: "Cost Price, Selling Price and Quantity must be >= 0.",
         });
       }
       if (!rowErrors.some((errorItem) => errorItem.row === rowNumber)) {
-        validRows.push({ name, sku, category, price, quantity });
+        validRows.push({ name, sku, category, costPrice, sellingPrice, quantity, supplier });
       }
     });
 
     let created = 0;
     let updated = 0;
     for (const row of validRows) {
-      const { name, sku, category, price, quantity } = row;
+      const { name, sku, category, costPrice, sellingPrice, quantity, supplier } = row;
       const existing = await InventoryItem.findOne({ tenantId, sku, deletedAt: null });
       if (existing) {
         existing.name = name;
         existing.category = category;
-        existing.price = price;
-        existing.sellingPrice = price;
-        existing.cost = Number(existing.costPrice ?? existing.cost ?? 0);
-        existing.costPrice = Number(existing.costPrice ?? existing.cost ?? 0);
+        existing.price = sellingPrice;
+        existing.sellingPrice = sellingPrice;
+        existing.cost = costPrice;
+        existing.costPrice = costPrice;
+        existing.supplier = supplier;
         existing.quantity = quantity;
         existing.updatedBy = req.user?.id;
         existing.auditLog = [
@@ -2165,10 +2228,11 @@ router.post("/inventory/import", inventoryImportUpload.single("file"), async (re
           name,
           sku,
           category,
-          price,
-          sellingPrice: price,
-          cost: 0,
-          costPrice: 0,
+          price: sellingPrice,
+          sellingPrice,
+          cost: costPrice,
+          costPrice,
+          supplier,
           quantity,
           unit: "pcs",
           createdBy: req.user?.id,

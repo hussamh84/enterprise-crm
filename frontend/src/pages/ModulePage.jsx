@@ -184,6 +184,24 @@ export default function ModulePage({ title, endpoint }) {
     }
   };
 
+  const downloadInventoryExport = async () => {
+    try {
+      const response = await api.get("/inventory/export", { responseType: "blob" });
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "inventory-export.xlsx";
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to export inventory Excel.");
+    }
+  };
+
   const handleInventoryImport = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -655,6 +673,9 @@ export default function ModulePage({ title, endpoint }) {
             <Link to="/sales/new" className="button-primary">
               Sell
             </Link>
+            <button type="button" className="btn-secondary btn-compact" onClick={downloadInventoryExport}>
+              Export Excel
+            </button>
             <button type="button" className="btn-secondary btn-compact" onClick={downloadInventorySample}>
               Download sample Excel format
             </button>
