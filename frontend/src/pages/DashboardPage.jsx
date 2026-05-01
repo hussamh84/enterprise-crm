@@ -7,21 +7,9 @@ import { formatCurrency } from "../utils/format";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const now = new Date();
   const { data } = useQuery({
     queryKey: ["kpis"],
     queryFn: async () => (await api.get("/dashboard/kpis")).data,
-  });
-  const { data: monthlyReport } = useQuery({
-    queryKey: ["monthly-report", now.getFullYear(), now.getMonth() + 1],
-    queryFn: async () =>
-      (
-        await api.get(`/reports/monthly?year=${now.getFullYear()}&month=${now.getMonth() + 1}`)
-      ).data,
-  });
-  const { data: yearlyReport } = useQuery({
-    queryKey: ["yearly-report", now.getFullYear()],
-    queryFn: async () => (await api.get(`/reports/yearly?year=${now.getFullYear()}`)).data,
   });
   const { data: inventoryItems = [] } = useQuery({
     queryKey: ["inventory-low-stock-dashboard"],
@@ -31,8 +19,14 @@ export default function DashboardPage() {
     queryKey: ["/clients", "dashboard-recent"],
     queryFn: async () => (await api.get("/clients")).data,
   });
+  const { data: invoices = [] } = useQuery({
+    queryKey: ["/invoices", "dashboard-kpi-paid-revenue"],
+    queryFn: async () => {
+      const raw = (await api.get("/invoices")).data;
+      return Array.isArray(raw) ? raw : [];
+    },
+  });
 
-  const totalRevenue = Number(yearlyReport?.totals?.totalRevenue || monthlyReport?.totals?.totalRevenue || 0);
   const inventoryValue = useMemo(
     () =>
       Array.isArray(inventoryItems)
@@ -40,11 +34,57 @@ export default function DashboardPage() {
         : 0,
     [inventoryItems]
   );
+
+  const { paidInvoicesTotal, paidInvoicesCount } = useMemo(() => {
+    let total = 0;
+    let count = 0;
+    for (const inv of invoices) {
+      const status = String(inv?.status || "").toLowerCase();
+      const remaining = Number(inv?.remainingAmount ?? NaN);
+      const isPaid = status === "paid" || (Number.isFinite(remaining) && remaining <= 0);
+      if (!isPaid) continue;
+      count += 1;
+      const amount = Number(
+        inv?.paidAmount ?? inv?.total ?? inv?.grandTotal ?? inv?.summarySubtotal ?? 0
+      );
+      total += amount;
+    }
+    return { paidInvoicesTotal: total, paidInvoicesCount: count };
+  }, [invoices]);
+
+  const inventoryLineCount = Array.isArray(inventoryItems) ? inventoryItems.length : 0;
+
   const cards = [
-    { title: "Total Clients", value: Number(data?.clients ?? 0), icon: Users },
-    { title: "Total Projects", value: Number(data?.projects ?? 0), icon: BriefcaseBusiness },
-    { title: "Total Revenue", value: formatCurrency(totalRevenue), icon: DollarSign },
-    { title: "Inventory Value", value: formatCurrency(inventoryValue), icon: TrendingUp },
+    {
+      title: "Total Revenue",
+      value: formatCurrency(paidInvoicesTotal),
+      subtitle:
+        paidInvoicesCount > 0
+          ? `${paidInvoicesCount} paid invoice${paidInvoicesCount === 1 ? "" : "s"}`
+          : "No paid invoices yet",
+      icon: DollarSign,
+    },
+    {
+      title: "Total Projects",
+      value: String(Number(data?.projects ?? 0)),
+      subtitle: "All projects in workspace",
+      icon: BriefcaseBusiness,
+    },
+    {
+      title: "Total Clients",
+      value: String(Number(data?.clients ?? 0)),
+      subtitle: "Registered clients",
+      icon: Users,
+    },
+    {
+      title: "Inventory Value",
+      value: formatCurrency(inventoryValue),
+      subtitle:
+        inventoryLineCount > 0
+          ? `${inventoryLineCount} inventory line${inventoryLineCount === 1 ? "" : "s"}`
+          : "No inventory rows",
+      icon: TrendingUp,
+    },
   ];
   const recentClients = [...(Array.isArray(clients) ? clients : [])]
     .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
@@ -78,18 +118,30 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {cards.map((card) => (
-          <div key={card.title} className="bg-white rounded-lg shadow-sm p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">{card.title}</p>
-              <div className="h-8 w-8 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center">
-                <card.icon size={16} />
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div
+              key={card.title}
+              className="rounded-xl border border-slate-100 bg-white p-5 shadow-[0_4px_24px_rgba(15,23,42,0.08)]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-slate-500">{card.title}</p>
+                  <p className="mt-2 truncate text-3xl font-semibold tracking-tight text-slate-900">{card.value}</p>
+                  <p className="mt-1 text-xs text-slate-500">{card.subtitle}</p>
+                </div>
+                <div
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0B132B]/10 text-[#0B132B]"
+                  aria-hidden
+                >
+                  <Icon className="h-5 w-5" strokeWidth={2} />
+                </div>
               </div>
             </div>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{card.value}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="bg-white rounded-lg shadow-sm p-4">
