@@ -16,13 +16,6 @@ const BLANK_ITEM = { productId: "", description: "", quantity: 1, unitPrice: 0, 
 
 const toNumber = (value) => Number(value || 0);
 
-const QUOTE_HEADER_GRID = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr 320px",
-  gap: 24,
-  alignItems: "start",
-};
-
 const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
 
@@ -277,56 +270,30 @@ export default function QuotationBuilderPage() {
 
   return (
     <div className="space-y-5 quotation-invoice-theme">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <div>
-          <h1 className="section-title">{isEdit ? "Edit quotation" : "New quotation"}</h1>
-          <p className="page-subtitle text-[#6b7c93]">Dynamic quotation builder with real-time totals.</p>
-        </div>
-        <Link
-          to={isEdit && quotationId ? `/quotations/${quotationId}` : "/quotations"}
-          className="btn-secondary"
-          style={{
-            whiteSpace: "nowrap",
-            height: "36px",
-            padding: "0 12px",
-            borderRadius: "8px",
-          }}
-        >
-          {isEdit ? "Cancel" : "Back to Quotations"}
-        </Link>
-      </div>
-
       <div className="premium-card p-5 space-y-5">
-        <div style={QUOTE_HEADER_GRID} className="mb-6">
-          <div className="min-w-0">
-            <label htmlFor="quote-title" className="block mb-2 text-sm font-medium">
+        <div id="qz26zf" className="grid grid-cols-3 gap-6 mb-8">
+          <div>
+            <label htmlFor="quote-title" className="block text-sm font-medium mb-2">
               Quotation Title
             </label>
             <input
               id="quote-title"
               type="text"
               placeholder="Enter quotation title"
-              className="w-full rounded-xl border px-4"
-              style={{ height: 52, boxSizing: "border-box" }}
+              className="w-full h-12 border rounded-xl px-4"
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
           </div>
 
-          <div className="min-w-0">
+          <div>
             <div className="flex gap-2 mb-2">
               <button
                 type="button"
                 className={
                   customerMode === "existing"
-                    ? "bg-[#0B132B] text-white px-4 h-[40px] rounded-lg"
-                    : "border px-4 h-[40px] rounded-lg"
+                    ? "bg-[#0B132B] text-white px-4 h-10 rounded-lg"
+                    : "border px-4 h-10 rounded-lg"
                 }
                 onClick={() => {
                   setCustomerMode("existing");
@@ -341,8 +308,8 @@ export default function QuotationBuilderPage() {
                 type="button"
                 className={
                   customerMode === "walkin"
-                    ? "bg-[#0B132B] text-white px-4 h-[40px] rounded-lg"
-                    : "border px-4 h-[40px] rounded-lg"
+                    ? "bg-[#0B132B] text-white px-4 h-10 rounded-lg"
+                    : "border px-4 h-10 rounded-lg"
                 }
                 onClick={() => {
                   setCustomerMode("walkin");
@@ -357,27 +324,33 @@ export default function QuotationBuilderPage() {
 
             {customerMode === "existing" ? (
               <div className="space-y-2">
-                <input
-                  type="text"
-                  placeholder="Search clients..."
-                  className="w-full rounded-xl border px-4"
-                  style={{ height: 52, boxSizing: "border-box" }}
-                  value={clientSearch}
-                  onChange={(e) => setClientSearch(e.target.value)}
-                />
                 <select
-                  className="w-full rounded-xl border px-4"
-                  style={{ height: 52, boxSizing: "border-box" }}
+                  id="quote-client"
+                  className="w-full h-12 border rounded-xl px-4"
                   value={clientId}
                   onChange={(event) => {
                     setClientId(event.target.value);
                     setProjectId("");
                   }}
                 >
-                  <option value="">Select client</option>
+                  <option value="">Select Client</option>
                   {filteredClients.map((client) => (
                     <option key={client._id} value={client._id}>
                       {client.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  id="quote-project-id"
+                  className="w-full h-12 border rounded-xl px-4"
+                  value={projectId}
+                  onChange={(event) => setProjectId(event.target.value)}
+                  disabled={!clientId}
+                >
+                  <option value="">Select project</option>
+                  {clientProjects.map((project) => (
+                    <option key={project._id} value={project._id}>
+                      {project.name}
                     </option>
                   ))}
                 </select>
@@ -387,24 +360,21 @@ export default function QuotationBuilderPage() {
                 <input
                   type="text"
                   placeholder="Customer name"
-                  className="w-full rounded-xl border px-4"
-                  style={{ height: 52, boxSizing: "border-box" }}
+                  className="w-full h-12 border rounded-xl px-4"
                   value={walkInName}
                   onChange={(e) => setWalkInName(e.target.value)}
                 />
                 <input
                   type="text"
                   placeholder="Phone"
-                  className="w-full rounded-xl border px-4"
-                  style={{ height: 52, boxSizing: "border-box" }}
+                  className="w-full h-12 border rounded-xl px-4"
                   value={walkInPhone}
                   onChange={(e) => setWalkInPhone(e.target.value)}
                 />
                 <input
                   type="email"
                   placeholder="Email (optional)"
-                  className="w-full rounded-xl border px-4"
-                  style={{ height: 52, boxSizing: "border-box" }}
+                  className="w-full h-12 border rounded-xl px-4"
                   value={walkInEmail}
                   onChange={(e) => setWalkInEmail(e.target.value)}
                 />
@@ -412,14 +382,13 @@ export default function QuotationBuilderPage() {
             )}
           </div>
 
-          <div className="min-w-0">
-            <label htmlFor="quote-project-type" className="block mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">
-              PROJECT TYPE
+          <div>
+            <label htmlFor="quote-project-type" className="block text-sm font-medium mb-2">
+              Project Type
             </label>
             <select
               id="quote-project-type"
-              className="w-full rounded-xl border px-4"
-              style={{ height: 52, boxSizing: "border-box" }}
+              className="w-full h-12 border rounded-xl px-4"
               value={projectType}
               onChange={(e) => {
                 const v = e.target.value;
@@ -427,60 +396,28 @@ export default function QuotationBuilderPage() {
                 if (v !== "CCTV") setCctvType("");
               }}
             >
-              <option value="">Select project type</option>
+              <option value="">Select type</option>
               {PROJECT_TYPE_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
                 </option>
               ))}
             </select>
-            <p className="text-xs text-[#635bff] mt-2 mb-0 leading-snug">
-              • If you select CCTV, you will be asked to choose IP or Analog.
-            </p>
             {projectType === "CCTV" ? (
-              <>
-                <label htmlFor="quote-cctv-type" className="block mb-2 mt-3 text-sm font-medium">
-                  CCTV Type
-                </label>
-                <select
-                  id="quote-cctv-type"
-                  className="w-full rounded-xl border px-4"
-                  style={{ height: 52, boxSizing: "border-box" }}
-                  value={cctvType}
-                  onChange={(e) => setCctvType(e.target.value)}
-                >
-                  <option value="">Select CCTV type</option>
-                  <option value="IP">IP</option>
-                  <option value="Analog">Analog</option>
-                </select>
-              </>
+              <select
+                id="quote-cctv-type"
+                className="w-full h-12 border rounded-xl px-4 mt-2"
+                value={cctvType}
+                onChange={(e) => setCctvType(e.target.value)}
+                aria-label="CCTV subtype"
+              >
+                <option value="">IP / Analog</option>
+                <option value="IP">IP</option>
+                <option value="Analog">Analog</option>
+              </select>
             ) : null}
           </div>
         </div>
-
-        {customerMode === "existing" ? (
-          <div style={QUOTE_HEADER_GRID} className="mb-6">
-            <div className="min-w-0" />
-            <div className="min-w-0">
-              <select
-                id="quote-project-id"
-                className="w-full rounded-xl border px-4"
-                style={{ height: 52, boxSizing: "border-box" }}
-                value={projectId}
-                onChange={(event) => setProjectId(event.target.value)}
-                disabled={!clientId}
-              >
-                <option value="">Select project</option>
-                {clientProjects.map((project) => (
-                  <option key={project._id} value={project._id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="min-w-0" />
-          </div>
-        ) : null}
 
         <div className="space-y-3">
           {items.map((item, index) => (
