@@ -200,19 +200,23 @@ export default function ClientDetailsPage() {
                         <td>{formatCurrency(invoice.remainingAmount || 0)}</td>
                         <td>{String(invoice.status || "draft")}</td>
                         <td>{dateValue(invoice.createdAt)}</td>
-                        <td>
-                          <button
-                            type="button"
-                            onClick={() => window.open(`/api/invoices/${invoice._id}/pdf`, "_blank")}
-                          >
-                            PDF
-                          </button>{" "}
-                          <button
-                            type="button"
-                            onClick={() => setExpandedInvoiceId(isExpanded ? null : invoice._id)}
-                          >
-                            {isExpanded ? "Hide" : "Payments"}
-                          </button>
+                        <td className="px-4 py-2">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              className="px-3 py-1 rounded-lg bg-[#0B132B] text-white text-sm whitespace-nowrap"
+                              onClick={() => window.open(`/api/invoices/${invoice._id}/pdf`, "_blank")}
+                            >
+                              PDF
+                            </button>
+                            <button
+                              type="button"
+                              className="px-3 py-1 rounded-lg bg-[#0B132B] text-white text-sm whitespace-nowrap"
+                              onClick={() => setExpandedInvoiceId(isExpanded ? null : invoice._id)}
+                            >
+                              {isExpanded ? "Hide" : "Payments"}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                       {isExpanded ? (
