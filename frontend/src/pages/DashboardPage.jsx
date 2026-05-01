@@ -388,7 +388,7 @@ export default function DashboardPage() {
             <X className="h-3.5 w-3.5" strokeWidth={2} />
           </button>
           <div className="flex w-full flex-col items-center justify-center pt-3 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500">Total Revenue</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500">TOTAL REVENUE TEST 999</p>
             <p className="mt-1 font-mono text-[10px] text-gray-400">{revenueMeta}</p>
             <p className="mt-2 text-[26px] font-bold leading-none tabular-nums text-[#2c3e50]">{revenueDisplay}</p>
             <div className="mt-3 flex gap-1.5">
