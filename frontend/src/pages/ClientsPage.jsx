@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 
 const emptyContact = () => ({ name: "", email: "", phone: "" });
 
 export default function ClientsPage() {
+  const navigate = useNavigate();
   const [clients, setClients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -145,39 +146,47 @@ export default function ClientsPage() {
         </Link>
       </div>
 
-      <div className="card !p-0 overflow-hidden">
+      <div className="card !p-0">
         <div className="saas-table-shell border-0 rounded-none">
-          <div className="saas-grid-head grid grid-cols-12">
-            <div className="col-span-4">Name</div>
-            <div className="col-span-4">Email</div>
-            <div className="col-span-2">Phone</div>
-            <div className="col-span-2 text-right sm:text-left">Actions</div>
+          <div
+            className="saas-grid-head grid items-center gap-x-2"
+            style={{ gridTemplateColumns: "minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr) 260px" }}
+          >
+            <div className="px-4 py-2">Name</div>
+            <div className="px-4 py-2">Email</div>
+            <div className="px-4 py-2">Phone</div>
+            <div className="px-4 py-2 text-center w-[260px]">Actions</div>
           </div>
 
           {clients.map((client) => (
-            <div key={client._id} className="saas-grid-row grid grid-cols-12 items-center gap-y-2">
-              <div className="col-span-4 font-medium">{client.name || "No Name"}</div>
-              <div className="col-span-4 text-sm text-gray-600">{client.email || "-"}</div>
-              <div className="col-span-2 text-sm text-gray-600">{client.phone || "-"}</div>
-              <div className="col-span-12 sm:col-span-2 min-w-0">
-                <div className="flex flex-nowrap items-center justify-start sm:justify-end gap-2 overflow-x-auto pb-1 sm:pb-0">
-                  <Link
-                    to={`/clients/${client._id}`}
-                    className="inline-flex items-center justify-center shrink-0 h-9 px-3 rounded-lg bg-[#0B132B] text-white text-sm whitespace-nowrap"
+            <div
+              key={client._id}
+              className="saas-grid-row grid items-center gap-x-2"
+              style={{ gridTemplateColumns: "minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr) 260px" }}
+            >
+              <div className="px-4 py-2 font-medium">{client.name || "No Name"}</div>
+              <div className="px-4 py-2 text-sm text-gray-600">{client.email || "-"}</div>
+              <div className="px-4 py-2 text-sm text-gray-600">{client.phone || "-"}</div>
+              <div className="px-4 py-2">
+                <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/clients/${client._id}`)}
+                    className="bg-[#0B132B] text-white px-3 py-2 rounded-lg text-sm"
                   >
                     View
-                  </Link>
+                  </button>
                   <button
                     type="button"
                     onClick={() => openEdit(client)}
-                    className="inline-flex items-center justify-center shrink-0 h-9 px-3 rounded-lg bg-white border border-gray-300 text-black text-sm whitespace-nowrap"
+                    className="bg-white border border-gray-300 px-3 py-2 rounded-lg text-sm"
                   >
                     Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => openDelete(client)}
-                    className="inline-flex items-center justify-center shrink-0 h-9 px-3 rounded-lg bg-red-500 text-white text-sm whitespace-nowrap"
+                    className="bg-red-500 text-white px-3 py-2 rounded-lg text-sm"
                   >
                     Delete
                   </button>
