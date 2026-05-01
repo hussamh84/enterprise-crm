@@ -32,6 +32,7 @@ function App() {
       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<DashboardPage />} />
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="/leads" element={<LeadsPage />} />
         <Route path="/quotations" element={<QuotationsPage />} />
         <Route path="/quotations/new" element={<QuotationBuilderPage />} />

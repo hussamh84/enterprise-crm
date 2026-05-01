@@ -98,6 +98,17 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-4 bg-gray-50 rounded-lg p-2">
+      <div
+        id="realdash"
+        style={{
+          background: "lime",
+          color: "black",
+          fontSize: "50px",
+          padding: "20px",
+        }}
+      >
+        REAL DASHBOARD FILE FOUND
+      </div>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
         <div className="flex items-center gap-3">
