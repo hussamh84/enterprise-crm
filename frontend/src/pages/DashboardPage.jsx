@@ -13,10 +13,36 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  ComposableMap,
+  Geographies,
+  Geography,
+  Marker,
+  ZoomableGroup,
+} from "react-simple-maps";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
 
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** World TopoJSON (static CDN, no API key). Center: [longitude, latitude] — Sudan focus. */
+const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+const SUDAN_CENTER = [30.2176, 12.8628];
+
+function projectCoordinates(project) {
+  const p = project && typeof project === "object" ? project : {};
+  const loc = p.location && typeof p.location === "object" ? p.location : {};
+  const client = p.clientId && typeof p.clientId === "object" ? p.clientId : {};
+  const latRaw =
+    p.lat ?? p.latitude ?? loc.lat ?? loc.latitude ?? client.lat ?? client.latitude;
+  const lngRaw =
+    p.lng ?? p.longitude ?? loc.lng ?? loc.longitude ?? client.lng ?? client.longitude;
+  const lat = latRaw != null && latRaw !== "" ? Number(latRaw) : NaN;
+  const lng = lngRaw != null && lngRaw !== "" ? Number(lngRaw) : NaN;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+  return [lng, lat];
+}
 
 function invoiceIsPaid(inv) {
   const status = String(inv?.status || "").toLowerCase();
@@ -116,6 +142,24 @@ export default function DashboardPage() {
         .slice(0, 5),
     [invoices]
   );
+
+  const projectGeoMarkers = useMemo(() => {
+    const out = [];
+    const seen = new Set();
+    for (const project of projectsList) {
+      const coords = projectCoordinates(project);
+      if (!coords) continue;
+      const key = `${coords[0].toFixed(4)},${coords[1].toFixed(4)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({
+        id: String(project?._id || key),
+        name: String(project?.name || "Project"),
+        coordinates: coords,
+      });
+    }
+    return out;
+  }, [projectsList]);
 
   const projectStatusMeta = (status) => {
     const s = String(status || "").toLowerCase();
@@ -335,6 +379,57 @@ export default function DashboardPage() {
               })
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-lg font-semibold text-slate-900">Operations Coverage</h3>
+        <div className="h-[320px] w-full overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
+          <ComposableMap
+            projection="geoMercator"
+            projectionConfig={{ scale: 520 }}
+            width={960}
+            height={320}
+            style={{ width: "100%", maxWidth: "100%", height: "auto" }}
+          >
+            <ZoomableGroup center={SUDAN_CENTER} zoom={2.35}>
+              <Geographies geography={WORLD_GEO_URL}>
+                {({ geographies }) =>
+                  geographies.map((geo) => (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      fill="#e2e8f0"
+                      stroke="#cbd5e1"
+                      strokeWidth={0.4}
+                      style={{
+                        default: { outline: "none" },
+                        hover: { outline: "none", fill: "#cbd5e1" },
+                        pressed: { outline: "none" },
+                      }}
+                    />
+                  ))
+                }
+              </Geographies>
+              <Marker coordinates={SUDAN_CENTER}>
+                <title>Company Operations - Sudan</title>
+                <circle r={9} fill="#0B132B" stroke="#ffffff" strokeWidth={2.5} />
+                <text
+                  textAnchor="middle"
+                  y={-14}
+                  style={{ fontSize: 11, fill: "#0B132B", fontWeight: 600 }}
+                >
+                  Sudan
+                </text>
+              </Marker>
+              {projectGeoMarkers.map((m) => (
+                <Marker key={m.id} coordinates={m.coordinates}>
+                  <title>{m.name}</title>
+                  <circle r={4} fill="#0d9488" stroke="#ffffff" strokeWidth={1.5} />
+                </Marker>
+              ))}
+            </ZoomableGroup>
+          </ComposableMap>
         </div>
       </div>
 
