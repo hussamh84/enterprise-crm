@@ -6,6 +6,8 @@ import {
   Calendar,
   Clock,
   Maximize2,
+  Minus,
+  Plus,
   RefreshCw,
   Settings,
   UserRound,
@@ -40,16 +42,20 @@ import { formatCurrency } from "../utils/format";
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const C = {
-  navy: "#2c3e50",
+  navy: "#1f3147",
+  navyMid: "#23364d",
   turquoise: "#1abc9c",
   orange: "#f39c12",
   red: "#e74c3c",
   green: "#95c11f",
 };
 
-/** World TopoJSON (static CDN). Center: [longitude, latitude] — Sudan. */
+/** World TopoJSON (static CDN). Sudan marker: [longitude, latitude]. */
 const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 const SUDAN_CENTER = [30.2176, 12.8628];
+/** Full-world framing (Mercator): Atlantic-centered, all continents visible. */
+const WORLD_CENTER = [0, 12];
+const WORLD_ZOOM_DEFAULT = 0.72;
 
 function projectCoordinates(project) {
   const p = project && typeof project === "object" ? project : {};
@@ -104,6 +110,7 @@ function tableActivityPercent(status) {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [now, setNow] = useState(() => new Date());
+  const [worldMapZoom, setWorldMapZoom] = useState(WORLD_ZOOM_DEFAULT);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -570,41 +577,44 @@ export default function DashboardPage() {
         </article>
       </section>
 
-      <section className="grid grid-cols-1 gap-2.5 lg:grid-cols-12 lg:gap-2" aria-label="Map and sales trend">
-        <article className={`${refCard} p-3 lg:col-span-8`}>
+      <section
+        className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-stretch lg:gap-2"
+        aria-label="Map and sales trend"
+      >
+        <article className={`${refCard} flex min-h-0 flex-col p-3`}>
           <div className="mb-2 flex flex-wrap items-start justify-between gap-2 border-b border-gray-200 pb-2">
             <div>
-              <h2 className="text-[12px] font-bold leading-tight text-[#1a252f]">Sales</h2>
-              <p className="text-[10px] text-gray-500">Sales activity by period</p>
+              <h2 className="text-[12px] font-bold leading-tight text-[#1f3147]">Sales</h2>
+              <p className="text-[10px] text-gray-500">Sales activity by period you selected</p>
             </div>
-            <span className="rounded-sm border border-gray-200 bg-white px-2 py-0.5 text-[9px] font-semibold text-gray-600">
+            <span className="rounded-sm border border-gray-200 bg-white px-2 py-0.5 text-[9px] font-semibold text-[#1f3147]">
               {mapRangeLabel}
             </span>
           </div>
-          <div className="flex flex-col gap-2.5 pt-0.5 lg:flex-row">
-            <aside className="flex w-full shrink-0 flex-col gap-2 text-[9px] text-gray-600 lg:w-[128px] lg:border-r lg:border-gray-200 lg:pr-2.5">
+          <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row lg:gap-0">
+            <aside className="flex w-full shrink-0 flex-col justify-center gap-2 border-gray-200 text-[9px] text-gray-600 lg:w-[24%] lg:max-w-[140px] lg:min-w-[112px] lg:border-r lg:pr-2.5">
               <div>
-                <p className="font-bold text-gray-600">In Queue</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-100">
-                  <div className="h-full rounded-sm bg-[#1a252f]" style={{ width: `${mapSidebarStats.queuePct}%` }} />
+                <p className="font-bold text-[#1f3147]">In Queue</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-200/90">
+                  <div className="h-full rounded-sm bg-[#1f3147]" style={{ width: `${mapSidebarStats.queuePct}%` }} />
                 </div>
-                <p className="mt-0.5 font-bold tabular-nums text-[#1a252f]">{mapSidebarStats.queuePct}%</p>
+                <p className="mt-0.5 font-bold tabular-nums text-[#1f3147]">{mapSidebarStats.queuePct}%</p>
               </div>
               <div>
-                <p className="font-bold text-gray-600">Shipped Products</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-100">
+                <p className="font-bold text-[#1f3147]">Shipped Products</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-200/90">
                   <div
-                    className="h-full rounded-sm bg-[#1abc9c]"
+                    className="h-full rounded-sm bg-[#1f3147]"
                     style={{ width: `${Math.min(100, (mapSidebarStats.shipped / mapSidebarStats.shipCap) * 100)}%` }}
                   />
                 </div>
-                <p className="mt-0.5 font-bold tabular-nums text-[#1a252f]">
+                <p className="mt-0.5 font-bold tabular-nums text-[#1f3147]">
                   {mapSidebarStats.shipped}/{mapSidebarStats.shipCap}
                 </p>
               </div>
               <div>
-                <p className="font-bold text-gray-600">Returned Products</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-100">
+                <p className="font-bold text-[#1f3147]">Returned Products</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-200/90">
                   <div
                     className="h-full rounded-sm bg-[#e74c3c]"
                     style={{ width: `${Math.min(100, (mapSidebarStats.lowStock / mapSidebarStats.retCap) * 100)}%` }}
@@ -615,8 +625,8 @@ export default function DashboardPage() {
                 </p>
               </div>
               <div>
-                <p className="font-bold text-gray-600">Progress Today</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-100">
+                <p className="font-bold text-[#1f3147]">Progress Today</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-200/90">
                   <div
                     className="h-full rounded-sm bg-[#1abc9c]"
                     style={{ width: `${Math.min(100, (mapSidebarStats.todayPaid / mapSidebarStats.dayGoal) * 100)}%` }}
@@ -627,59 +637,91 @@ export default function DashboardPage() {
                 </p>
               </div>
             </aside>
-            <div className="min-h-[220px] min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-200 bg-[#eef1f5]">
+            <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-sm border border-[#23364d] bg-[#d5dae2]">
+              <div className="pointer-events-auto absolute left-1 top-1 z-[2] flex flex-col gap-px rounded-sm border border-white/30 bg-[#1f3147] p-px shadow-md">
+                <button
+                  type="button"
+                  className="flex h-6 w-6 items-center justify-center rounded-sm text-white hover:bg-[#23364d]"
+                  aria-label="Zoom in"
+                  onClick={() => setWorldMapZoom((z) => Math.min(2.4, Number((z + 0.1).toFixed(2))))}
+                >
+                  <Plus className="h-3 w-3" strokeWidth={2.5} />
+                </button>
+                <button
+                  type="button"
+                  className="flex h-6 w-6 items-center justify-center rounded-sm text-white hover:bg-[#23364d]"
+                  aria-label="Zoom out"
+                  onClick={() => setWorldMapZoom((z) => Math.max(0.42, Number((z - 0.1).toFixed(2))))}
+                >
+                  <Minus className="h-3 w-3" strokeWidth={2.5} />
+                </button>
+              </div>
               <ComposableMap
                 projection="geoMercator"
-                projectionConfig={{ scale: 145 }}
-                width={720}
-                height={220}
-                style={{ width: "100%", maxWidth: "100%", height: "auto" }}
+                projectionConfig={{ scale: 92 }}
+                width={1400}
+                height={260}
+                className="block h-[260px] w-full max-w-full"
+                style={{ width: "100%", height: "260px" }}
               >
-                <ZoomableGroup center={[22, 14]} zoom={1.12}>
+                <ZoomableGroup center={WORLD_CENTER} zoom={worldMapZoom}>
+                  <rect x={-2800} y={-1400} width={5600} height={2800} fill="#d5dae2" />
                   <Geographies geography={WORLD_GEO_URL}>
                     {({ geographies }) =>
                       geographies.map((geo) => (
                         <Geography
                           key={geo.rsmKey}
                           geography={geo}
-                          fill="#2c3e50"
-                          stroke="#1a252f"
-                          strokeWidth={0.35}
+                          fill="#23364d"
+                          stroke="#1f3147"
+                          strokeWidth={0.4}
                           style={{
                             default: { outline: "none" },
-                            hover: { outline: "none", fill: "#3d566e" },
+                            hover: { outline: "none", fill: "#2a4260" },
                             pressed: { outline: "none" },
                           }}
                         />
                       ))
                     }
                   </Geographies>
-                  <Marker coordinates={SUDAN_CENTER}>
-                    <title>Company Operations - Sudan</title>
-                    <circle r={8} fill="#1abc9c" stroke="#ffffff" strokeWidth={2} />
-                  </Marker>
                   {projectGeoMarkers.map((m) => (
                     <Marker key={m.id} coordinates={m.coordinates}>
                       <title>{m.name}</title>
-                      <circle r={4} fill="#1abc9c" stroke="#ffffff" strokeWidth={1.5} />
+                      <circle
+                        r={4}
+                        fill="#1abc9c"
+                        stroke="rgba(255,255,255,0.85)"
+                        strokeWidth={1.25}
+                        style={{ filter: "drop-shadow(0 0 3px rgba(26, 188, 156, 0.9))" }}
+                      />
                     </Marker>
                   ))}
+                  <Marker coordinates={SUDAN_CENTER}>
+                    <title>Company Operations - Sudan</title>
+                    <circle
+                      r={11}
+                      fill="#1abc9c"
+                      stroke="#ffffff"
+                      strokeWidth={2}
+                      style={{ filter: "drop-shadow(0 0 10px rgba(26, 188, 156, 1)) drop-shadow(0 0 4px rgba(26, 188, 156, 0.8))" }}
+                    />
+                  </Marker>
                 </ZoomableGroup>
               </ComposableMap>
             </div>
           </div>
         </article>
 
-        <article className={`${refCard} flex flex-col p-3 lg:col-span-4`}>
-          <RefPanelHeader title="Sales" subtitle="Sales activity" />
-          <div className="h-[380px] w-full">
+        <article className={`${refCard} flex min-h-0 flex-col p-3`}>
+          <RefPanelHeader title="Sales" subtitle="Event 'Purchase Button'" />
+          <div className="h-[320px] w-full flex-1">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={salesLineData} margin={{ top: 4, right: 2, left: -4, bottom: 2 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="label" tick={{ fontSize: 8, fill: "#64748b" }} interval={0} angle={-25} textAnchor="end" height={52} />
                 <YAxis
                   yAxisId="left"
-                  tick={{ fontSize: 9, fill: "#2c3e50" }}
+                  tick={{ fontSize: 9, fill: "#1f3147" }}
                   width={36}
                   tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : v)}
                 />
