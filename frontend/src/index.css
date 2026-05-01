@@ -1322,7 +1322,7 @@ a[href*="/projects/new"]:hover {
   background-color: #000000 !important;
 }
 
-a[href*="quotation"] {
+a[href*="quotation"]:not(.sidebar-item) {
   background-color: #111827 !important;
   color: #ffffff !important;
 }

@@ -1,4 +1,20 @@
-import { Bell, Briefcase, LayoutDashboard, LogOut, Menu, Search, Settings, ShieldCheck, User, UserCircle2, Users, X } from "lucide-react";
+import {
+  Bell,
+  Boxes,
+  Briefcase,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Receipt,
+  Search,
+  Settings,
+  ShieldCheck,
+  UserCircle,
+  UserCog,
+  Users,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
@@ -12,14 +28,14 @@ console.log("CHECK PAGE:", __filename);
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Briefcase },
-  { to: "/clients", label: "Clients", icon: UserCircle2 },
+  { to: "/clients", label: "Clients", icon: Users },
   { to: "/projects", label: "Projects", icon: ShieldCheck },
-  { to: "/quotations", label: "Quotations", icon: Settings },
-  { to: "/invoices", label: "Invoices", icon: Settings },
-  { to: "/inventory", label: "Inventory", icon: Briefcase },
-  { to: "/users", label: "Users", icon: Users },
+  { to: "/quotations", label: "Quotations", icon: FileText },
+  { to: "/invoices", label: "Invoices", icon: Receipt },
+  { to: "/inventory", label: "Inventory", icon: Boxes },
+  { to: "/users", label: "Users", icon: UserCog },
   { to: "/settings", label: "Settings", icon: Settings },
-  { to: "/profile", label: "Profile", icon: User },
+  { to: "/profile", label: "Profile", icon: UserCircle },
 ];
 
 const resolveLogoSrc = (logoPath) => {
@@ -193,12 +209,12 @@ export default function Layout() {
                   className={({ isActive }) =>
                     `sidebar-item flex items-center gap-2 text-[14px] transition ${
                       isActive
-                        ? "active font-medium dark:bg-gray-800 dark:text-white dark:border dark:border-gray-700"
-                        : "hover:bg-slate-50 dark:hover:bg-gray-800"
+                        ? "bg-[#0B132B] text-white font-medium"
+                        : "text-gray-600 hover:bg-gray-100"
                     }`
                   }
                 >
-                  <Icon size={16} />
+                  <Icon className="w-5 h-5 shrink-0" aria-hidden />
                   <span>{item.label}</span>
                 </NavLink>
               );
@@ -207,9 +223,13 @@ export default function Layout() {
           </div>
         </div>
         <div className="p-3 border-t border-slate-100 dark:border-gray-700">
-          <button onClick={handleLogout} className="w-full bg-gray-900 text-white py-2 rounded hover:bg-black flex items-center justify-center gap-2">
-              <LogOut size={14} /> Logout
-            </button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full bg-gray-900 text-white py-2 rounded hover:bg-black flex items-center justify-center gap-2"
+          >
+            <LogOut className="w-5 h-5 shrink-0" aria-hidden /> Logout
+          </button>
         </div>
       </aside>
       <main className="main relative z-[1] flex-1 w-full max-w-full">
