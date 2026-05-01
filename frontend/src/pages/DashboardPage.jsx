@@ -374,7 +374,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="space-y-4 bg-[#F3F4F6] p-4 text-[#2c3e50]">
+    <div className="space-y-4 bg-[#F3F4F6] p-4 text-[#2c3e50]" data-page="dashboard">
       <div className="text-xs text-gray-500">
         <span className="text-gray-400">Home</span>
         <span className="mx-1.5">/</span>
