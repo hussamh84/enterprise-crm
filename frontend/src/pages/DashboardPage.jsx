@@ -336,6 +336,14 @@ export default function DashboardPage() {
     };
   }, [projectsList, invoices, inventoryItems]);
 
+  const mapRangeLabel = useMemo(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    const opts = { month: "short", day: "numeric", year: "numeric" };
+    return `${start.toLocaleDateString(undefined, opts)} – ${end.toLocaleDateString(undefined, opts)}`;
+  }, []);
+
   const totalProjects = Number(data?.projects ?? projectsList.length);
   const totalUsers = Number(data?.clients ?? 0);
 
@@ -357,20 +365,20 @@ export default function DashboardPage() {
 
   function RefPanelHeader({ title, subtitle }) {
     return (
-      <header className="mb-2.5 flex items-start justify-between gap-2 border-b border-gray-100 pb-2.5">
+      <header className="mb-2 flex items-start justify-between gap-2 border-b border-gray-200 pb-2">
         <div className="min-w-0">
-          <h2 className="text-[13px] font-semibold leading-tight text-[#2c3e50]">{title}</h2>
-          <p className="mt-0.5 text-[11px] leading-tight text-gray-500">{subtitle}</p>
+          <h2 className="text-[12px] font-bold leading-tight tracking-tight text-[#1a252f]">{title}</h2>
+          <p className="mt-0.5 text-[10px] leading-tight text-gray-500">{subtitle}</p>
         </div>
-        <div className="flex shrink-0 items-center gap-0.5 text-gray-400">
-          <button type="button" className="rounded p-1 hover:bg-gray-100" aria-label="Expand">
-            <Maximize2 className="h-3.5 w-3.5" strokeWidth={2} />
+        <div className="flex shrink-0 items-center gap-0 text-gray-500">
+          <button type="button" className="rounded p-0.5 hover:bg-gray-100" aria-label="Expand">
+            <Maximize2 className="h-3 w-3" strokeWidth={2.25} />
           </button>
-          <button type="button" className="rounded p-1 hover:bg-gray-100" aria-label="Refresh">
-            <RefreshCw className="h-3.5 w-3.5" strokeWidth={2} />
+          <button type="button" className="rounded p-0.5 hover:bg-gray-100" aria-label="Refresh">
+            <RefreshCw className="h-3 w-3" strokeWidth={2.25} />
           </button>
-          <button type="button" className="rounded p-1 hover:bg-gray-100" aria-label="Settings">
-            <Settings className="h-3.5 w-3.5" strokeWidth={2} />
+          <button type="button" className="rounded p-0.5 hover:bg-gray-100" aria-label="Settings">
+            <Settings className="h-3 w-3" strokeWidth={2.25} />
           </button>
         </div>
       </header>
@@ -380,114 +388,124 @@ export default function DashboardPage() {
   /* Layout sidebar lives in <Layout />; this is the Outlet page shell only. */
   return (
     <div
-      className="ce-dashboard-reference w-full max-w-full min-h-0 bg-[#F3F4F6] -mx-4 -my-5 px-4 py-5 sm:-mx-5 sm:px-5 text-[#2c3e50]"
+      className="ce-dashboard-reference w-full max-w-full min-h-0 bg-[#F3F4F6] -mx-4 -my-5 text-[#2c3e50] sm:-mx-5"
       data-ce-dashboard="reference-v2"
     >
-      <nav className="mb-4 text-[11px] text-gray-500" aria-label="Breadcrumb">
-        <span className="text-gray-400">Home</span>
-        <span className="mx-1.5 text-gray-300">/</span>
-        <span className="font-semibold text-[#2c3e50]">Dashboard</span>
-      </nav>
+      <div className="border-b border-gray-200 bg-[#e4e7ec] px-3 py-2 sm:px-4">
+        <nav className="text-[10px] font-medium text-gray-600" aria-label="Breadcrumb">
+          <span className="text-gray-500">Home</span>
+          <span className="mx-1 text-gray-400">&gt;</span>
+          <span className="font-bold text-[#1a252f]">Dashboard</span>
+        </nav>
+      </div>
 
-      {/* —— Row 1: KPI strip —— */}
-      <section className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:items-stretch" aria-label="Summary metrics">
-        <article className={`relative flex min-h-[128px] ${refCard} p-4`}>
-          <button type="button" className="absolute right-2 top-2 rounded p-0.5 text-gray-400 hover:bg-gray-100" aria-label="Dismiss">
-            <X className="h-3.5 w-3.5" strokeWidth={2} />
+      <div className="space-y-2.5 px-3 py-2.5 sm:px-4 sm:py-3">
+      {/* Row 1: four KPIs — single row at lg+ */}
+      <section
+        className="grid grid-cols-1 gap-2.5 md:grid-cols-2 lg:grid-cols-4 lg:gap-2"
+        aria-label="Summary metrics"
+      >
+        <article className={`relative flex h-[135px] ${refCard} p-3`}>
+          <button type="button" className="absolute right-1.5 top-1.5 rounded p-0.5 text-gray-400 hover:bg-gray-100" aria-label="Dismiss">
+            <X className="h-3 w-3" strokeWidth={2.5} />
           </button>
-          <div className="flex w-full flex-col items-center justify-center pt-2 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500">Total Revenue</p>
-            <p className="mt-1 font-mono text-[10px] text-gray-400">{revenueMeta}</p>
-            <p className="mt-2.5 text-[28px] font-bold leading-none tabular-nums text-[#2c3e50]">{revenueDisplay}</p>
-            <div className="mt-3.5 flex gap-1.5" role="presentation">
+          <div className="flex w-full flex-col items-center justify-center text-center leading-none">
+            <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-gray-600">Total Revenue</p>
+            <p className="mt-0.5 font-mono text-[9px] text-gray-500">{revenueMeta}</p>
+            <p className="mt-1.5 text-[22px] font-bold tabular-nums text-[#1a252f]">{revenueDisplay}</p>
+            <div className="mt-2 flex gap-1" role="presentation">
               {revenueDotsActive.map((on, i) => (
                 <span
                   key={i}
-                  className={`h-1.5 w-1.5 rounded-full ${on ? "bg-[#2c3e50]" : "bg-gray-300"}`}
+                  className={`h-1 w-1 rounded-full ${on ? "bg-[#2c3e50]" : "bg-gray-300"}`}
                 />
               ))}
             </div>
           </div>
         </article>
 
-        <article className={`flex min-h-[128px] ${refCard} p-4`}>
-          <div className="flex w-full items-center gap-4">
-            <BriefcaseBusiness className="h-14 w-14 shrink-0 text-black" strokeWidth={1.1} aria-hidden />
-            <div className="min-w-0 flex-1 text-right">
-              <p className="text-[11px] font-medium text-gray-500">Total Projects</p>
-              <p className="text-[28px] font-bold leading-tight tabular-nums text-[#2c3e50]">{totalProjects}</p>
-              <p className="text-[10px] text-gray-400">In your mailbox</p>
+        <article className={`flex h-[135px] ${refCard} p-3`}>
+          <div className="flex w-full items-center gap-2">
+            <BriefcaseBusiness className="h-16 w-16 shrink-0 text-black" strokeWidth={2} aria-hidden />
+            <div className="min-w-0 flex-1 text-right leading-tight">
+              <p className="text-[10px] font-semibold text-gray-600">Total Projects</p>
+              <p className="text-[24px] font-bold tabular-nums text-[#1a252f]">{totalProjects}</p>
+              <p className="text-[9px] text-gray-500">In your mailbox</p>
             </div>
           </div>
         </article>
 
-        <article className={`flex min-h-[128px] ${refCard} p-4`}>
-          <div className="flex w-full items-center gap-4">
-            <UserRound className="h-14 w-14 shrink-0 text-black" strokeWidth={1.1} aria-hidden />
-            <div className="min-w-0 flex-1 text-right">
-              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-500">Registered Users</p>
-              <p className="text-[28px] font-bold leading-tight tabular-nums text-[#2c3e50]">{totalUsers}</p>
-              <p className="text-[10px] text-gray-400">On your website</p>
+        <article className={`flex h-[135px] ${refCard} p-3`}>
+          <div className="flex w-full items-center gap-2">
+            <UserRound className="h-16 w-16 shrink-0 text-black" strokeWidth={2} aria-hidden />
+            <div className="min-w-0 flex-1 text-right leading-tight">
+              <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-gray-600">Registered Users</p>
+              <p className="text-[24px] font-bold tabular-nums text-[#1a252f]">{totalUsers}</p>
+              <p className="text-[9px] text-gray-500">On your website</p>
             </div>
           </div>
         </article>
 
         <article
-          className="flex min-h-[128px] flex-col justify-center rounded-sm border border-emerald-700/25 p-4 text-white shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+          className="flex h-[135px] flex-col justify-center rounded-sm border border-emerald-600/30 p-3 text-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
           style={{
-            background: "linear-gradient(148deg, #1dd2af 0%, #1abc9c 40%, #138d75 100%)",
+            background: "linear-gradient(180deg, #1abc9c 0%, #16a085 100%)",
           }}
         >
-          <p className="text-center text-[30px] font-bold tabular-nums leading-none tracking-[0.18em]">{clockTime}</p>
-          <p className="mt-2 text-center text-[11px] font-medium leading-snug text-white/95">{clockDate}</p>
-          <div className="mt-3.5 flex items-center justify-center gap-8 border-t border-white/30 pt-3">
-            <Clock className="h-4 w-4 text-white" strokeWidth={2} aria-hidden />
-            <Bell className="h-4 w-4 text-white" strokeWidth={2} aria-hidden />
-            <Calendar className="h-4 w-4 text-white" strokeWidth={2} aria-hidden />
+          <p className="text-center text-[26px] font-bold tabular-nums leading-none tracking-[0.15em]">{clockTime}</p>
+          <p className="mt-1.5 text-center text-[10px] font-semibold leading-tight text-white/95">{clockDate}</p>
+          <div className="mt-2 flex items-center justify-center gap-6 border-t border-white/25 pt-2">
+            <Clock className="h-[15px] w-[15px] text-white" strokeWidth={2.25} aria-hidden />
+            <Bell className="h-[15px] w-[15px] text-white" strokeWidth={2.25} aria-hidden />
+            <Calendar className="h-[15px] w-[15px] text-white" strokeWidth={2.25} aria-hidden />
           </div>
         </article>
       </section>
 
-      {/* —— Row 2: activity / inventory / status —— */}
-      <section className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-12" aria-label="Charts and project status">
-        <article className={`${refCard} flex flex-col p-4 lg:col-span-4`}>
+      <section className="grid grid-cols-1 gap-2.5 lg:grid-cols-12 lg:gap-2" aria-label="Charts and project status">
+        <article className={`${refCard} flex flex-col p-3 lg:col-span-4`}>
           <RefPanelHeader title="Projects Activity" subtitle="Projects vs returning" />
-          <div className="h-[240px] w-full min-h-0">
+          <div className="h-[280px] w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={projectActivityBars} margin={{ top: 4, right: 6, left: -6, bottom: 2 }} barGap={4} barCategoryGap="22%">
+              <BarChart
+                data={projectActivityBars}
+                margin={{ top: 8, right: 4, left: -12, bottom: 6 }}
+                barGap={3}
+                barCategoryGap="14%"
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 9, fill: "#6b7280" }}
+                  tick={{ fontSize: 9, fill: "#64748b" }}
                   axisLine={false}
                   tickLine={false}
                   interval={0}
-                  angle={-14}
+                  angle={-12}
                   textAnchor="end"
-                  height={48}
+                  height={44}
                 />
-                <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} width={28} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={{ fontSize: 11, borderRadius: 4, border: "1px solid #e5e7eb" }} />
-                <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} iconType="square" iconSize={8} />
-                <Bar dataKey="projects" fill={C.navy} radius={[3, 3, 0, 0]} name="Projects" />
-                <Bar dataKey="returning" fill={C.turquoise} radius={[3, 3, 0, 0]} name="Returning" />
+                <YAxis tick={{ fontSize: 9, fill: "#64748b" }} width={26} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip contentStyle={{ fontSize: 10, borderRadius: 2, border: "1px solid #e5e7eb" }} />
+                <Legend wrapperStyle={{ fontSize: 10, paddingTop: 4 }} iconType="square" iconSize={7} />
+                <Bar dataKey="projects" fill={C.navy} radius={[2, 2, 0, 0]} maxBarSize={52} name="Projects" />
+                <Bar dataKey="returning" fill={C.turquoise} radius={[2, 2, 0, 0]} maxBarSize={52} name="Returning" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </article>
 
-        <article className={`${refCard} flex flex-col p-4 lg:col-span-4`}>
-          <RefPanelHeader title="Inventory Value" subtitle="Value (on hand)" />
-          <div className="relative mx-auto h-[240px] w-full max-w-[260px]">
+        <article className={`${refCard} flex flex-col p-3 lg:col-span-4`}>
+          <RefPanelHeader title="Inventory Value" subtitle="Value (last month)" />
+          <div className="relative mx-auto h-[280px] w-full max-w-[300px] min-w-[240px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={inventoryDonutData}
                   cx="50%"
                   cy="50%"
-                  innerRadius="56%"
-                  outerRadius="84%"
-                  paddingAngle={2}
+                  innerRadius="42%"
+                  outerRadius="78%"
+                  paddingAngle={1}
                   dataKey="value"
                   stroke="none"
                 >
@@ -498,28 +516,28 @@ export default function DashboardPage() {
                 <Tooltip formatter={(v) => formatCurrency(Number(v))} />
               </PieChart>
             </ResponsiveContainer>
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Inventory Value</p>
-              <p className="mt-1 text-base font-bold tabular-nums text-[#2c3e50]">{formatCurrency(inventoryValue)}</p>
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-2 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-gray-600">Inventory Value</p>
+              <p className="mt-1 text-lg font-bold tabular-nums leading-none text-[#1a252f]">{formatCurrency(inventoryValue)}</p>
             </div>
           </div>
         </article>
 
-        <article className={`${refCard} p-4 lg:col-span-4`}>
+        <article className={`${refCard} p-3 lg:col-span-4`}>
           <RefPanelHeader title="Projects" subtitle="Projects activity" />
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full table-fixed text-left text-[11px]">
               <thead>
-                <tr className="border-b border-gray-200 text-[10px] font-medium uppercase tracking-wide text-gray-400">
-                  <th className="pb-2 pr-2 font-medium">Project</th>
-                  <th className="pb-2 pr-2 font-medium">Status</th>
-                  <th className="pb-2 font-medium">Activity</th>
+                <tr className="border-b border-gray-200 text-[9px] font-bold uppercase tracking-wide text-gray-500">
+                  <th className="w-[36%] pb-1.5 pr-2 pt-0.5 font-bold">Project</th>
+                  <th className="w-[32%] pb-1.5 pr-2 font-bold">Status</th>
+                  <th className="w-[32%] pb-1.5 font-bold">Activity</th>
                 </tr>
               </thead>
               <tbody>
                 {tableProjects.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-6 text-center text-gray-400">
+                    <td colSpan={3} className="py-4 text-center text-[11px] text-gray-400">
                       No projects yet.
                     </td>
                   </tr>
@@ -529,17 +547,17 @@ export default function DashboardPage() {
                     const pct = tableActivityPercent(project?.status);
                     return (
                       <tr key={project?._id} className="border-b border-gray-100 last:border-0">
-                        <td className="max-w-[120px] truncate py-2.5 pr-2 font-medium text-[#2c3e50]">
+                        <td className="truncate py-1.5 pr-2 align-middle font-semibold text-[#1a252f]">
                           {project?.name || "—"}
                         </td>
-                        <td className="py-2.5 pr-2">
-                          <span className={`inline-block rounded px-2 py-0.5 text-[10px] font-medium ${pres.badgeClass}`}>
+                        <td className="py-1.5 pr-2 align-middle">
+                          <span className={`inline-block whitespace-nowrap rounded-sm px-1.5 py-px text-[9px] font-bold ${pres.badgeClass}`}>
                             {pres.label}
                           </span>
                         </td>
-                        <td className="py-2.5">
-                          <div className="h-2 w-full max-w-[80px] overflow-hidden rounded-full bg-gray-100">
-                            <div className={`h-full rounded-full ${pres.barClass}`} style={{ width: `${pct}%` }} />
+                        <td className="py-1.5 align-middle">
+                          <div className="h-2 w-full min-w-[7rem] max-w-[9rem] overflow-hidden rounded-sm bg-gray-100">
+                            <div className={`h-full rounded-sm ${pres.barClass}`} style={{ width: `${pct}%` }} />
                           </div>
                         </td>
                       </tr>
@@ -552,73 +570,72 @@ export default function DashboardPage() {
         </article>
       </section>
 
-      {/* —— Row 3: Sudan / world map + sales —— */}
-      <section className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-12" aria-label="Operations map and sales trend">
-        <article className={`${refCard} p-4 lg:col-span-8`}>
-          <div className="mb-2.5 flex flex-wrap items-start justify-between gap-2 border-b border-gray-100 pb-2.5">
+      <section className="grid grid-cols-1 gap-2.5 lg:grid-cols-12 lg:gap-2" aria-label="Map and sales trend">
+        <article className={`${refCard} p-3 lg:col-span-8`}>
+          <div className="mb-2 flex flex-wrap items-start justify-between gap-2 border-b border-gray-200 pb-2">
             <div>
-              <h2 className="text-[13px] font-semibold leading-tight text-[#2c3e50]">Operations</h2>
-              <p className="mt-0.5 text-[11px] text-gray-500">Sudan-centered map — turquoise project markers</p>
+              <h2 className="text-[12px] font-bold leading-tight text-[#1a252f]">Sales</h2>
+              <p className="text-[10px] text-gray-500">Sales activity by period</p>
             </div>
-            <span className="rounded-sm border border-gray-200 bg-gray-50 px-2 py-1 text-[10px] font-medium text-gray-600">
-              {new Date().getFullYear()}
+            <span className="rounded-sm border border-gray-200 bg-white px-2 py-0.5 text-[9px] font-semibold text-gray-600">
+              {mapRangeLabel}
             </span>
           </div>
-          <div className="flex flex-col gap-4 pt-1 lg:flex-row">
-            <aside className="flex w-full shrink-0 flex-col gap-3 text-[10px] text-gray-600 lg:w-[140px] lg:border-r lg:border-gray-100 lg:pr-4">
+          <div className="flex flex-col gap-2.5 pt-0.5 lg:flex-row">
+            <aside className="flex w-full shrink-0 flex-col gap-2 text-[9px] text-gray-600 lg:w-[128px] lg:border-r lg:border-gray-200 lg:pr-2.5">
               <div>
-                <p className="font-medium text-gray-500">In Queue</p>
-                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-gray-100">
-                  <div className="h-full rounded-full bg-[#2c3e50]" style={{ width: `${mapSidebarStats.queuePct}%` }} />
+                <p className="font-bold text-gray-600">In Queue</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-100">
+                  <div className="h-full rounded-sm bg-[#1a252f]" style={{ width: `${mapSidebarStats.queuePct}%` }} />
                 </div>
-                <p className="mt-1 font-semibold tabular-nums text-[#2c3e50]">{mapSidebarStats.queuePct}%</p>
+                <p className="mt-0.5 font-bold tabular-nums text-[#1a252f]">{mapSidebarStats.queuePct}%</p>
               </div>
               <div>
-                <p className="font-medium text-gray-500">Shipped Products</p>
-                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-gray-100">
+                <p className="font-bold text-gray-600">Shipped Products</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-100">
                   <div
-                    className="h-full rounded-full bg-[#2c3e50]"
+                    className="h-full rounded-sm bg-[#1abc9c]"
                     style={{ width: `${Math.min(100, (mapSidebarStats.shipped / mapSidebarStats.shipCap) * 100)}%` }}
                   />
                 </div>
-                <p className="mt-1 font-semibold tabular-nums text-[#2c3e50]">
+                <p className="mt-0.5 font-bold tabular-nums text-[#1a252f]">
                   {mapSidebarStats.shipped}/{mapSidebarStats.shipCap}
                 </p>
               </div>
               <div>
-                <p className="font-medium text-gray-500">Low stock SKUs</p>
-                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-gray-100">
+                <p className="font-bold text-gray-600">Returned Products</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-100">
                   <div
-                    className="h-full rounded-full bg-[#e74c3c]"
+                    className="h-full rounded-sm bg-[#e74c3c]"
                     style={{ width: `${Math.min(100, (mapSidebarStats.lowStock / mapSidebarStats.retCap) * 100)}%` }}
                   />
                 </div>
-                <p className="mt-1 font-semibold tabular-nums text-[#e74c3c]">
+                <p className="mt-0.5 font-bold tabular-nums text-[#e74c3c]">
                   {mapSidebarStats.lowStock}/{mapSidebarStats.retCap}
                 </p>
               </div>
               <div>
-                <p className="font-medium text-gray-500">Paid today</p>
-                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-gray-100">
+                <p className="font-bold text-gray-600">Progress Today</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-100">
                   <div
-                    className="h-full rounded-full bg-[#1abc9c]"
+                    className="h-full rounded-sm bg-[#1abc9c]"
                     style={{ width: `${Math.min(100, (mapSidebarStats.todayPaid / mapSidebarStats.dayGoal) * 100)}%` }}
                   />
                 </div>
-                <p className="mt-1 font-semibold tabular-nums text-[#1abc9c]">
+                <p className="mt-0.5 font-bold tabular-nums text-[#1abc9c]">
                   {mapSidebarStats.todayPaid}/{mapSidebarStats.dayGoal}
                 </p>
               </div>
             </aside>
-            <div className="min-h-[260px] min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-200 bg-[#e8edf3]">
+            <div className="min-h-[220px] min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-200 bg-[#eef1f5]">
               <ComposableMap
                 projection="geoMercator"
-                projectionConfig={{ scale: 550 }}
-                width={840}
-                height={260}
+                projectionConfig={{ scale: 145 }}
+                width={720}
+                height={220}
                 style={{ width: "100%", maxWidth: "100%", height: "auto" }}
               >
-                <ZoomableGroup center={SUDAN_CENTER} zoom={2.35}>
+                <ZoomableGroup center={[22, 14]} zoom={1.12}>
                   <Geographies geography={WORLD_GEO_URL}>
                     {({ geographies }) =>
                       geographies.map((geo) => (
@@ -626,8 +643,8 @@ export default function DashboardPage() {
                           key={geo.rsmKey}
                           geography={geo}
                           fill="#2c3e50"
-                          stroke="#152028"
-                          strokeWidth={0.45}
+                          stroke="#1a252f"
+                          strokeWidth={0.35}
                           style={{
                             default: { outline: "none" },
                             hover: { outline: "none", fill: "#3d566e" },
@@ -639,12 +656,12 @@ export default function DashboardPage() {
                   </Geographies>
                   <Marker coordinates={SUDAN_CENTER}>
                     <title>Company Operations - Sudan</title>
-                    <circle r={10} fill="#1abc9c" stroke="#ffffff" strokeWidth={2} />
+                    <circle r={8} fill="#1abc9c" stroke="#ffffff" strokeWidth={2} />
                   </Marker>
                   {projectGeoMarkers.map((m) => (
                     <Marker key={m.id} coordinates={m.coordinates}>
                       <title>{m.name}</title>
-                      <circle r={5} fill="#1abc9c" stroke="#ffffff" strokeWidth={1.5} />
+                      <circle r={4} fill="#1abc9c" stroke="#ffffff" strokeWidth={1.5} />
                     </Marker>
                   ))}
                 </ZoomableGroup>
@@ -653,28 +670,28 @@ export default function DashboardPage() {
           </div>
         </article>
 
-        <article className={`${refCard} p-4 lg:col-span-4`}>
+        <article className={`${refCard} flex flex-col p-3 lg:col-span-4`}>
           <RefPanelHeader title="Sales" subtitle="Sales activity" />
-          <div className="h-[308px] w-full">
+          <div className="h-[380px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={salesLineData} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
+              <LineChart data={salesLineData} margin={{ top: 4, right: 2, left: -4, bottom: 2 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#6b7280" }} />
+                <XAxis dataKey="label" tick={{ fontSize: 8, fill: "#64748b" }} interval={0} angle={-25} textAnchor="end" height={52} />
                 <YAxis
                   yAxisId="left"
-                  tick={{ fontSize: 10, fill: "#2c3e50" }}
-                  width={44}
+                  tick={{ fontSize: 9, fill: "#2c3e50" }}
+                  width={36}
                   tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : v)}
                 />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
-                  tick={{ fontSize: 10, fill: "#1abc9c" }}
-                  width={28}
+                  tick={{ fontSize: 9, fill: "#1abc9c" }}
+                  width={22}
                   allowDecimals={false}
                 />
                 <Tooltip
-                  contentStyle={{ fontSize: 11, borderRadius: 4, border: "1px solid #e5e7eb" }}
+                  contentStyle={{ fontSize: 10, borderRadius: 2, border: "1px solid #e5e7eb" }}
                   formatter={(value, name) =>
                     name === "Revenue" ? formatCurrency(Number(value)) : [value, "Paid invoices"]
                   }
@@ -684,7 +701,7 @@ export default function DashboardPage() {
                   type="monotone"
                   dataKey="revenue"
                   stroke={C.navy}
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                   dot={{ r: 3, fill: C.navy }}
                   name="Revenue"
                 />
@@ -693,7 +710,7 @@ export default function DashboardPage() {
                   type="monotone"
                   dataKey="paidCount"
                   stroke={C.turquoise}
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                   dot={{ r: 3, fill: C.turquoise }}
                   name="Paid invoices"
                 />
@@ -703,16 +720,17 @@ export default function DashboardPage() {
         </article>
       </section>
 
-      <footer className="flex justify-end border-t border-transparent pt-1">
+      <footer className="flex justify-end pt-1">
         <button
           type="button"
           onClick={() => navigate("/reports")}
           data-ui="generate-report-btn"
-          className="rounded-sm border border-gray-200 bg-white px-4 py-2 text-[11px] font-semibold text-[#2c3e50] shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-gray-50"
+          className="rounded-sm border border-gray-200 bg-white px-3 py-1.5 text-[10px] font-bold text-[#1a252f] shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-gray-50"
         >
           Generate Report
         </button>
       </footer>
+      </div>
     </div>
   );
 }
