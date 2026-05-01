@@ -398,12 +398,20 @@ export default function DashboardPage() {
       className="ce-dashboard-reference w-full max-w-full min-h-0 bg-[#F3F4F6] -mx-4 -my-5 text-[#2c3e50] sm:-mx-5"
       data-ce-dashboard="reference-v2"
     >
-      <div className="border-b border-gray-200 bg-[#e4e7ec] px-3 py-2 sm:px-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 bg-[#e4e7ec] px-3 py-2 sm:px-4">
         <nav className="text-[10px] font-medium text-gray-600" aria-label="Breadcrumb">
           <span className="text-gray-500">Home</span>
           <span className="mx-1 text-gray-400">&gt;</span>
           <span className="font-bold text-[#1a252f]">Dashboard</span>
         </nav>
+        <button
+          type="button"
+          onClick={() => navigate("/reports")}
+          data-ui="generate-report-btn"
+          className="shrink-0 rounded-sm border border-gray-300 bg-white px-3 py-1.5 text-[10px] font-bold text-[#1a252f] shadow-sm hover:bg-gray-50"
+        >
+          Generate Report
+        </button>
       </div>
 
       <div className="space-y-2.5 px-3 py-2.5 sm:px-4 sm:py-3">
@@ -533,14 +541,14 @@ export default function DashboardPage() {
         <article className={`${refCard} min-w-0 p-3 lg:col-span-4`}>
           <RefPanelHeader title="Projects" subtitle="Projects activity" />
           <div className="min-w-0 overflow-hidden">
-            <table className="w-full table-fixed text-left text-[10px]">
+            <table className="w-full table-fixed text-left text-[11px]">
               <colgroup>
                 <col className="w-[38%]" />
                 <col className="w-[30%]" />
                 <col className="w-[32%]" />
               </colgroup>
               <thead>
-                <tr className="border-b border-gray-200 text-[8px] font-bold uppercase tracking-wide text-gray-500">
+                <tr className="border-b border-gray-200 text-[9px] font-bold uppercase tracking-wide text-gray-600">
                   <th className="pb-1 pr-1 pt-0.5 font-bold">Project</th>
                   <th className="pb-1 pr-1 font-bold">Status</th>
                   <th className="pb-1 pr-0 font-bold">Activity</th>
@@ -549,7 +557,7 @@ export default function DashboardPage() {
               <tbody>
                 {tableProjects.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-3 text-center text-[10px] text-gray-400">
+                    <td colSpan={3} className="py-3 text-center text-[11px] text-gray-400">
                       No projects yet.
                     </td>
                   </tr>
@@ -559,17 +567,17 @@ export default function DashboardPage() {
                     const pct = tableActivityPercent(project?.status);
                     return (
                       <tr key={project?._id} className="border-b border-gray-100 last:border-0">
-                        <td className="truncate py-1 pr-1 align-middle font-semibold text-[#1a252f]" title={project?.name || ""}>
+                        <td className="truncate py-0.5 pr-1 align-middle text-[11px] font-semibold leading-tight text-[#1a252f]" title={project?.name || ""}>
                           {project?.name || "—"}
                         </td>
-                        <td className="max-w-0 py-1 pr-1 align-middle">
+                        <td className="max-w-0 py-0.5 pr-1 align-middle">
                           <span
-                            className={`block max-w-full truncate rounded-sm px-1 py-px text-center text-[8px] font-bold leading-tight ${pres.badgeClass}`}
+                            className={`block max-w-full truncate rounded-sm px-1 py-px text-center text-[9px] font-bold leading-tight ${pres.badgeClass}`}
                           >
                             {pres.label}
                           </span>
                         </td>
-                        <td className="py-1 align-middle pr-0">
+                        <td className="py-0.5 align-middle pr-0">
                           <div className="h-1.5 w-full max-w-full overflow-hidden rounded-sm bg-gray-100">
                             <div className={`h-full rounded-sm ${pres.barClass}`} style={{ width: `${pct}%` }} />
                           </div>
@@ -585,7 +593,7 @@ export default function DashboardPage() {
       </section>
 
       <section
-        className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-stretch lg:gap-2"
+        className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start lg:gap-2"
         aria-label="Map and sales trend"
       >
         <article className={`${refCard} flex min-w-0 flex-col p-3`}>
@@ -644,7 +652,7 @@ export default function DashboardPage() {
                 </p>
               </div>
             </aside>
-            <div className="relative h-[260px] min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-200 bg-white lg:self-start">
+            <div className="relative h-[260px] max-h-[260px] min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-200 bg-white leading-[0] lg:self-start [&_svg]:block [&_svg]:max-h-[260px] [&_svg]:w-full">
               <div className="pointer-events-auto absolute left-1 top-1 z-[2] flex flex-col gap-px rounded-sm border border-white/30 bg-[#1f3147] p-px shadow-md">
                 <button
                   type="button"
@@ -668,11 +676,11 @@ export default function DashboardPage() {
                 projectionConfig={{ scale: 92 }}
                 width={1400}
                 height={260}
-                className="block h-[260px] w-full max-w-full"
-                style={{ width: "100%", height: "260px" }}
+                className="block !max-h-[260px] h-[260px] w-full max-w-full align-top"
+                style={{ width: "100%", height: "260px", maxHeight: "260px", display: "block", verticalAlign: "top" }}
               >
                 <ZoomableGroup center={WORLD_CENTER} zoom={worldMapZoom}>
-                  <rect x={-2800} y={-1400} width={5600} height={2800} fill="#d5dae2" />
+                  <rect x={-2800} y={-1400} width={5600} height={2800} fill="#ffffff" />
                   <Geographies geography={WORLD_GEO_URL}>
                     {({ geographies }) =>
                       geographies.map((geo) => (
@@ -768,17 +776,6 @@ export default function DashboardPage() {
           </div>
         </article>
       </section>
-
-      <footer className="flex justify-end pt-1">
-        <button
-          type="button"
-          onClick={() => navigate("/reports")}
-          data-ui="generate-report-btn"
-          className="rounded-sm border border-gray-200 bg-white px-3 py-1.5 text-[10px] font-bold text-[#1a252f] shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-gray-50"
-        >
-          Generate Report
-        </button>
-      </footer>
       </div>
     </div>
   );
