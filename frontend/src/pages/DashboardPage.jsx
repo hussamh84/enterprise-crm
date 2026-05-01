@@ -470,7 +470,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid grid-cols-1 gap-2.5 lg:grid-cols-12 lg:gap-2" aria-label="Charts and project status">
-        <article className={`${refCard} flex flex-col p-3 lg:col-span-4`}>
+        <article className={`${refCard} flex min-w-0 flex-col p-3 lg:col-span-4`}>
           <RefPanelHeader title="Projects Activity" subtitle="Projects vs returning" />
           <div className="h-[280px] w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
@@ -501,7 +501,7 @@ export default function DashboardPage() {
           </div>
         </article>
 
-        <article className={`${refCard} flex flex-col p-3 lg:col-span-4`}>
+        <article className={`${refCard} flex min-w-0 flex-col p-3 lg:col-span-4`}>
           <RefPanelHeader title="Inventory Value" subtitle="Value (last month)" />
           <div className="relative mx-auto h-[280px] w-full max-w-[300px] min-w-[240px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -530,21 +530,26 @@ export default function DashboardPage() {
           </div>
         </article>
 
-        <article className={`${refCard} p-3 lg:col-span-4`}>
+        <article className={`${refCard} min-w-0 p-3 lg:col-span-4`}>
           <RefPanelHeader title="Projects" subtitle="Projects activity" />
-          <div className="overflow-x-auto">
-            <table className="w-full table-fixed text-left text-[11px]">
+          <div className="min-w-0 overflow-hidden">
+            <table className="w-full table-fixed text-left text-[10px]">
+              <colgroup>
+                <col className="w-[38%]" />
+                <col className="w-[30%]" />
+                <col className="w-[32%]" />
+              </colgroup>
               <thead>
-                <tr className="border-b border-gray-200 text-[9px] font-bold uppercase tracking-wide text-gray-500">
-                  <th className="w-[36%] pb-1.5 pr-2 pt-0.5 font-bold">Project</th>
-                  <th className="w-[32%] pb-1.5 pr-2 font-bold">Status</th>
-                  <th className="w-[32%] pb-1.5 font-bold">Activity</th>
+                <tr className="border-b border-gray-200 text-[8px] font-bold uppercase tracking-wide text-gray-500">
+                  <th className="pb-1 pr-1 pt-0.5 font-bold">Project</th>
+                  <th className="pb-1 pr-1 font-bold">Status</th>
+                  <th className="pb-1 pr-0 font-bold">Activity</th>
                 </tr>
               </thead>
               <tbody>
                 {tableProjects.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-4 text-center text-[11px] text-gray-400">
+                    <td colSpan={3} className="py-3 text-center text-[10px] text-gray-400">
                       No projects yet.
                     </td>
                   </tr>
@@ -554,16 +559,18 @@ export default function DashboardPage() {
                     const pct = tableActivityPercent(project?.status);
                     return (
                       <tr key={project?._id} className="border-b border-gray-100 last:border-0">
-                        <td className="truncate py-1.5 pr-2 align-middle font-semibold text-[#1a252f]">
+                        <td className="truncate py-1 pr-1 align-middle font-semibold text-[#1a252f]" title={project?.name || ""}>
                           {project?.name || "—"}
                         </td>
-                        <td className="py-1.5 pr-2 align-middle">
-                          <span className={`inline-block whitespace-nowrap rounded-sm px-1.5 py-px text-[9px] font-bold ${pres.badgeClass}`}>
+                        <td className="max-w-0 py-1 pr-1 align-middle">
+                          <span
+                            className={`block max-w-full truncate rounded-sm px-1 py-px text-center text-[8px] font-bold leading-tight ${pres.badgeClass}`}
+                          >
                             {pres.label}
                           </span>
                         </td>
-                        <td className="py-1.5 align-middle">
-                          <div className="h-2 w-full min-w-[7rem] max-w-[9rem] overflow-hidden rounded-sm bg-gray-100">
+                        <td className="py-1 align-middle pr-0">
+                          <div className="h-1.5 w-full max-w-full overflow-hidden rounded-sm bg-gray-100">
                             <div className={`h-full rounded-sm ${pres.barClass}`} style={{ width: `${pct}%` }} />
                           </div>
                         </td>
@@ -581,7 +588,7 @@ export default function DashboardPage() {
         className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-stretch lg:gap-2"
         aria-label="Map and sales trend"
       >
-        <article className={`${refCard} flex min-h-0 flex-col p-3`}>
+        <article className={`${refCard} flex min-w-0 flex-col p-3`}>
           <div className="mb-2 flex flex-wrap items-start justify-between gap-2 border-b border-gray-200 pb-2">
             <div>
               <h2 className="text-[12px] font-bold leading-tight text-[#1f3147]">Sales</h2>
@@ -591,8 +598,8 @@ export default function DashboardPage() {
               {mapRangeLabel}
             </span>
           </div>
-          <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row lg:gap-0">
-            <aside className="flex w-full shrink-0 flex-col justify-center gap-2 border-gray-200 text-[9px] text-gray-600 lg:w-[24%] lg:max-w-[140px] lg:min-w-[112px] lg:border-r lg:pr-2.5">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:gap-0">
+            <aside className="flex w-full shrink-0 flex-col justify-center gap-2 border-gray-200 text-[9px] text-gray-600 lg:w-[24%] lg:max-w-[140px] lg:min-w-[112px] lg:border-r lg:pr-2.5 lg:shrink-0">
               <div>
                 <p className="font-bold text-[#1f3147]">In Queue</p>
                 <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-200/90">
@@ -637,7 +644,7 @@ export default function DashboardPage() {
                 </p>
               </div>
             </aside>
-            <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-sm border border-[#23364d] bg-[#d5dae2]">
+            <div className="relative h-[260px] min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-200 bg-white lg:self-start">
               <div className="pointer-events-auto absolute left-1 top-1 z-[2] flex flex-col gap-px rounded-sm border border-white/30 bg-[#1f3147] p-px shadow-md">
                 <button
                   type="button"
