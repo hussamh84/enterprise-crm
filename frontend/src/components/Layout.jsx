@@ -209,7 +209,7 @@ export default function Layout() {
                   className={({ isActive }) =>
                     `sidebar-item flex items-center gap-2 text-[14px] transition ${
                       isActive
-                        ? "bg-[#0B132B] text-white font-medium"
+                        ? "bg-[#0B132B] !text-white font-medium"
                         : "text-gray-600 hover:bg-gray-100"
                     }`
                   }
