@@ -278,9 +278,9 @@ export default function QuotationBuilderPage() {
         }}
       >
         <div>
-          <h1 id="7n5z5g" style={{ color: "red" }}>
-            TEST REAL FILE
-          </h1>
+          <div id="wjg6tq" style={{ color: "red", fontSize: "40px" }}>
+            REAL FILE WORKING
+          </div>
           <h1 className="section-title">{isEdit ? "Edit quotation" : "New quotation"}</h1>
           <p className="page-subtitle text-[#6b7c93]">Dynamic quotation builder with real-time totals.</p>
         </div>
