@@ -375,9 +375,11 @@ export default function DashboardPage() {
   const refCard =
     "rounded-sm border border-gray-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]";
 
-  function RefPanelHeader({ title, subtitle }) {
+  function RefPanelHeader({ title, subtitle, compact }) {
     return (
-      <header className="mb-2 flex items-start justify-between gap-2 border-b border-gray-200 pb-2">
+      <header
+        className={`flex items-start justify-between gap-2 border-b border-gray-200 ${compact ? "mb-1 pb-1" : "mb-2 pb-2"}`}
+      >
         <div className="min-w-0">
           <h2 className="text-[12px] font-bold leading-tight tracking-tight text-[#1a252f]">{title}</h2>
           <p className="mt-0.5 text-[10px] leading-tight text-gray-500">{subtitle}</p>
@@ -611,7 +613,7 @@ export default function DashboardPage() {
               {mapRangeLabel}
             </span>
           </div>
-          <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:gap-0">
+          <div className="flex max-w-full flex-col gap-2 overflow-x-auto lg:flex-row lg:items-start lg:gap-0">
             <aside className="flex w-full shrink-0 flex-col justify-center gap-2 border-gray-200 text-[9px] text-gray-600 lg:w-[24%] lg:max-w-[140px] lg:min-w-[112px] lg:border-r lg:pr-2.5 lg:shrink-0">
               <div>
                 <p className="font-bold text-[#1f3147]">In Queue</p>
@@ -657,7 +659,10 @@ export default function DashboardPage() {
                 </p>
               </div>
             </aside>
-            <div className="relative h-[260px] max-h-[260px] min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-200 bg-white leading-[0] lg:self-start [&_svg]:block [&_svg]:max-h-[260px] [&_svg]:w-full">
+            <div
+              className="relative shrink-0 overflow-hidden rounded-sm border border-gray-200 bg-white leading-[0] lg:self-start [&_svg]:block [&_svg]:max-h-none [&_svg]:max-w-none [&_svg]:h-[260px] [&_svg]:w-[1400px]"
+              style={{ width: MAP_SVG_W, height: MAP_SVG_H }}
+            >
               <div className="pointer-events-auto absolute left-1 top-1 z-[2] flex flex-col gap-px rounded-sm border border-white/30 bg-[#1f3147] p-px shadow-md">
                 <button
                   type="button"
@@ -685,8 +690,15 @@ export default function DashboardPage() {
                 projectionConfig={{ scale: 78 }}
                 width={MAP_SVG_W}
                 height={MAP_SVG_H}
-                className="block !max-h-[260px] h-[260px] w-full max-w-full align-top"
-                style={{ width: "100%", height: "260px", maxHeight: "260px", display: "block", verticalAlign: "top" }}
+                className="block align-top"
+                style={{
+                  width: MAP_SVG_W,
+                  height: MAP_SVG_H,
+                  display: "block",
+                  verticalAlign: "top",
+                  maxWidth: MAP_SVG_W,
+                  maxHeight: MAP_SVG_H,
+                }}
               >
                 <ZoomableGroup
                   center={WORLD_CENTER}
@@ -745,24 +757,31 @@ export default function DashboardPage() {
           </div>
         </article>
 
-        <article className={`${refCard} flex min-h-0 min-w-0 flex-col p-3 lg:col-span-4`}>
-          <RefPanelHeader title="Sales" subtitle="Event 'Purchase Button'" />
-          <div className="h-[320px] w-full flex-1">
+        <article className={`${refCard} flex min-h-0 min-w-0 flex-col p-2 lg:col-span-4`}>
+          <RefPanelHeader compact title="Sales" subtitle="Event 'Purchase Button'" />
+          <div className="min-h-[400px] w-full min-w-0 flex-1">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={salesLineData} margin={{ top: 4, right: 2, left: -4, bottom: 2 }}>
+              <LineChart data={salesLineData} margin={{ top: 8, right: 4, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="label" tick={{ fontSize: 8, fill: "#64748b" }} interval={0} angle={-25} textAnchor="end" height={52} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: "#64748b" }}
+                  interval={0}
+                  angle={-20}
+                  textAnchor="end"
+                  height={44}
+                />
                 <YAxis
                   yAxisId="left"
-                  tick={{ fontSize: 9, fill: "#1f3147" }}
-                  width={36}
+                  tick={{ fontSize: 10, fill: "#1f3147" }}
+                  width={42}
                   tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : v)}
                 />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
-                  tick={{ fontSize: 9, fill: "#1abc9c" }}
-                  width={22}
+                  tick={{ fontSize: 10, fill: "#1abc9c" }}
+                  width={28}
                   allowDecimals={false}
                 />
                 <Tooltip
