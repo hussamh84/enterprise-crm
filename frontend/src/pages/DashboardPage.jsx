@@ -101,6 +101,54 @@ export default function DashboardPage() {
     ];
   }, [projectsList]);
 
+  const recentProjects = useMemo(
+    () =>
+      [...projectsList]
+        .sort((a, b) => new Date(b?.createdAt || 0).getTime() - new Date(a?.createdAt || 0).getTime())
+        .slice(0, 5),
+    [projectsList]
+  );
+
+  const recentInvoices = useMemo(
+    () =>
+      [...invoices]
+        .sort((a, b) => new Date(b?.createdAt || 0).getTime() - new Date(a?.createdAt || 0).getTime())
+        .slice(0, 5),
+    [invoices]
+  );
+
+  const projectStatusMeta = (status) => {
+    const s = String(status || "").toLowerCase();
+    if (s === "completed" || s === "paid") {
+      return { label: "Completed", className: "bg-green-100 text-green-700" };
+    }
+    if (s === "pending" || s === "in_progress" || s === "in progress") {
+      return { label: "Pending", className: "bg-yellow-100 text-yellow-700" };
+    }
+    return { label: "Active", className: "bg-blue-100 text-blue-700" };
+  };
+
+  const projectProgress = (status) => {
+    const s = String(status || "").toLowerCase();
+    if (s === "completed" || s === "paid") return 100;
+    if (s === "pending" || s === "in_progress" || s === "in progress") return 45;
+    return 70;
+  };
+
+  const invoicePaymentMeta = (invoice) => {
+    const total = Number(invoice?.total ?? invoice?.grandTotal ?? 0);
+    const paid = Number(invoice?.paidAmount ?? 0);
+    const remaining = Number(invoice?.remainingAmount ?? Math.max(total - paid, 0));
+    const status = String(invoice?.status || "").toLowerCase();
+    if (status === "paid" || remaining <= 0) {
+      return { label: "Paid", className: "bg-green-100 text-green-700" };
+    }
+    if (paid > 0 || status === "partial") {
+      return { label: "Partial", className: "bg-yellow-100 text-yellow-700" };
+    }
+    return { label: "Unpaid", className: "bg-red-100 text-red-700" };
+  };
+
   const cards = [
     {
       title: "Total Revenue",
@@ -209,6 +257,83 @@ export default function DashboardPage() {
                 <Bar dataKey="count" fill="#0B132B" radius={[6, 6, 0, 0]} name="Projects" />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-semibold text-slate-900">Recent Projects</h3>
+          <div className="space-y-3">
+            {recentProjects.length === 0 ? (
+              <p className="text-sm text-slate-500">No projects available.</p>
+            ) : (
+              recentProjects.map((project) => {
+                const meta = projectStatusMeta(project?.status);
+                const progress = projectProgress(project?.status);
+                return (
+                  <div key={project?._id} className="rounded-xl border border-slate-100 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-slate-900">{project?.name || "Project"}</p>
+                        <p className="truncate text-xs text-slate-500">
+                          {project?.clientId?.name || "No client"} •{" "}
+                          {new Date(project?.createdAt || Date.now()).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${meta.className}`}>
+                        {meta.label}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="h-2 flex-1 rounded-full bg-slate-100">
+                        <div
+                          className="h-2 rounded-full bg-[#0B132B]"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-slate-600">{progress}%</span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-semibold text-slate-900">Recent Invoices</h3>
+          <div className="space-y-3">
+            {recentInvoices.length === 0 ? (
+              <p className="text-sm text-slate-500">No invoices available.</p>
+            ) : (
+              recentInvoices.map((invoice) => {
+                const meta = invoicePaymentMeta(invoice);
+                return (
+                  <div key={invoice?._id} className="rounded-xl border border-slate-100 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-slate-900">
+                          {invoice?.invoiceNo || invoice?.invoiceNumber || `INV-${String(invoice?._id || "").slice(-6)}`}
+                        </p>
+                        <p className="truncate text-xs text-slate-500">
+                          {invoice?.clientId?.name || invoice?.clientName || "No client"} •{" "}
+                          {new Date(invoice?.createdAt || Date.now()).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${meta.className}`}>
+                        {meta.label}
+                      </span>
+                    </div>
+                    <div className="mt-2 text-sm font-semibold text-slate-900">
+                      {formatCurrency(
+                        Number(invoice?.total ?? invoice?.grandTotal ?? invoice?.paidAmount ?? 0)
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
