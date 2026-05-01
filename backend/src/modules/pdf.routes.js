@@ -342,12 +342,17 @@ router.get("/quotations/:id/pdf", async (req, res, next) => {
     const project = quotation.projectId
       ? await models.Project.findOne({ _id: quotation.projectId, tenantId: req.tenantId, deletedAt: null })
       : null;
+    const walkBill = String(quotation.walkInCustomerName || "").trim();
     const printableQuotation = {
       ...quotation.toObject(),
-      clientName: client?.name || quotation.clientName,
+      clientName: walkBill || client?.name || quotation.clientName,
       projectName: project?.name || quotation.projectName,
-      clientEmail: client?.contacts?.[0]?.email || quotation.clientEmail,
-      clientPhone: client?.contacts?.[0]?.phone || quotation.clientPhone,
+      clientEmail: walkBill
+        ? String(quotation.walkInCustomerEmail || "").trim() || "-"
+        : client?.contacts?.[0]?.email || quotation.clientEmail,
+      clientPhone: walkBill
+        ? String(quotation.walkInCustomerPhone || "").trim() || "-"
+        : client?.contacts?.[0]?.phone || quotation.clientPhone,
       clientAddress: quotation.clientAddress || "-",
     };
 

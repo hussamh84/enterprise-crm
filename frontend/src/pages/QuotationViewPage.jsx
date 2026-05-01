@@ -43,7 +43,11 @@ export default function QuotationViewPage() {
   const quotation = data?.quotation ?? data;
   const client = data?.client;
   const project = data?.project;
-  const clientName = data?.clientName || client?.name || quotation?.clientName;
+  const clientName =
+    data?.clientName ||
+    client?.name ||
+    String(quotation?.walkInCustomerName || "").trim() ||
+    quotation?.clientName;
   const projectName = data?.projectName || project?.name || quotation?.projectName;
   const projectTypeLine = formatProjectTypeDisplay({
     projectType: quotation?.projectType || project?.projectType,

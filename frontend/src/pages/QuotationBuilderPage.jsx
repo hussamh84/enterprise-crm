@@ -26,8 +26,13 @@ export default function QuotationBuilderPage() {
   const presetClientId = searchParams.get("clientId") || "";
   const presetProjectId = searchParams.get("projectId") || "";
   const [name, setName] = useState("");
+  const [customerMode, setCustomerMode] = useState("existing");
   const [clientId, setClientId] = useState(isEdit ? "" : presetClientId);
   const [projectId, setProjectId] = useState(isEdit ? "" : presetProjectId);
+  const [clientSearch, setClientSearch] = useState("");
+  const [walkInName, setWalkInName] = useState("");
+  const [walkInPhone, setWalkInPhone] = useState("");
+  const [walkInEmail, setWalkInEmail] = useState("");
   const [discountType, setDiscountType] = useState("fixed");
   const [discountValue, setDiscountValue] = useState(0);
   const [tax, setTax] = useState(0);
@@ -51,8 +56,14 @@ export default function QuotationBuilderPage() {
     if (!isEdit || !editBundle?.quotation) return;
     const q = editBundle.quotation;
     setName(q.name || "");
+    const walkin =
+      String(q.customerKind || "").toLowerCase() === "walkin" || Boolean(String(q.walkInCustomerName || "").trim());
+    setCustomerMode(walkin ? "walkin" : "existing");
     setClientId(String(q.clientId || ""));
     setProjectId(String(q.projectId || ""));
+    setWalkInName(String(q.walkInCustomerName || q.customerName || "").trim());
+    setWalkInPhone(String(q.walkInCustomerPhone || q.customerPhone || "").trim());
+    setWalkInEmail(String(q.walkInCustomerEmail || q.customerEmail || "").trim());
     const d = q.discount || {};
     setDiscountType(d.type === "percentage" ? "percentage" : "fixed");
     setDiscountValue(d.value ?? 0);
@@ -75,9 +86,9 @@ export default function QuotationBuilderPage() {
       setProjectType(q.projectType);
       setCctvType(String(q.projectType).toLowerCase() === "cctv" ? String(q.cctvType || "") : "");
     } else if (editBundle.project) {
-      const d = deriveTypeFromProject(editBundle.project);
-      setProjectType(d.primary || "Network");
-      setCctvType(d.primary === "CCTV" ? d.cctv : "");
+      const derived = deriveTypeFromProject(editBundle.project);
+      setProjectType(derived.primary || "Network");
+      setCctvType(derived.primary === "CCTV" ? derived.cctv : "");
     } else {
       setProjectType("Network");
       setCctvType("");
@@ -96,13 +107,20 @@ export default function QuotationBuilderPage() {
     queryKey: ["/projects", "quotation-builder"],
     queryFn: async () => (await api.get("/projects")).data,
   });
+
+  const filteredClients = useMemo(() => {
+    const q = clientSearch.trim().toLowerCase();
+    if (!q) return clients;
+    return clients.filter((c) => String(c.name || "").toLowerCase().includes(q) || String(c.email || "").toLowerCase().includes(q));
+  }, [clients, clientSearch]);
+
   const clientProjects = useMemo(
     () => projects.filter((project) => String(project.clientId?._id || project.clientId) === String(clientId)),
     [projects, clientId]
   );
 
   useEffect(() => {
-    if (isEdit) return;
+    if (isEdit || customerMode !== "existing") return;
     if (!projectId || !clientId) return;
     const p = projects.find(
       (x) => String(x._id) === String(projectId) && String(x.clientId?._id || x.clientId) === String(clientId)
@@ -111,7 +129,7 @@ export default function QuotationBuilderPage() {
     const d = deriveTypeFromProject(p);
     setProjectType(d.primary || "Network");
     setCctvType(d.primary === "CCTV" ? d.cctv : "");
-  }, [projectId, clientId, isEdit, projects]);
+  }, [projectId, clientId, isEdit, projects, customerMode]);
 
   const calculatedItems = useMemo(
     () =>
@@ -145,10 +163,15 @@ export default function QuotationBuilderPage() {
 
   const saveQuotation = useMutation({
     mutationFn: async () => {
+      const isWalkin = customerMode === "walkin";
       const body = {
         name,
-        clientId,
-        projectId,
+        customerKind: isWalkin ? "walkin" : "existing",
+        clientId: isWalkin ? clientId || "" : clientId,
+        projectId: isWalkin ? "" : projectId,
+        walkInCustomerName: isWalkin ? walkInName.trim() : "",
+        walkInCustomerPhone: isWalkin ? walkInPhone.trim() : "",
+        walkInCustomerEmail: isWalkin ? walkInEmail.trim().toLowerCase() : "",
         projectType,
         cctvType: projectType === "CCTV" ? cctvType : "",
         items: calculatedItems,
@@ -170,6 +193,13 @@ export default function QuotationBuilderPage() {
       else navigate("/quotations");
     },
   });
+
+  const canSave = useMemo(() => {
+    if (!name.trim() || !projectType || (projectType === "CCTV" && !cctvType)) return false;
+    if (calculatedItems.length === 0 || calculatedItems.some((item) => !item.description)) return false;
+    if (customerMode === "walkin") return Boolean(walkInName.trim());
+    return Boolean(clientId && projectId);
+  }, [name, projectType, cctvType, calculatedItems, customerMode, walkInName, clientId, projectId]);
 
   const updateItem = (index, key, value) => {
     setItems((previous) => previous.map((item, itemIndex) => (itemIndex === index ? { ...item, [key]: value } : item)));
@@ -266,63 +296,129 @@ export default function QuotationBuilderPage() {
       </div>
 
       <div className="premium-card p-5 space-y-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <input className="w-full" value={name} onChange={(event) => setName(event.target.value)} placeholder="Quotation title" />
-          <select className="w-full" value={clientId} onChange={(event) => { setClientId(event.target.value); setProjectId(""); }}>
-            <option value="">Select client</option>
-            {clients.map((client) => (
-              <option key={client._id} value={client._id}>
-                {client.name}
-              </option>
-            ))}
-          </select>
-          <select className="w-full" value={projectId} onChange={(event) => setProjectId(event.target.value)} disabled={!clientId}>
-            <option value="">Select project</option>
-            {clientProjects.map((project) => (
-              <option key={project._id} value={project._id}>{project.name}</option>
-            ))}
-          </select>
-          <div className="sm:col-span-2 lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="quote-project-type" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                Project Type
-              </label>
-              <select
-                id="quote-project-type"
-                className="w-full"
-                value={projectType}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setProjectType(v);
-                  if (v !== "CCTV") setCctvType("");
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+          <input
+            className="w-full lg:col-span-3"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Quotation title"
+          />
+
+          <div className="lg:col-span-4 space-y-2 min-w-0">
+            <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50">
+              <button
+                type="button"
+                className={`px-3 py-1.5 text-sm rounded-md ${customerMode === "existing" ? "bg-white shadow text-[#0a2540] font-medium" : "text-[#64748b]"}`}
+                onClick={() => {
+                  setCustomerMode("existing");
+                  setWalkInName("");
+                  setWalkInPhone("");
+                  setWalkInEmail("");
                 }}
               >
-                {PROJECT_TYPE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
+                Existing Client
+              </button>
+              <button
+                type="button"
+                className={`px-3 py-1.5 text-sm rounded-md ${customerMode === "walkin" ? "bg-white shadow text-[#0a2540] font-medium" : "text-[#64748b]"}`}
+                onClick={() => {
+                  setCustomerMode("walkin");
+                  setClientId("");
+                  setProjectId("");
+                  setClientSearch("");
+                }}
+              >
+                Walk-in Customer
+              </button>
             </div>
-            {projectType === "CCTV" ? (
-              <div>
-                <label htmlFor="quote-cctv-type" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                  CCTV Type
-                </label>
-                <select
-                  id="quote-cctv-type"
+            {customerMode === "existing" ? (
+              <>
+                <input
                   className="w-full"
-                  value={cctvType}
-                  onChange={(e) => setCctvType(e.target.value)}
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  placeholder="Search clients…"
+                />
+                <select
+                  className="w-full"
+                  value={clientId}
+                  onChange={(event) => {
+                    setClientId(event.target.value);
+                    setProjectId("");
+                  }}
                 >
-                  <option value="">Select CCTV type</option>
-                  <option value="IP">IP</option>
-                  <option value="Analog">Analog</option>
+                  <option value="">Select client</option>
+                  {filteredClients.map((client) => (
+                    <option key={client._id} value={client._id}>
+                      {client.name}
+                    </option>
+                  ))}
                 </select>
-              </div>
+              </>
             ) : (
-              <div className="hidden sm:block" aria-hidden />
+              <>
+                <input className="w-full" value={walkInName} onChange={(e) => setWalkInName(e.target.value)} placeholder="Customer name" />
+                <input className="w-full" value={walkInPhone} onChange={(e) => setWalkInPhone(e.target.value)} placeholder="Phone" />
+                <input
+                  className="w-full"
+                  type="email"
+                  value={walkInEmail}
+                  onChange={(e) => setWalkInEmail(e.target.value)}
+                  placeholder="Email (optional)"
+                />
+              </>
             )}
           </div>
+
+          <div className="lg:col-span-2 min-w-0">
+            <label htmlFor="quote-project-type" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              Project Type
+            </label>
+            <select
+              id="quote-project-type"
+              className="w-full"
+              value={projectType}
+              onChange={(e) => {
+                const v = e.target.value;
+                setProjectType(v);
+                if (v !== "CCTV") setCctvType("");
+              }}
+            >
+              {PROJECT_TYPE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {customerMode === "existing" ? (
+            <select className="w-full lg:col-span-3" value={projectId} onChange={(event) => setProjectId(event.target.value)} disabled={!clientId}>
+              <option value="">Select project</option>
+              {clientProjects.map((project) => (
+                <option key={project._id} value={project._id}>{project.name}</option>
+              ))}
+            </select>
+          ) : (
+            <p className="lg:col-span-3 text-xs text-[#64748b] self-end pb-2">No project link for walk-in quotes.</p>
+          )}
         </div>
+
+        {projectType === "CCTV" ? (
+          <div className="max-w-xs">
+            <label htmlFor="quote-cctv-type" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              CCTV Type
+            </label>
+            <select
+              id="quote-cctv-type"
+              className="w-full"
+              value={cctvType}
+              onChange={(e) => setCctvType(e.target.value)}
+            >
+              <option value="">Select CCTV type</option>
+              <option value="IP">IP</option>
+              <option value="Analog">Analog</option>
+            </select>
+          </div>
+        ) : null}
 
         <div className="space-y-3">
           {items.map((item, index) => (
@@ -437,16 +533,7 @@ export default function QuotationBuilderPage() {
               padding: "0 12px",
               borderRadius: "8px",
             }}
-            disabled={
-              saveQuotation.isPending ||
-              !name ||
-              !clientId ||
-              !projectId ||
-              !projectType ||
-              (projectType === "CCTV" && !cctvType) ||
-              calculatedItems.length === 0 ||
-              calculatedItems.some((item) => !item.description)
-            }
+            disabled={saveQuotation.isPending || !canSave}
             onClick={() => saveQuotation.mutate()}
           >
             <FileText size={16} />

@@ -79,7 +79,11 @@ const Visit = makeEntityModel("Visit", {
   status: { type: String, enum: ["ON_SITE", "OUTSIDE"], default: "OUTSIDE" },
 });
 const Quotation = makeEntityModel("Quotation", {
-  clientId: { type: String, required: true },
+  clientId: { type: String, default: "" },
+  customerKind: { type: String, enum: ["existing", "walkin"], default: "existing" },
+  walkInCustomerName: { type: String, trim: true, default: "" },
+  walkInCustomerPhone: { type: String, trim: true, default: "" },
+  walkInCustomerEmail: { type: String, trim: true, default: "" },
   customerName: { type: String, trim: true, default: "" },
   customerPhone: { type: String, trim: true, default: "" },
   customerEmail: { type: String, trim: true, default: "" },
@@ -315,6 +319,57 @@ const resolveClientForSale = async ({ req, tenantId, source, clientIdRaw, walkIn
   if (!name) return "";
   // Keep walk-in sales independent from the client database.
   return String(new mongoose.Types.ObjectId());
+};
+
+const resolveQuotationClientAndProject = ({
+  customerKind,
+  clientIdRaw,
+  projectIdRaw,
+  walkInName,
+  walkInPhone,
+  walkInEmail,
+}) => {
+  const isWalkIn = String(customerKind || "").toLowerCase() === "walkin";
+  const walkName = String(walkInName || "").trim();
+  const clientId = String(clientIdRaw || "").trim();
+  const projectId = String(projectIdRaw || "").trim();
+
+  if (isWalkIn) {
+    if (!walkName) {
+      return { error: new AppError("Customer name is required for walk-in quotations", 400) };
+    }
+    const existingId = String(clientIdRaw || "").trim();
+    const stableClientId =
+      existingId && mongoose.Types.ObjectId.isValid(existingId)
+        ? existingId
+        : String(new mongoose.Types.ObjectId());
+    return {
+      isWalkIn: true,
+      clientId: stableClientId,
+      projectId: "",
+      walkInCustomerName: walkName,
+      walkInCustomerPhone: String(walkInPhone || "").trim(),
+      walkInCustomerEmail: String(walkInEmail || "").trim().toLowerCase(),
+      customerName: walkName,
+      customerPhone: String(walkInPhone || "").trim(),
+      customerEmail: String(walkInEmail || "").trim().toLowerCase(),
+    };
+  }
+
+  if (!clientId) {
+    return { error: new AppError("clientId is required", 400) };
+  }
+  if (!projectId) {
+    return { error: new AppError("projectId is required", 400) };
+  }
+  return {
+    isWalkIn: false,
+    clientId,
+    projectId,
+    walkInCustomerName: "",
+    walkInCustomerPhone: "",
+    walkInCustomerEmail: "",
+  };
 };
 
 const calculateInvoiceProfitFromItems = async ({ tenantId, items = [] }) => {
@@ -615,9 +670,9 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
           purchaseCost: Number.isFinite(quotationPurchaseCost) && quotationPurchaseCost >= 0 ? quotationPurchaseCost : 0,
           supplierName: String(quotation.supplierName || ""),
           supplierPhone: String(quotation.supplierPhone || ""),
-          customerName: String(quotation.customerName || ""),
-          customerPhone: String(quotation.customerPhone || ""),
-          customerEmail: String(quotation.customerEmail || ""),
+          customerName: String(quotation.walkInCustomerName || quotation.customerName || ""),
+          customerPhone: String(quotation.walkInCustomerPhone || quotation.customerPhone || ""),
+          customerEmail: String(quotation.walkInCustomerEmail || quotation.customerEmail || ""),
           quotationId: String(quotation._id),
           total,
           profit:
@@ -1379,11 +1434,14 @@ router.get("/quotations", async (req, res, next) => {
     const enrichedQuotations = quotationObjects.map((quotation) => {
       const rawClientId = String(quotation.clientId || "");
       const client = clientMap[rawClientId];
+      const walkLabel = String(quotation.walkInCustomerName || "").trim();
       return {
         ...quotation,
         clientId: client
           ? { _id: String(client._id), name: client.name || "", email: client.email || "" }
-          : quotation.clientId,
+          : walkLabel
+            ? { _id: rawClientId, name: `${walkLabel} (walk-in)`, email: quotation.walkInCustomerEmail || "" }
+            : quotation.clientId,
       };
     });
 
@@ -1402,11 +1460,12 @@ router.get("/quotations/:id", async (req, res, next) => {
       quotation.clientId ? Client.findOne({ _id: quotation.clientId, tenantId, deletedAt: null }) : null,
       quotation.projectId ? Project.findOne({ _id: quotation.projectId, tenantId, deletedAt: null }) : null,
     ]);
+    const walkName = String(quotation.walkInCustomerName || "").trim();
     res.json({
       quotation,
       client,
       project,
-      clientName: client?.name || "",
+      clientName: walkName || client?.name || "",
       projectName: project?.name || "",
     });
   } catch (error) {
@@ -1421,19 +1480,54 @@ router.post("/quotations", async (req, res, next) => {
     const source = String(req.body?.source || "project").toLowerCase() === "inventory" ? "inventory" : "project";
     const saleType = String(req.body?.saleType || "stock").toLowerCase() === "external_purchase" ? "external_purchase" : "stock";
     const purchaseCost = Number(req.body?.purchaseCost || 0);
-    const clientId = await resolveClientForSale({
-      req,
-      tenantId,
-      source,
-      clientIdRaw: req.body?.clientId,
-      walkInCustomer: req.body?.walkInCustomer,
-    });
-    const projectId = source === "inventory" ? null : String(req.body?.projectId || "").trim();
-    if (!clientId) return res.status(400).json({ message: "clientId is required" });
-    if (source === "project") {
-      if (!projectId) return res.status(400).json({ message: "projectId is required" });
-      await ensureClientProjectLink({ tenantId, clientId, projectId });
+
+    let clientId = "";
+    let projectId = source === "inventory" ? null : String(req.body?.projectId || "").trim();
+    let walkInCustomerName = "";
+    let walkInCustomerPhone = "";
+    let walkInCustomerEmail = "";
+    let customerKind = "existing";
+    let customerName = "";
+    let customerPhone = "";
+    let customerEmail = "";
+
+    if (source === "inventory") {
+      clientId = await resolveClientForSale({
+        req,
+        tenantId,
+        source,
+        clientIdRaw: req.body?.clientId,
+        walkInCustomer: req.body?.walkInCustomer,
+      });
+      if (!clientId) return res.status(400).json({ message: "clientId is required" });
+    } else {
+      customerKind = String(req.body?.customerKind || "existing").toLowerCase() === "walkin" ? "walkin" : "existing";
+      const walkInName = String(req.body?.walkInCustomerName || req.body?.walkInCustomer?.name || "").trim();
+      const walkInPhone = String(req.body?.walkInCustomerPhone || req.body?.walkInCustomer?.phone || "").trim();
+      const walkInMail = String(req.body?.walkInCustomerEmail || req.body?.walkInCustomer?.email || "").trim();
+      const resolved = resolveQuotationClientAndProject({
+        customerKind,
+        clientIdRaw: req.body?.clientId,
+        projectIdRaw: req.body?.projectId,
+        walkInName,
+        walkInPhone,
+        walkInEmail: walkInMail,
+      });
+      if (resolved.error) return next(resolved.error);
+      clientId = resolved.clientId;
+      projectId = resolved.projectId;
+      if (resolved.isWalkIn) {
+        walkInCustomerName = resolved.walkInCustomerName;
+        walkInCustomerPhone = resolved.walkInCustomerPhone;
+        walkInCustomerEmail = resolved.walkInCustomerEmail;
+        customerName = resolved.customerName;
+        customerPhone = resolved.customerPhone;
+        customerEmail = resolved.customerEmail;
+      } else {
+        await ensureClientProjectLink({ tenantId, clientId, projectId });
+      }
     }
+
     const quotationNo = await generateDocumentNo({ model: Quotation, prefix: "QTN", tenantId });
 
     const calculated = source === "inventory"
@@ -1450,14 +1544,27 @@ router.post("/quotations", async (req, res, next) => {
       quotationNo,
       name: String(req.body?.name || "").trim() || quotationNo,
       clientId,
-      customerName: String(req.body?.walkInCustomer?.name || "").trim(),
-      customerPhone: String(req.body?.walkInCustomer?.phone || "").trim(),
-      customerEmail: String(req.body?.walkInCustomer?.email || "").trim(),
+      customerKind: source === "inventory" ? "existing" : customerKind,
+      walkInCustomerName,
+      walkInCustomerPhone,
+      walkInCustomerEmail,
+      customerName:
+        source === "inventory"
+          ? String(req.body?.walkInCustomer?.name || "").trim()
+          : customerName || String(req.body?.customerName || "").trim(),
+      customerPhone:
+        source === "inventory"
+          ? String(req.body?.walkInCustomer?.phone || "").trim()
+          : customerPhone || String(req.body?.customerPhone || "").trim(),
+      customerEmail:
+        source === "inventory"
+          ? String(req.body?.walkInCustomer?.email || "").trim()
+          : customerEmail || String(req.body?.customerEmail || "").trim(),
       saleType,
       purchaseCost: Number.isFinite(purchaseCost) && purchaseCost >= 0 ? purchaseCost : 0,
       supplierName: String(req.body?.supplierName || "").trim(),
       supplierPhone: String(req.body?.supplierPhone || "").trim(),
-      projectId,
+      projectId: source === "inventory" ? null : projectId,
       source,
       ...calculated,
       ...typeFields,
@@ -1488,13 +1595,47 @@ router.put("/quotations/:id", async (req, res, next) => {
   try {
     const tenantId = getTenantId(req);
     if (!tenantId) return next(new AppError("Tenant context is required", 400));
-    const clientId = String(req.body?.clientId || "").trim();
     const source = String(req.body?.source || "project").toLowerCase() === "inventory" ? "inventory" : "project";
-    const projectId = source === "inventory" ? null : String(req.body?.projectId || "").trim();
-    if (!clientId) return res.status(400).json({ message: "clientId is required" });
-    if (source === "project") {
-      if (!projectId) return res.status(400).json({ message: "projectId is required" });
-      await ensureClientProjectLink({ tenantId, clientId, projectId });
+
+    let clientId = "";
+    let projectId = source === "inventory" ? null : String(req.body?.projectId || "").trim();
+    let walkInCustomerName = "";
+    let walkInCustomerPhone = "";
+    let walkInCustomerEmail = "";
+    let customerKind = "existing";
+    let customerName = "";
+    let customerPhone = "";
+    let customerEmail = "";
+
+    if (source === "inventory") {
+      clientId = String(req.body?.clientId || "").trim();
+      if (!clientId) return res.status(400).json({ message: "clientId is required" });
+    } else {
+      customerKind = String(req.body?.customerKind || "existing").toLowerCase() === "walkin" ? "walkin" : "existing";
+      const walkInName = String(req.body?.walkInCustomerName || req.body?.walkInCustomer?.name || "").trim();
+      const walkInPhone = String(req.body?.walkInCustomerPhone || req.body?.walkInCustomer?.phone || "").trim();
+      const walkInMail = String(req.body?.walkInCustomerEmail || req.body?.walkInCustomer?.email || "").trim();
+      const resolved = resolveQuotationClientAndProject({
+        customerKind,
+        clientIdRaw: req.body?.clientId,
+        projectIdRaw: req.body?.projectId,
+        walkInName,
+        walkInPhone,
+        walkInEmail: walkInMail,
+      });
+      if (resolved.error) return next(resolved.error);
+      clientId = resolved.clientId;
+      projectId = resolved.projectId;
+      if (resolved.isWalkIn) {
+        walkInCustomerName = resolved.walkInCustomerName;
+        walkInCustomerPhone = resolved.walkInCustomerPhone;
+        walkInCustomerEmail = resolved.walkInCustomerEmail;
+        customerName = resolved.customerName;
+        customerPhone = resolved.customerPhone;
+        customerEmail = resolved.customerEmail;
+      } else {
+        await ensureClientProjectLink({ tenantId, clientId, projectId });
+      }
     }
 
     const calculated = await computeQuotationTotals({ tenantId, payload: req.body });
@@ -1504,7 +1645,23 @@ router.put("/quotations/:id", async (req, res, next) => {
       {
         ...req.body,
         clientId,
-        projectId,
+        projectId: source === "inventory" ? null : projectId,
+        customerKind: source === "inventory" ? "existing" : customerKind,
+        walkInCustomerName: source === "inventory" ? "" : walkInCustomerName,
+        walkInCustomerPhone: source === "inventory" ? "" : walkInCustomerPhone,
+        walkInCustomerEmail: source === "inventory" ? "" : walkInCustomerEmail,
+        customerName:
+          source === "inventory"
+            ? String(req.body?.walkInCustomer?.name || "").trim()
+            : customerName || String(req.body?.customerName || "").trim(),
+        customerPhone:
+          source === "inventory"
+            ? String(req.body?.walkInCustomer?.phone || "").trim()
+            : customerPhone || String(req.body?.customerPhone || "").trim(),
+        customerEmail:
+          source === "inventory"
+            ? String(req.body?.walkInCustomer?.email || "").trim()
+            : customerEmail || String(req.body?.customerEmail || "").trim(),
         source,
         ...calculated,
         ...typeFields,
@@ -1538,7 +1695,14 @@ router.patch("/quotations/:id/approve", async (req, res, next) => {
     const before = await Quotation.findOne({ _id: req.params.id, tenantId, deletedAt: null });
     if (!before) return res.status(404).json({ message: "Quotation not found" });
     const quotationSource = String(before.source || "project").toLowerCase();
-    if (quotationSource === "project" && (before.projectId == null || String(before.projectId).trim() === "")) {
+    const isWalkInQuotation =
+      String(before.customerKind || "").toLowerCase() === "walkin" ||
+      Boolean(String(before.walkInCustomerName || "").trim());
+    if (
+      quotationSource === "project" &&
+      (before.projectId == null || String(before.projectId).trim() === "") &&
+      !isWalkInQuotation
+    ) {
       return res.status(400).json({
         message: "Quotation must be linked to a project before approval.",
       });
