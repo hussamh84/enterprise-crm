@@ -27,13 +27,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import {
-  ComposableMap,
-  Geographies,
-  Geography,
-  Marker,
-  useMapContext,
-} from "react-simple-maps";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
 
@@ -47,46 +40,6 @@ const C = {
   red: "#e74c3c",
   green: "#95c11f",
 };
-
-/** World TopoJSON (static CDN). Sudan marker: [longitude, latitude]. */
-const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
-const SUDAN_CENTER = [30.2176, 12.8628];
-/** Full-world framing (Mercator): Atlantic-centered, all continents visible. */
-const WORLD_CENTER = [0, 14];
-/** Static viewport zoom (lower = slightly wider world; tuned with projection scale). */
-const WORLD_ZOOM_STATIC = 0.56;
-/** Larger canvas = bigger on-screen map; same aspect as prior 1400×260. */
-const MAP_SVG_W = 1615;
-const MAP_SVG_H = 300;
-const MAP_PROJECTION_SCALE = 86;
-
-/** Non-interactive viewport: same translate/scale math as react-simple-maps ZoomableGroup initial view. */
-function StaticWorldViewport({ center, zoom, children }) {
-  const { projection, width, height } = useMapContext();
-  const transform = useMemo(() => {
-    const [lon, lat] = center;
-    const coords = projection([lon, lat]);
-    const x = coords[0] * zoom;
-    const y = coords[1] * zoom;
-    return `translate(${width / 2 - x} ${height / 2 - y}) scale(${zoom})`;
-  }, [center, zoom, projection, width, height]);
-  return <g transform={transform}>{children}</g>;
-}
-
-function projectCoordinates(project) {
-  const p = project && typeof project === "object" ? project : {};
-  const loc = p.location && typeof p.location === "object" ? p.location : {};
-  const client = p.clientId && typeof p.clientId === "object" ? p.clientId : {};
-  const latRaw =
-    p.lat ?? p.latitude ?? loc.lat ?? loc.latitude ?? client.lat ?? client.latitude;
-  const lngRaw =
-    p.lng ?? p.longitude ?? loc.lng ?? loc.longitude ?? client.lng ?? client.longitude;
-  const lat = latRaw != null && latRaw !== "" ? Number(latRaw) : NaN;
-  const lng = lngRaw != null && lngRaw !== "" ? Number(lngRaw) : NaN;
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
-  return [lng, lat];
-}
 
 function invoiceIsPaid(inv) {
   const status = String(inv?.status || "").toLowerCase();
@@ -292,24 +245,6 @@ export default function DashboardPage() {
     if (out.length === 0) out.push({ name: "Stock", value: Math.max(total, 1), color: C.navy });
     return out;
   }, [inventoryItems, inventoryValue]);
-
-  const projectGeoMarkers = useMemo(() => {
-    const out = [];
-    const seen = new Set();
-    for (const project of projectsList) {
-      const coords = projectCoordinates(project);
-      if (!coords) continue;
-      const key = `${coords[0].toFixed(4)},${coords[1].toFixed(4)}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push({
-        id: String(project?._id || key),
-        name: String(project?.name || "Project"),
-        coordinates: coords,
-      });
-    }
-    return out;
-  }, [projectsList]);
 
   const tableProjects = useMemo(
     () =>
@@ -610,10 +545,10 @@ export default function DashboardPage() {
       </section>
 
       <section
-        className="grid grid-cols-1 gap-2.5 lg:grid-cols-12 lg:gap-2 lg:items-stretch"
-        aria-label="Map and sales trend"
+        className="grid grid-cols-1 gap-2.5 lg:grid-cols-2 lg:gap-2 lg:items-stretch"
+        aria-label="Sales analytics"
       >
-        <article className={`${refCard} flex min-w-0 flex-col overflow-hidden p-3 lg:col-span-8`}>
+        <article className={`${refCard} flex min-h-0 min-w-0 flex-col p-3`}>
           <div className="mb-2 flex flex-wrap items-start justify-between gap-2 border-b border-gray-200 pb-2">
             <div>
               <h2 className="text-[12px] font-bold leading-tight text-[#1f3147]">Sales</h2>
@@ -623,124 +558,85 @@ export default function DashboardPage() {
               {mapRangeLabel}
             </span>
           </div>
-          <div className="flex min-w-0 flex-col gap-2 overflow-hidden lg:flex-row lg:items-stretch lg:gap-0">
-            <aside className="relative z-[1] flex w-full shrink-0 flex-col justify-center gap-2 border-gray-200 bg-white text-[9px] text-gray-600 lg:w-[24%] lg:max-w-[140px] lg:min-w-[112px] lg:border-r lg:pr-2.5 lg:shrink-0">
-              <div>
-                <p className="font-bold text-[#1f3147]">In Queue</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-200/90">
-                  <div className="h-full rounded-sm bg-[#1f3147]" style={{ width: `${mapSidebarStats.queuePct}%` }} />
-                </div>
-                <p className="mt-0.5 font-bold tabular-nums text-[#1f3147]">{mapSidebarStats.queuePct}%</p>
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            <div className="min-w-0 text-[9px] text-gray-600">
+              <p className="font-bold text-[#1f3147]">In Queue</p>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-200/90">
+                <div className="h-full rounded-sm bg-[#1f3147]" style={{ width: `${mapSidebarStats.queuePct}%` }} />
               </div>
-              <div>
-                <p className="font-bold text-[#1f3147]">Shipped Products</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-200/90">
-                  <div
-                    className="h-full rounded-sm bg-[#1f3147]"
-                    style={{ width: `${Math.min(100, (mapSidebarStats.shipped / mapSidebarStats.shipCap) * 100)}%` }}
-                  />
-                </div>
-                <p className="mt-0.5 font-bold tabular-nums text-[#1f3147]">
-                  {mapSidebarStats.shipped}/{mapSidebarStats.shipCap}
-                </p>
-              </div>
-              <div>
-                <p className="font-bold text-[#1f3147]">Returned Products</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-200/90">
-                  <div
-                    className="h-full rounded-sm bg-[#e74c3c]"
-                    style={{ width: `${Math.min(100, (mapSidebarStats.lowStock / mapSidebarStats.retCap) * 100)}%` }}
-                  />
-                </div>
-                <p className="mt-0.5 font-bold tabular-nums text-[#e74c3c]">
-                  {mapSidebarStats.lowStock}/{mapSidebarStats.retCap}
-                </p>
-              </div>
-              <div>
-                <p className="font-bold text-[#1f3147]">Progress Today</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-200/90">
-                  <div
-                    className="h-full rounded-sm bg-[#1abc9c]"
-                    style={{ width: `${Math.min(100, (mapSidebarStats.todayPaid / mapSidebarStats.dayGoal) * 100)}%` }}
-                  />
-                </div>
-                <p className="mt-0.5 font-bold tabular-nums text-[#1abc9c]">
-                  {mapSidebarStats.todayPaid}/{mapSidebarStats.dayGoal}
-                </p>
-              </div>
-            </aside>
-            <div
-              className="relative isolate min-h-0 min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-200 bg-white leading-[0] pointer-events-none select-none"
-              role="img"
-              aria-label="World map"
-            >
-              <ComposableMap
-                projection="geoMercator"
-                projectionConfig={{ scale: MAP_PROJECTION_SCALE }}
-                width={MAP_SVG_W}
-                height={MAP_SVG_H}
-                preserveAspectRatio="xMidYMid meet"
-                className="block w-full max-w-full align-top [&:focus]:outline-none"
-                style={{
-                  width: "100%",
-                  height: MAP_SVG_H,
-                  maxWidth: "100%",
-                  display: "block",
-                  verticalAlign: "top",
-                  pointerEvents: "none",
-                }}
-              >
-                <StaticWorldViewport center={WORLD_CENTER} zoom={WORLD_ZOOM_STATIC}>
-                  <rect x={-2800} y={-1400} width={5600} height={2800} fill="#ffffff" />
-                  <Geographies geography={WORLD_GEO_URL}>
-                    {({ geographies }) =>
-                      geographies.map((geo) => (
-                        <Geography
-                          key={geo.rsmKey}
-                          geography={geo}
-                          fill="#23364d"
-                          stroke="#1f3147"
-                          strokeWidth={0.5}
-                          style={{
-                            default: { outline: "none" },
-                            hover: { outline: "none", fill: "#23364d" },
-                            pressed: { outline: "none" },
-                          }}
-                        />
-                      ))
-                    }
-                  </Geographies>
-                  {projectGeoMarkers.map((m) => (
-                    <Marker key={m.id} coordinates={m.coordinates}>
-                      <circle
-                        r={4.75}
-                        fill="#1abc9c"
-                        stroke="rgba(255,255,255,0.85)"
-                        strokeWidth={1.35}
-                        style={{ filter: "drop-shadow(0 0 3px rgba(26, 188, 156, 0.9))" }}
-                      />
-                    </Marker>
-                  ))}
-                  <Marker coordinates={SUDAN_CENTER}>
-                    <circle
-                      r={12.5}
-                      fill="#1abc9c"
-                      stroke="#ffffff"
-                      strokeWidth={2.1}
-                      style={{ filter: "drop-shadow(0 0 10px rgba(26, 188, 156, 1)) drop-shadow(0 0 4px rgba(26, 188, 156, 0.8))" }}
-                    />
-                  </Marker>
-                </StaticWorldViewport>
-              </ComposableMap>
+              <p className="mt-0.5 font-bold tabular-nums text-[#1f3147]">{mapSidebarStats.queuePct}%</p>
             </div>
+            <div className="min-w-0 text-[9px] text-gray-600">
+              <p className="font-bold text-[#1f3147]">Shipped Products</p>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-200/90">
+                <div
+                  className="h-full rounded-sm bg-[#1f3147]"
+                  style={{ width: `${Math.min(100, (mapSidebarStats.shipped / mapSidebarStats.shipCap) * 100)}%` }}
+                />
+              </div>
+              <p className="mt-0.5 font-bold tabular-nums text-[#1f3147]">
+                {mapSidebarStats.shipped}/{mapSidebarStats.shipCap}
+              </p>
+            </div>
+            <div className="min-w-0 text-[9px] text-gray-600">
+              <p className="font-bold text-[#1f3147]">Returned Products</p>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-200/90">
+                <div
+                  className="h-full rounded-sm bg-[#e74c3c]"
+                  style={{ width: `${Math.min(100, (mapSidebarStats.lowStock / mapSidebarStats.retCap) * 100)}%` }}
+                />
+              </div>
+              <p className="mt-0.5 font-bold tabular-nums text-[#e74c3c]">
+                {mapSidebarStats.lowStock}/{mapSidebarStats.retCap}
+              </p>
+            </div>
+            <div className="min-w-0 text-[9px] text-gray-600">
+              <p className="font-bold text-[#1f3147]">Progress Today</p>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-gray-200/90">
+                <div
+                  className="h-full rounded-sm bg-[#1abc9c]"
+                  style={{ width: `${Math.min(100, (mapSidebarStats.todayPaid / mapSidebarStats.dayGoal) * 100)}%` }}
+                />
+              </div>
+              <p className="mt-0.5 font-bold tabular-nums text-[#1abc9c]">
+                {mapSidebarStats.todayPaid}/{mapSidebarStats.dayGoal}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 min-h-[300px] w-full min-w-0 flex-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={salesLineData} margin={{ top: 8, right: 8, left: 4, bottom: 8 }} barCategoryGap="12%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 9, fill: "#64748b" }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={0}
+                />
+                <YAxis
+                  tick={{ fontSize: 9, fill: "#1f3147" }}
+                  width={40}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : v)}
+                />
+                <Tooltip
+                  contentStyle={{ fontSize: 10, borderRadius: 2, border: "1px solid #e5e7eb" }}
+                  formatter={(value) => formatCurrency(Number(value))}
+                  labelFormatter={(l) => String(l)}
+                />
+                <Bar dataKey="revenue" fill={C.navy} radius={[2, 2, 0, 0]} maxBarSize={48} name="Revenue" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </article>
 
-        <article className={`${refCard} flex min-h-0 min-w-0 flex-col p-2 lg:col-span-4`}>
+        <article className={`${refCard} flex min-h-0 min-w-0 flex-col p-3`}>
           <RefPanelHeader compact title="Sales" subtitle="Event 'Purchase Button'" />
-          <div className="mx-auto min-h-[340px] w-[94%] min-w-0 max-w-[520px] flex-1">
+          <div className="min-h-[300px] w-full min-w-0 flex-1">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={salesLineData} margin={{ top: 6, right: 2, left: 0, bottom: 4 }}>
+              <LineChart data={salesLineData} margin={{ top: 8, right: 6, left: 2, bottom: 6 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="label"
