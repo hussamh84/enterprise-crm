@@ -10,7 +10,12 @@ const BLANK_ITEM = { productId: "", description: "", quantity: 1, unitPrice: 0 }
 export default function SalesFromInventoryPage() {
   const [searchParams] = useSearchParams();
   const presetClientId = searchParams.get("clientId") || "";
+  const [customerType, setCustomerType] = useState(presetClientId ? "existing" : "walkin");
   const [clientId, setClientId] = useState(presetClientId);
+  const [clientSearch, setClientSearch] = useState("");
+  const [walkInName, setWalkInName] = useState("");
+  const [walkInPhone, setWalkInPhone] = useState("");
+  const [walkInEmail, setWalkInEmail] = useState("");
   const [name, setName] = useState("");
   const [items, setItems] = useState([{ ...BLANK_ITEM }]);
   const [itemSearch, setItemSearch] = useState({});
@@ -27,6 +32,17 @@ export default function SalesFromInventoryPage() {
   const updateItem = (index, key, value) => {
     setItems((previous) => previous.map((item, itemIndex) => (itemIndex === index ? { ...item, [key]: value } : item)));
   };
+
+  const filteredClients = useMemo(() => {
+    const query = String(clientSearch || "").trim().toLowerCase();
+    if (!query) return clients;
+    return clients.filter((client) => {
+      const clientName = String(client?.name || "").toLowerCase();
+      const clientPhone = String(client?.phone || "").toLowerCase();
+      const clientEmail = String(client?.email || "").toLowerCase();
+      return clientName.includes(query) || clientPhone.includes(query) || clientEmail.includes(query);
+    });
+  }, [clients, clientSearch]);
 
   const removeItem = (index) => {
     setItems((previous) => (previous.length > 1 ? previous.filter((_, itemIndex) => itemIndex !== index) : previous));
@@ -102,7 +118,15 @@ export default function SalesFromInventoryPage() {
 
   const basePayload = () => ({
     name: String(name || "").trim() || "Inventory Sale",
-    clientId: String(clientId || "").trim(),
+    clientId: customerType === "existing" ? String(clientId || "").trim() : "",
+    walkInCustomer:
+      customerType === "walkin"
+        ? {
+            name: String(walkInName || "").trim(),
+            phone: String(walkInPhone || "").trim(),
+            email: String(walkInEmail || "").trim(),
+          }
+        : undefined,
     projectId: null,
     source: "inventory",
     items: normalizedItems,
@@ -132,7 +156,9 @@ export default function SalesFromInventoryPage() {
     },
   });
 
-  const canSubmit = Boolean(clientId) && normalizedItems.length > 0;
+  const hasValidExistingClient = customerType === "existing" ? Boolean(clientId) : false;
+  const hasValidWalkIn = customerType === "walkin" ? Boolean(String(walkInName || "").trim()) : false;
+  const canSubmit = (hasValidExistingClient || hasValidWalkIn) && normalizedItems.length > 0;
 
   return (
     <div className="space-y-5">
@@ -149,15 +175,65 @@ export default function SalesFromInventoryPage() {
       <div className="premium-card p-5 space-y-4">
         <div className="grid md:grid-cols-3 gap-3">
           <input className="w-full" value={name} onChange={(event) => setName(event.target.value)} placeholder="Sale title (optional)" />
-          <select className="w-full" value={clientId} onChange={(event) => setClientId(event.target.value)}>
-            <option value="">Select client</option>
-            {clients.map((client) => (
-              <option key={client._id} value={client._id}>
-                {client.name}
-              </option>
-            ))}
+          <select
+            className="w-full"
+            value={customerType}
+            onChange={(event) => {
+              const value = event.target.value;
+              setCustomerType(value);
+              if (value === "existing") {
+                setWalkInName("");
+                setWalkInPhone("");
+                setWalkInEmail("");
+              } else {
+                setClientId("");
+                setClientSearch("");
+              }
+            }}
+          >
+            <option value="existing">Select Existing Client</option>
+            <option value="walkin">Walk-in Customer</option>
           </select>
         </div>
+        {customerType === "existing" ? (
+          <div className="grid md:grid-cols-2 gap-3">
+            <input
+              className="w-full"
+              value={clientSearch}
+              onChange={(event) => setClientSearch(event.target.value)}
+              placeholder="Search client by name, phone, email"
+            />
+            <select className="w-full" value={clientId} onChange={(event) => setClientId(event.target.value)}>
+              <option value="">Select client</option>
+              {filteredClients.map((client) => (
+                <option key={client._id} value={client._id}>
+                  {client.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-3">
+            <input
+              className="w-full"
+              value={walkInName}
+              onChange={(event) => setWalkInName(event.target.value)}
+              placeholder="Customer Name"
+            />
+            <input
+              className="w-full"
+              value={walkInPhone}
+              onChange={(event) => setWalkInPhone(event.target.value)}
+              placeholder="Phone Number"
+            />
+            <input
+              className="w-full"
+              value={walkInEmail}
+              onChange={(event) => setWalkInEmail(event.target.value)}
+              placeholder="Email (optional)"
+            />
+          </div>
+        )}
 
         <div className="space-y-3">
           {items.map((item, index) => (

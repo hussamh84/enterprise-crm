@@ -129,6 +129,9 @@ const Project = makeEntityModel("Project", {
 });
 const Invoice = makeEntityModel("Invoice", {
   clientId: { type: String, required: true },
+  customerName: { type: String, trim: true, default: "" },
+  customerPhone: { type: String, trim: true, default: "" },
+  customerEmail: { type: String, trim: true, default: "" },
   projectId: { type: String, default: null },
   source: { type: String, enum: ["project", "inventory"], default: "project" },
   quotationId: { type: String },
@@ -293,6 +296,27 @@ const ensureClientProjectLink = async ({ tenantId, clientId, projectId }) => {
     throw new AppError("Project does not belong to the selected client", 400);
   }
   return { client, project };
+};
+
+const resolveClientForSale = async ({ req, tenantId, source, clientIdRaw, walkInCustomer }) => {
+  const clientId = String(clientIdRaw || "").trim();
+  if (clientId) return clientId;
+  if (source !== "inventory") return "";
+  const name = String(walkInCustomer?.name || "").trim();
+  const phone = String(walkInCustomer?.phone || "").trim();
+  const email = String(walkInCustomer?.email || "").trim().toLowerCase();
+  if (!name) return "";
+  const doc = await Client.create({
+    tenantId,
+    name,
+    phone,
+    email: email || undefined,
+    status: "active",
+    createdBy: req.user?.id,
+    updatedBy: req.user?.id,
+    auditLog: [{ action: "client.walkin_create", by: req.user?.id, note: "Created from inventory sale walk-in customer" }],
+  });
+  return String(doc._id);
 };
 
 const calculateInvoiceProfitFromItems = async ({ tenantId, items = [] }) => {
@@ -1253,8 +1277,14 @@ router.post("/quotations", async (req, res, next) => {
   try {
     const tenantId = getTenantId(req);
     if (!tenantId) return next(new AppError("Tenant context is required", 400));
-    const clientId = String(req.body?.clientId || "").trim();
     const source = String(req.body?.source || "project").toLowerCase() === "inventory" ? "inventory" : "project";
+    const clientId = await resolveClientForSale({
+      req,
+      tenantId,
+      source,
+      clientIdRaw: req.body?.clientId,
+      walkInCustomer: req.body?.walkInCustomer,
+    });
     const projectId = source === "inventory" ? null : String(req.body?.projectId || "").trim();
     if (!clientId) return res.status(400).json({ message: "clientId is required" });
     if (source === "project") {
@@ -1655,8 +1685,14 @@ router.post("/invoices", async (req, res, next) => {
   try {
     const tenantId = getTenantId(req);
     if (!tenantId) return next(new AppError("Tenant context is required", 400));
-    const clientId = String(req.body?.clientId || "").trim();
     const source = String(req.body?.source || "project").toLowerCase() === "inventory" ? "inventory" : "project";
+    const clientId = await resolveClientForSale({
+      req,
+      tenantId,
+      source,
+      clientIdRaw: req.body?.clientId,
+      walkInCustomer: req.body?.walkInCustomer,
+    });
     const projectId = source === "inventory" ? null : String(req.body?.projectId || "").trim();
     if (!clientId) return res.status(400).json({ message: "clientId is required" });
     if (source === "project") {
@@ -1695,6 +1731,9 @@ router.post("/invoices", async (req, res, next) => {
             invoiceNo,
             name: String(req.body?.name || "").trim() || invoiceNo,
             clientId,
+            customerName: String(req.body?.walkInCustomer?.name || "").trim(),
+            customerPhone: String(req.body?.walkInCustomer?.phone || "").trim(),
+            customerEmail: String(req.body?.walkInCustomer?.email || "").trim(),
             projectId,
             source,
             items: source === "inventory" ? normalizedItems : (Array.isArray(req.body?.items) ? req.body.items : []),

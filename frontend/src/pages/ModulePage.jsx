@@ -670,16 +670,16 @@ export default function ModulePage({ title, endpoint }) {
             <p className="page-subtitle">Manage all your {title.toLowerCase()}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/sales/new" className="button-primary">
+            <Link to="/sales/new" className="bg-[#0B132B] text-white rounded-xl px-4 py-2">
               Sell
             </Link>
-            <button type="button" className="btn-secondary btn-compact" onClick={downloadInventoryExport}>
+            <button type="button" className="bg-[#0B132B] text-white rounded-xl px-4 py-2" onClick={downloadInventoryExport}>
               Export Excel
             </button>
-            <button type="button" className="btn-secondary btn-compact" onClick={downloadInventorySample}>
+            <button type="button" className="bg-[#0B132B] text-white rounded-xl px-4 py-2" onClick={downloadInventorySample}>
               Download sample Excel format
             </button>
-            <label className="button-primary cursor-pointer">
+            <label className="bg-[#0B132B] text-white rounded-xl px-4 py-2 cursor-pointer">
               Import Excel
               <input
                 type="file"
