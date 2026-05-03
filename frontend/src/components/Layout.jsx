@@ -8,6 +8,7 @@ import {
   Menu,
   Receipt,
   Search,
+  Palette,
   Settings,
   ShieldCheck,
   UserCircle,
@@ -20,7 +21,8 @@ import { useQuery } from "@tanstack/react-query";
 import { NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { syncCurrencyConfig } from "../config/currency";
-import { COMPANY, onCompanyLogoImgError, resolveCompanyLogoSrc } from "../config/company";
+import { onCompanyLogoImgError, resolveCompanyLogoSrc } from "../config/company";
+import { applyCompanyThemeColors, getCompanySettings, useMergedWorkspaceSettings } from "../lib/companySettings";
 import { useAuthStore } from "../store/authStore";
 
 const nav = [
@@ -33,6 +35,7 @@ const nav = [
   { to: "/inventory", label: "Inventory", icon: Boxes },
   { to: "/users", label: "Users", icon: UserCog },
   { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/company-settings", label: "Company Settings", icon: Palette },
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
 
@@ -63,6 +66,12 @@ export default function Layout() {
     queryFn: async () => (await api.get("/inventory")).data,
   });
 
+  const displaySettings = useMergedWorkspaceSettings(settings);
+
+  useEffect(() => {
+    applyCompanyThemeColors(getCompanySettings());
+  }, []);
+
   useEffect(() => {
     if (settings) syncCurrencyConfig(settings);
     if (settings?.backgroundImageUrl) {
@@ -71,8 +80,8 @@ export default function Layout() {
   }, [settings]);
 
   useEffect(() => {
-    document.title = settings?.companyName || COMPANY.name;
-  }, [settings?.companyName]);
+    document.title = displaySettings.companyName;
+  }, [displaySettings.companyName]);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -171,7 +180,7 @@ export default function Layout() {
           <div className="pb-4 mb-2 border-b border-slate-100 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <img
-                src={resolveCompanyLogoSrc(settings?.companyLogoUrl)}
+                src={resolveCompanyLogoSrc(displaySettings.companyLogoUrl)}
                 onError={onCompanyLogoImgError}
                 alt=""
                 className="h-[56px] w-auto max-w-[180px] object-contain bg-transparent border-0 shadow-none"
@@ -179,7 +188,7 @@ export default function Layout() {
               <div>
                 <p className="muted-label">Enterprise Suite</p>
                 <p className="text-sm font-semibold mt-1 text-[#0a2540] dark:text-white leading-snug">
-                  {settings?.companyName || COMPANY.name}
+                  {displaySettings.companyName}
                 </p>
               </div>
             </div>
@@ -196,7 +205,7 @@ export default function Layout() {
                   className={({ isActive }) =>
                     `sidebar-item flex items-center gap-2 text-[14px] transition ${
                       isActive
-                        ? "bg-[#0B132B] !text-white font-medium"
+                        ? "!text-white font-medium bg-[var(--primary-color)]"
                         : "text-gray-600 hover:bg-gray-100"
                     }`
                   }
@@ -236,13 +245,13 @@ export default function Layout() {
               </div>
               <div className="flex items-center gap-2 text-[#0a2540] font-semibold mt-0.5">
                 <img
-                  src={resolveCompanyLogoSrc(settings?.companyLogoUrl)}
+                  src={resolveCompanyLogoSrc(displaySettings.companyLogoUrl)}
                   onError={onCompanyLogoImgError}
                   alt=""
                   className="hidden sm:block h-7 w-auto max-w-[120px] object-contain bg-transparent border-0 shadow-none"
                 />
                 <LayoutDashboard size={18} className="hidden sm:block" />
-                <span className="truncate">{settings?.companyName || COMPANY.name}</span>
+                <span className="truncate">{displaySettings.companyName}</span>
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">

@@ -28,6 +28,7 @@ import {
   YAxis,
 } from "recharts";
 import api from "../lib/api";
+import { useMergedWorkspaceSettings } from "../lib/companySettings";
 import { formatCurrency } from "../utils/format";
 
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -84,6 +85,12 @@ export default function DashboardPage() {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  const { data: workspaceSettings } = useQuery({
+    queryKey: ["workspace-settings"],
+    queryFn: async () => (await api.get("/settings")).data,
+  });
+  const displayCompany = useMergedWorkspaceSettings(workspaceSettings);
 
   const { data } = useQuery({
     queryKey: ["kpis"],
@@ -351,10 +358,14 @@ export default function DashboardPage() {
       data-ce-dashboard="reference-v2"
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 bg-[#e4e7ec] px-3 py-2 sm:px-4">
-        <nav className="text-[10px] font-medium text-gray-600" aria-label="Breadcrumb">
+        <nav className="text-[10px] font-medium text-gray-600 min-w-0" aria-label="Breadcrumb">
           <span className="text-gray-500">Home</span>
           <span className="mx-1 text-gray-400">&gt;</span>
           <span className="font-bold text-[#1a252f]">Dashboard</span>
+          <span className="mx-1.5 text-gray-400">·</span>
+          <span className="text-gray-600 truncate align-middle" title={displayCompany.companyName}>
+            {displayCompany.companyName}
+          </span>
         </nav>
         <button
           type="button"

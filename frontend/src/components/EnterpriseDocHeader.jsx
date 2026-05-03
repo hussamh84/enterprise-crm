@@ -1,4 +1,5 @@
-import { COMPANY, onCompanyLogoImgError, resolveCompanyLogoSrc } from "../config/company";
+import { onCompanyLogoImgError, resolveCompanyLogoSrc } from "../config/company";
+import { useMergedWorkspaceSettings } from "../lib/companySettings";
 
 /**
  * Enterprise-style document header: logo + company left, document title block right.
@@ -10,16 +11,18 @@ export default function EnterpriseDocHeader({
   dateStr,
   settings,
 }) {
-  const companyName = settings?.companyName || COMPANY.name;
-  const address = settings?.companyAddress || COMPANY.address;
-  const phone = settings?.companyPhone || COMPANY.phone;
-  const email = settings?.companyEmail || COMPANY.email;
+  const merged = useMergedWorkspaceSettings(settings);
+  const companyName = merged.companyName;
+  const address = merged.companyAddress;
+  const phone = merged.companyPhone;
+  const email = merged.companyEmail;
+  const website = merged.companyWebsite;
 
   return (
     <div className="enterprise-doc-header flex flex-wrap items-start justify-between gap-8 px-8 pt-8 pb-6 border-b border-[#eee]">
       <div className="flex flex-wrap items-start gap-5 min-w-0">
         <img
-          src={resolveCompanyLogoSrc(settings?.companyLogoUrl)}
+          src={resolveCompanyLogoSrc(merged.companyLogoUrl)}
           alt=""
           className="h-16 w-auto max-w-[200px] object-contain shrink-0"
           onError={onCompanyLogoImgError}
@@ -29,6 +32,13 @@ export default function EnterpriseDocHeader({
           {address ? <p>{address}</p> : null}
           {phone ? <p>{phone}</p> : null}
           {email ? <p>{email}</p> : null}
+          {website ? (
+            <p>
+              <a href={website.startsWith("http") ? website : `https://${website}`} className="text-[color:var(--secondary-color)] underline">
+                {website}
+              </a>
+            </p>
+          ) : null}
         </div>
       </div>
       <div className="text-right ml-auto shrink-0" style={{ fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" }}>

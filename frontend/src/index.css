@@ -11,6 +11,9 @@
   --border: #e5e7eb;
   --text: #111827;
   --subtext: #6b7280;
+  /* Company branding (overridden from Company Settings page) */
+  --primary-color: #0b132b;
+  --secondary-color: #4f46e5;
   --primary: #4f46e5;
   --saas-text: #0a2540;
   --saas-muted: #6b7280;

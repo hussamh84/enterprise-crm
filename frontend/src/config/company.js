@@ -10,6 +10,7 @@ export const COMPANY = {
 /** Public or API-backed logo URL for <img src> */
 export function resolveCompanyLogoSrc(logoPath) {
   if (!logoPath) return COMPANY.logo;
+  if (typeof logoPath === "string" && logoPath.startsWith("data:")) return logoPath;
   if (logoPath.startsWith("http")) return logoPath;
   if (logoPath.startsWith("/uploads/")) {
     const apiBase = String(import.meta.env.VITE_API_URL || "").replace(/\/api(?:\/v1)?\/?$/, "");

@@ -6,9 +6,6 @@ import { formatCurrency } from "../utils/format";
 import { openPdf } from "../utils/pdf";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 
-const __filename = import.meta.url;
-console.log("CHECK PAGE:", __filename);
-
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");
 
 export default function InvoiceDetailPage() {
@@ -90,7 +87,7 @@ export default function InvoiceDetailPage() {
     <div className="enterprise-doc p-6 pb-10 max-w-5xl mx-auto quotation-invoice-theme relative">
       {projectCompletedToast ? (
         <div
-          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-[#0B132B] text-white px-4 py-3 text-sm shadow-lg max-w-md text-center"
+          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg text-white px-4 py-3 text-sm shadow-lg max-w-md text-center bg-[var(--primary-color)]"
           role="status"
         >
           Project automatically marked as completed
