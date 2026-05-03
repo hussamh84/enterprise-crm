@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { COMPANY } from "../config/company";
 import api from "../lib/api";
+import { useCompanyBrandingSnapshot } from "../lib/companySettings";
 
 export default function UsersPage() {
   const queryClient = useQueryClient();
@@ -14,6 +14,11 @@ export default function UsersPage() {
     queryKey: ["/users"],
     queryFn: async () => (await api.get("/users")).data,
   });
+  const { data: workspaceSettings } = useQuery({
+    queryKey: ["workspace-settings"],
+    queryFn: async () => (await api.get("/settings")).data,
+  });
+  const branding = useCompanyBrandingSnapshot(workspaceSettings);
 
   const createUser = useMutation({
     mutationFn: async () => api.post("/users", { fullName, email, role, password }),
@@ -51,7 +56,7 @@ export default function UsersPage() {
     <div className="space-y-5">
       <div>
         <h1 className="section-title">User Management</h1>
-        <p className="page-subtitle text-[#6b7c93]">Manage Admin and Employee users for {COMPANY.name}.</p>
+        <p className="page-subtitle text-[#6b7c93]">Manage Admin and Employee users for {branding.companyName}.</p>
       </div>
 
       <div className="premium-card p-5 grid md:grid-cols-2 lg:grid-cols-5 gap-3">

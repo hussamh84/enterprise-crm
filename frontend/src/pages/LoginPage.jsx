@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { COMPANY, onCompanyLogoImgError } from "../config/company";
+import { onCompanyLogoImgError } from "../config/company";
 import api from "../lib/api";
+import { useCompanyBrandingSnapshot } from "../lib/companySettings";
 import { useAuthStore } from "../store/authStore";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const sessionToken = useAuthStore((s) => s.token);
   const setSession = useAuthStore((s) => s.setSession);
+  const branding = useCompanyBrandingSnapshot(null);
   const [form, setForm] = useState({ email: "admin@demo.com", password: "12345678" });
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    document.title = COMPANY.name;
-  }, []);
+    document.title = branding.companyName;
+  }, [branding.companyName]);
 
   useEffect(() => {
     if (sessionToken) navigate("/", { replace: true });
@@ -47,7 +49,7 @@ export default function LoginPage() {
     >
       <div className="login-page-inner">
         <form className="login-card" onSubmit={onLogin}>
-          <img src={COMPANY.logo} onError={onCompanyLogoImgError} alt="" />
+          <img src={branding.logo} onError={onCompanyLogoImgError} alt="" />
 
           <label htmlFor="login-email">Email address</label>
           <input

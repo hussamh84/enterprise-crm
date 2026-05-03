@@ -1,5 +1,5 @@
-import { onCompanyLogoImgError, resolveCompanyLogoSrc } from "../config/company";
-import { useMergedWorkspaceSettings } from "../lib/companySettings";
+import { onCompanyLogoImgError } from "../config/company";
+import { useCompanyBrandingSnapshot } from "../lib/companySettings";
 
 /**
  * Enterprise-style document header: logo + company left, document title block right.
@@ -11,7 +11,7 @@ export default function EnterpriseDocHeader({
   dateStr,
   settings,
 }) {
-  const merged = useMergedWorkspaceSettings(settings);
+  const merged = useCompanyBrandingSnapshot(settings);
   const companyName = merged.companyName;
   const address = merged.companyAddress;
   const phone = merged.companyPhone;
@@ -22,7 +22,7 @@ export default function EnterpriseDocHeader({
     <div className="enterprise-doc-header flex flex-wrap items-start justify-between gap-8 px-8 pt-8 pb-6 border-b border-[#eee]">
       <div className="flex flex-wrap items-start gap-5 min-w-0">
         <img
-          src={resolveCompanyLogoSrc(merged.companyLogoUrl)}
+          src={merged.logo}
           alt=""
           className="h-16 w-auto max-w-[200px] object-contain shrink-0"
           onError={onCompanyLogoImgError}

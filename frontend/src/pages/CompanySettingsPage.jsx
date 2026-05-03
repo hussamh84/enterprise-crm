@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2 } from "lucide-react";
-import { COMPANY } from "../config/company";
 import {
   applyCompanyThemeColors,
   getCompanySettings,
   saveCompanySettings,
+  useCompanyBrandingSnapshot,
 } from "../lib/companySettings";
 
 const LOGO_MAX_BYTES = 750_000;
 
 export default function CompanySettingsPage() {
+  const defaults = useCompanyBrandingSnapshot(null);
   const initial = useMemo(() => getCompanySettings(), []);
   const [companyName, setCompanyName] = useState(initial.companyName || "");
   const [companyPhone, setCompanyPhone] = useState(initial.companyPhone || "");
@@ -80,7 +81,7 @@ export default function CompanySettingsPage() {
           <h1 className="section-title">Company Settings</h1>
           <p className="page-subtitle text-[#6b7c93] mt-1">
             Branding is saved in this browser only (<code className="text-xs bg-slate-100 px-1 rounded">localStorage</code>
-            ). Empty fields fall back to workspace API values, then to <strong>{COMPANY.name}</strong>.
+            ). Empty fields fall back to workspace API values, then to <strong>{defaults.companyName}</strong>.
           </p>
         </div>
       </div>
@@ -93,7 +94,7 @@ export default function CompanySettingsPage() {
               className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              placeholder={COMPANY.name}
+              placeholder={defaults.companyName}
             />
           </label>
           <label className="block">

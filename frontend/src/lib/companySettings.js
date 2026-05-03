@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { COMPANY } from "../config/company";
+import { COMPANY, resolveCompanyLogoSrc } from "../config/company";
 
 export const COMPANY_SETTINGS_STORAGE_KEY = "company_settings";
 
@@ -23,7 +23,10 @@ function trimOrEmpty(v) {
   return typeof v === "string" ? v.trim() : "";
 }
 
-/** Read persisted company / branding overrides (localStorage only). */
+/**
+ * Raw persisted overrides (localStorage only). All higher-level branding
+ * should be derived via {@link getCompanyBranding}.
+ */
 export function getCompanySettings() {
   if (typeof window === "undefined") return emptyState();
   try {
@@ -36,7 +39,7 @@ export function getCompanySettings() {
   }
 }
 
-/** Persist partial company / branding fields and apply theme colors. */
+/** Persist partial fields; applies CSS variables and notifies listeners. */
 export function saveCompanySettings(partial) {
   const prev = getCompanySettings();
   const next = { ...prev, ...partial };
@@ -46,7 +49,9 @@ export function saveCompanySettings(partial) {
   return next;
 }
 
-/** Apply --primary-color and --secondary-color from saved settings (or defaults). */
+/**
+ * Apply theme colors on :root using setProperty (safe if values missing).
+ */
 export function applyCompanyThemeColors(state = getCompanySettings()) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
@@ -57,8 +62,8 @@ export function applyCompanyThemeColors(state = getCompanySettings()) {
 }
 
 /**
- * Merge API workspace settings with local company_settings.
- * Local non-empty fields win so branding can be changed without code or DB.
+ * Internal merge: localStorage (getCompanySettings) overrides API workspace fields.
+ * Server-generated PDFs cannot read localStorage; use on-screen document views for local branding.
  */
 export function mergeWorkspaceBranding(apiSettings) {
   const local = getCompanySettings();
@@ -76,13 +81,39 @@ export function mergeWorkspaceBranding(apiSettings) {
   };
 }
 
-/** Re-compute merged settings when API data or localStorage overrides change. */
-export function useMergedWorkspaceSettings(apiSettings) {
+/**
+ * Single branding snapshot for UI: always starts from getCompanySettings()
+ * overrides, then API, then COMPANY. Includes resolved `logo` for &lt;img src&gt;.
+ */
+export function getCompanyBranding(apiSettings) {
+  const merged = mergeWorkspaceBranding(apiSettings);
+  const rawLogo = merged.companyLogoUrl || "";
+  const local = getCompanySettings();
+  return {
+    companyName: merged.companyName || "Company Name",
+    companyPhone: merged.companyPhone,
+    companyEmail: merged.companyEmail,
+    companyAddress: merged.companyAddress,
+    companyWebsite: merged.companyWebsite,
+    companyLogoUrl: rawLogo,
+    logo: resolveCompanyLogoSrc(rawLogo || ""),
+    primaryColor: trimOrEmpty(local.primaryColor) || DEFAULT_PRIMARY,
+    secondaryColor: trimOrEmpty(local.secondaryColor) || DEFAULT_SECONDARY,
+  };
+}
+
+/**
+ * Reactive branding for React: updates when `company-settings-changed` fires.
+ */
+export function useCompanyBrandingSnapshot(apiSettings) {
   const [rev, setRev] = useState(0);
   useEffect(() => {
     const on = () => setRev((r) => r + 1);
     window.addEventListener("company-settings-changed", on);
     return () => window.removeEventListener("company-settings-changed", on);
   }, []);
-  return useMemo(() => mergeWorkspaceBranding(apiSettings), [apiSettings, rev]);
+  return useMemo(() => getCompanyBranding(apiSettings), [apiSettings, rev]);
 }
+
+/** @deprecated Use useCompanyBrandingSnapshot — alias for compatibility */
+export const useMergedWorkspaceSettings = useCompanyBrandingSnapshot;

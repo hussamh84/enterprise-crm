@@ -28,7 +28,7 @@ import {
   YAxis,
 } from "recharts";
 import api from "../lib/api";
-import { useMergedWorkspaceSettings } from "../lib/companySettings";
+import { useCompanyBrandingSnapshot } from "../lib/companySettings";
 import { formatCurrency } from "../utils/format";
 
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -90,7 +90,7 @@ export default function DashboardPage() {
     queryKey: ["workspace-settings"],
     queryFn: async () => (await api.get("/settings")).data,
   });
-  const displayCompany = useMergedWorkspaceSettings(workspaceSettings);
+  const displayCompany = useCompanyBrandingSnapshot(workspaceSettings);
 
   const { data } = useQuery({
     queryKey: ["kpis"],

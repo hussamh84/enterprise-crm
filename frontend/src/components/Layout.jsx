@@ -21,8 +21,8 @@ import { useQuery } from "@tanstack/react-query";
 import { NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { syncCurrencyConfig } from "../config/currency";
-import { onCompanyLogoImgError, resolveCompanyLogoSrc } from "../config/company";
-import { applyCompanyThemeColors, getCompanySettings, useMergedWorkspaceSettings } from "../lib/companySettings";
+import { onCompanyLogoImgError } from "../config/company";
+import { applyCompanyThemeColors, getCompanySettings, useCompanyBrandingSnapshot } from "../lib/companySettings";
 import { useAuthStore } from "../store/authStore";
 
 const nav = [
@@ -66,7 +66,7 @@ export default function Layout() {
     queryFn: async () => (await api.get("/inventory")).data,
   });
 
-  const displaySettings = useMergedWorkspaceSettings(settings);
+  const displaySettings = useCompanyBrandingSnapshot(settings);
 
   useEffect(() => {
     applyCompanyThemeColors(getCompanySettings());
@@ -180,7 +180,7 @@ export default function Layout() {
           <div className="pb-4 mb-2 border-b border-slate-100 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <img
-                src={resolveCompanyLogoSrc(displaySettings.companyLogoUrl)}
+                src={displaySettings.logo}
                 onError={onCompanyLogoImgError}
                 alt=""
                 className="h-[56px] w-auto max-w-[180px] object-contain bg-transparent border-0 shadow-none"
@@ -245,7 +245,7 @@ export default function Layout() {
               </div>
               <div className="flex items-center gap-2 text-[#0a2540] font-semibold mt-0.5">
                 <img
-                  src={resolveCompanyLogoSrc(displaySettings.companyLogoUrl)}
+                  src={displaySettings.logo}
                   onError={onCompanyLogoImgError}
                   alt=""
                   className="hidden sm:block h-7 w-auto max-w-[120px] object-contain bg-transparent border-0 shadow-none"

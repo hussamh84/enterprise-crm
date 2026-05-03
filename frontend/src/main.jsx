@@ -6,12 +6,11 @@ import "./index.css";
 import "leaflet/dist/leaflet.css";
 import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 import App from "./App.jsx";
-import { COMPANY } from "./config/company";
-import { applyCompanyThemeColors, getCompanySettings } from "./lib/companySettings";
+import { applyCompanyThemeColors, getCompanyBranding, getCompanySettings } from "./lib/companySettings";
 import { setAuthToken } from "./lib/api";
 import { useAuthStore } from "./store/authStore";
 
-document.title = COMPANY.name;
+document.title = getCompanyBranding(null).companyName;
 applyCompanyThemeColors(getCompanySettings());
 
 const queryClient = new QueryClient();

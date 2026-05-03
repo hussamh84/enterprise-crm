@@ -21,8 +21,13 @@ export function resolveCompanyLogoSrc(logoPath) {
 
 export function onCompanyLogoImgError(event) {
   event.currentTarget.onerror = null;
+  const cur = String(event.currentTarget.src || "");
   const fallback = COMPANY.logo;
-  if (!event.currentTarget.src.endsWith(fallback)) {
+  if (cur.startsWith("data:")) {
+    event.currentTarget.src = fallback;
+    return;
+  }
+  if (!cur.endsWith(fallback) && !cur.endsWith("/logo.png")) {
     event.currentTarget.src = fallback;
     return;
   }

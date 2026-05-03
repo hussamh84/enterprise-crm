@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { COMPANY, onCompanyLogoImgError } from "../config/company";
+import { onCompanyLogoImgError } from "../config/company";
 import api from "../lib/api";
+import { useCompanyBrandingSnapshot } from "../lib/companySettings";
 
 export default function ForgotPasswordPage() {
+  const branding = useCompanyBrandingSnapshot(null);
   useEffect(() => {
-    document.title = COMPANY.name;
-  }, []);
+    document.title = branding.companyName;
+  }, [branding.companyName]);
 
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -37,7 +39,7 @@ export default function ForgotPasswordPage() {
     >
       <div className="login-page-inner">
         <form className="login-card" onSubmit={handleSubmit}>
-          <img src={COMPANY.logo} onError={onCompanyLogoImgError} alt="" />
+          <img src={branding.logo} onError={onCompanyLogoImgError} alt="" />
 
           <h1>Forgot Password</h1>
 
