@@ -386,42 +386,41 @@ export default function QuotationBuilderPage() {
             </div>
 
             {customerMode === "existing" ? (
-              <select
-                id="quote-client"
-                className="w-full h-12 border rounded-xl px-4"
-                value={clientId}
-                onChange={(event) => {
-                  setClientId(event.target.value);
-                  setProjectId("");
-                }}
-              >
-                <option value="">Select Client</option>
-                {filteredClients.map((client) => (
-                  <option key={client._id} value={client._id}>
-                    {client.name}
-                  </option>
-                ))}
-              </select>
-            ) : null}
-            {customerMode === "existing" && clientId ? (
-              <div className="mt-3 min-w-0">
-                <label htmlFor="quote-project-link" className="block text-xs font-medium text-slate-600 mb-1.5">
-                  Project <span className="font-normal text-slate-400">(optional)</span>
+              <>
+                <select
+                  id="quote-client"
+                  className="w-full h-12 border rounded-xl px-4"
+                  value={clientId}
+                  onChange={(event) => {
+                    setClientId(event.target.value);
+                    setProjectId("");
+                  }}
+                >
+                  <option value="">Select Client</option>
+                  {filteredClients.map((client) => (
+                    <option key={client._id} value={client._id}>
+                      {client.name}
+                    </option>
+                  ))}
+                </select>
+                <label htmlFor="quote-project-link" className="block text-sm font-medium mb-2 mt-3">
+                  Project
                 </label>
                 <select
                   id="quote-project-link"
                   className="w-full h-12 border rounded-xl px-4"
                   value={projectId}
                   onChange={(event) => setProjectId(event.target.value)}
+                  disabled={!clientId}
                 >
-                  <option value="">No project — save as standalone quotation</option>
+                  <option value="">{clientId ? "Select project (optional)" : "Select client first"}</option>
                   {projectsForClient.map((p) => (
                     <option key={p._id} value={p._id}>
                       {p.name}
                     </option>
                   ))}
                 </select>
-              </div>
+              </>
             ) : null}
             {customerMode === "walkin" ? (
               <div className="space-y-2">
