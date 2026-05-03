@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
 import { openPdf } from "../utils/pdf";
+import { formatQuotationStatusLabel } from "../utils/quotationStatus";
 
 export default function QuotationsPage() {
   const navigate = useNavigate();
@@ -67,12 +68,12 @@ export default function QuotationsPage() {
             {quotations.map((q) => {
               const clientName = q?.clientId?.name || q?.clientName || "No Client";
               const amount = Number(q?.grandTotal ?? q?.subtotal ?? q?.total ?? 0);
-              const status = String(q?.status || "draft");
+              const statusLabel = formatQuotationStatusLabel(q?.status);
               return (
                 <div key={q._id} className="saas-grid-row grid grid-cols-12 items-center">
                   <div className="col-span-3">{clientName}</div>
                   <div className="col-span-2 text-sm text-slate-600">{formatCurrency(amount)}</div>
-                  <div className="col-span-2 text-sm">{status}</div>
+                  <div className="col-span-2 text-sm">{statusLabel}</div>
                   <div className="col-span-2 text-sm text-slate-600">{new Date(q.createdAt || Date.now()).toLocaleDateString()}</div>
                   <div className="col-span-3 p-2 whitespace-nowrap text-right">
                     <div className="flex items-center gap-1 flex-nowrap justify-end">

@@ -5,9 +5,7 @@ import { formatCurrency } from "../utils/format";
 import { openPdf } from "../utils/pdf";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 import { formatProjectTypeDisplay } from "../utils/projectTypeDisplay";
-
-const __filename = import.meta.url;
-console.log("CHECK PAGE:", __filename);
+import { formatQuotationStatusLabel, normalizeQuotationStatus } from "../utils/quotationStatus";
 
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");
 
@@ -57,8 +55,12 @@ export default function QuotationViewPage() {
   const items = normalizeItems(quotation);
   const totalFromItems = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
   const total = Number(quotation?.grandTotal ?? quotation?.totalPrice ?? quotation?.total ?? totalFromItems ?? 0);
-  const status = (quotation?.status || "draft").toLowerCase();
+  const status = normalizeQuotationStatus(quotation?.status);
+  const statusLabel = formatQuotationStatusLabel(quotation?.status);
   const isApproved = status === "approved";
+  const isConverted = status === "converted_to_project";
+  const linkedProjectId = String(quotation?.projectId || project?._id || "").trim();
+  const showConvertToProject = isApproved && !linkedProjectId;
 
   const approveMutation = useMutation({
     mutationFn: async () => (await api.patch(`/quotations/${id}/approve`)).data,
@@ -69,6 +71,22 @@ export default function QuotationViewPage() {
       const invoiceId = payload?.invoice?._id;
       if (invoiceId) navigate(`/invoices/${invoiceId}`);
       else navigate("/invoices");
+    },
+  });
+
+  const convertToProjectMutation = useMutation({
+    mutationFn: async () => (await api.post(`/quotations/${id}/convert-to-project`)).data,
+    onSuccess: async (payload) => {
+      const newProjectId = payload?.project?._id;
+      await queryClient.invalidateQueries({ queryKey: ["/quotations"] });
+      await queryClient.invalidateQueries({ queryKey: ["/projects"] });
+      await queryClient.invalidateQueries({ queryKey: ["quotation-view", id] });
+      if (newProjectId) {
+        await queryClient.invalidateQueries({ queryKey: ["project-details", String(newProjectId)] });
+        navigate(`/projects/${newProjectId}`);
+      } else {
+        navigate(`/quotations/${id}`);
+      }
     },
   });
 
@@ -93,10 +111,10 @@ export default function QuotationViewPage() {
     <div className="enterprise-doc p-6 pb-10 max-w-5xl mx-auto quotation-invoice-theme">
       <div className="enterprise-doc-section page-header">
         <span className="rounded-full border border-[#e2e8f0] bg-[#f8fafc] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#475569]">
-          {status}
+          {statusLabel}
         </span>
         <div className="header-actions">
-          {isApproved ? (
+          {isApproved || isConverted ? (
             <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">Edit</span>
           ) : (
             <Link
@@ -113,7 +131,25 @@ export default function QuotationViewPage() {
           >
             Print PDF
           </button>
-          {!isApproved ? (
+          {showConvertToProject ? (
+            <button
+              type="button"
+              disabled={convertToProjectMutation.isPending}
+              onClick={() => convertToProjectMutation.mutate()}
+              className="rounded-lg bg-[#0f766e] px-3 py-2 text-sm font-medium text-white hover:bg-[#115e59] disabled:opacity-50"
+            >
+              {convertToProjectMutation.isPending ? "Converting…" : "Convert To Project"}
+            </button>
+          ) : null}
+          {linkedProjectId ? (
+            <Link
+              to={`/projects/${linkedProjectId}`}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-[#425466] hover:bg-slate-50 shadow-sm"
+            >
+              Open project
+            </Link>
+          ) : null}
+          {!isApproved && !isConverted ? (
             <button
               type="button"
               disabled={approveMutation.isPending}
@@ -130,6 +166,11 @@ export default function QuotationViewPage() {
       </div>
 
       {approveMutation.isError ? <p className="text-sm text-rose-600 mb-4">Could not approve quotation. Try again.</p> : null}
+      {convertToProjectMutation.isError ? (
+        <p className="text-sm text-rose-600 mb-4">
+          {convertToProjectMutation.error?.response?.data?.message || "Could not convert to project. Try again."}
+        </p>
+      ) : null}
 
       <div className="enterprise-doc-card">
         <EnterpriseDocHeader
@@ -149,7 +190,7 @@ export default function QuotationViewPage() {
             <InfoField label="Project" value={projectName || "—"} />
             <InfoField label="Project Type" value={projectTypeLine} />
             <InfoField label="Created" value={dateValue(quotation.createdAt)} />
-            <InfoField label="Status" value={status} />
+            <InfoField label="Status" value={statusLabel} />
           </div>
         </div>
       </div>

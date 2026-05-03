@@ -5,6 +5,7 @@ import { CirclePlus, FileText, Trash2 } from "lucide-react";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
 import { deriveTypeFromProject } from "../utils/projectTypeDisplay";
+import { normalizeQuotationStatus } from "../utils/quotationStatus";
 
 const PROJECT_TYPE_OPTIONS = [
   { value: "CCTV", label: "CCTV" },
@@ -67,7 +68,7 @@ export default function QuotationBuilderPage() {
     setDiscountType(d.type === "percentage" ? "percentage" : "fixed");
     setDiscountValue(d.value ?? 0);
     setTax(Number(q.tax ?? 0));
-    setQuoteStatus(q.status || "draft");
+    setQuoteStatus(normalizeQuotationStatus(q.status));
     if (Array.isArray(q.items) && q.items.length > 0) {
       setItems(
         q.items.map((row) => ({
@@ -112,6 +113,11 @@ export default function QuotationBuilderPage() {
     if (!q) return clients;
     return clients.filter((c) => String(c.name || "").toLowerCase().includes(q) || String(c.email || "").toLowerCase().includes(q));
   }, [clients, clientSearch]);
+
+  const projectsForClient = useMemo(() => {
+    if (!clientId || customerMode !== "existing") return [];
+    return projects.filter((p) => String(p.clientId?._id || p.clientId) === String(clientId));
+  }, [projects, clientId, customerMode]);
 
   useEffect(() => {
     if (isEdit || customerMode !== "existing") return;
@@ -298,6 +304,33 @@ export default function QuotationBuilderPage() {
     );
   }
 
+  if (isEdit && editBundle?.quotation) {
+    const loadedStatus = normalizeQuotationStatus(editBundle.quotation.status);
+    if (loadedStatus === "converted_to_project") {
+      const pid = String(editBundle.quotation.projectId || "").trim();
+      return (
+        <div className="space-y-4 p-4 quotation-invoice-theme">
+          <div className="premium-card p-5 space-y-3">
+            <p className="text-sm text-slate-700">This quotation was converted to a project and cannot be edited.</p>
+            <div className="flex flex-wrap gap-2">
+              {pid ? (
+                <Link to={`/projects/${pid}`} className="btn-primary">
+                  Open project
+                </Link>
+              ) : null}
+              <Link to={`/quotations/${quotationId}`} className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-[#425466] hover:bg-slate-50">
+                View quotation
+              </Link>
+              <Link to="/quotations" className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-[#425466] hover:bg-slate-50">
+                Back to list
+              </Link>
+            </div>
+          </div>
+        </div>
+      );
+    }
+  }
+
   return (
     <div className="space-y-5 quotation-invoice-theme">
       <div className="premium-card p-5 space-y-5">
@@ -369,7 +402,28 @@ export default function QuotationBuilderPage() {
                   </option>
                 ))}
               </select>
-            ) : (
+            ) : null}
+            {customerMode === "existing" && clientId ? (
+              <div className="mt-3 min-w-0">
+                <label htmlFor="quote-project-link" className="block text-xs font-medium text-slate-600 mb-1.5">
+                  Project <span className="font-normal text-slate-400">(optional)</span>
+                </label>
+                <select
+                  id="quote-project-link"
+                  className="w-full h-12 border rounded-xl px-4"
+                  value={projectId}
+                  onChange={(event) => setProjectId(event.target.value)}
+                >
+                  <option value="">No project — save as standalone quotation</option>
+                  {projectsForClient.map((p) => (
+                    <option key={p._id} value={p._id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+            {customerMode === "walkin" ? (
               <div className="space-y-2">
                 <input
                   type="text"
@@ -393,7 +447,7 @@ export default function QuotationBuilderPage() {
                   onChange={(e) => setWalkInEmail(e.target.value)}
                 />
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="min-w-0">
@@ -493,6 +547,28 @@ export default function QuotationBuilderPage() {
             <CirclePlus size={14} /> Add Item
           </button>
         </div>
+
+        {isEdit ? (
+          <div className="max-w-md">
+            <label htmlFor="quote-status" className="block text-sm font-medium mb-2">
+              Quotation status
+            </label>
+            <select
+              id="quote-status"
+              className="w-full h-12 border rounded-xl px-4"
+              value={quoteStatus}
+              onChange={(e) => setQuoteStatus(normalizeQuotationStatus(e.target.value))}
+            >
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <p className="text-xs text-slate-500 mt-1.5">
+              Use <strong>Approve</strong> on the view page to generate the invoice when the client accepts.
+            </p>
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <select className="w-full" value={discountType} onChange={(event) => setDiscountType(event.target.value)}>

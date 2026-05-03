@@ -93,6 +93,7 @@ const Quotation = makeEntityModel("Quotation", {
   projectId: { type: String, default: null },
   source: { type: String, enum: ["project", "inventory"], default: "project" },
   quotationNo: { type: String, trim: true },
+  /** draft | sent | approved | rejected | converted_to_project */
   status: { type: String, default: "draft" },
   items: [
     {
@@ -122,6 +123,7 @@ const Quotation = makeEntityModel("Quotation", {
 });
 const Project = makeEntityModel("Project", {
   clientId: { type: String, required: true },
+  quotationId: { type: String, default: null, index: true },
   status: { type: String, enum: ["active", "partial", "completed"], default: "active" },
   milestone: String,
   progress: Number,
@@ -377,6 +379,18 @@ const resolveQuotationClientAndProject = ({
     walkInCustomerPhone: "",
     walkInCustomerEmail: "",
   };
+};
+
+const QUOTATION_ALLOWED_STATUSES = new Set(["draft", "sent", "approved", "rejected", "converted_to_project"]);
+
+const normalizeQuotationStatus = (value, fallback = "draft") => {
+  const raw = String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+  if (raw === "convertedtoproject") return "converted_to_project";
+  if (QUOTATION_ALLOWED_STATUSES.has(raw)) return raw;
+  return fallback;
 };
 
 const calculateInvoiceProfitFromItems = async ({ tenantId, items = [] }) => {
@@ -1623,6 +1637,13 @@ router.put("/quotations/:id", async (req, res, next) => {
   try {
     const tenantId = getTenantId(req);
     if (!tenantId) return next(new AppError("Tenant context is required", 400));
+    const existing = await Quotation.findOne({ _id: req.params.id, tenantId, deletedAt: null });
+    if (!existing) return res.status(404).json({ message: "Quotation not found" });
+    const prevStatus = normalizeQuotationStatus(existing.status);
+    if (prevStatus === "converted_to_project") {
+      return res.status(400).json({ message: "This quotation was converted to a project and cannot be edited." });
+    }
+
     const source = String(req.body?.source || "project").toLowerCase() === "inventory" ? "inventory" : "project";
 
     let clientId = "";
@@ -1668,6 +1689,16 @@ router.put("/quotations/:id", async (req, res, next) => {
 
     const calculated = await computeQuotationTotals({ tenantId, payload: req.body });
     const typeFields = pickQuotationProjectTypeFields(req.body);
+    const hasBodyStatus =
+      req.body &&
+      Object.prototype.hasOwnProperty.call(req.body, "status") &&
+      req.body.status !== "" &&
+      req.body.status != null;
+    let nextStatus = hasBodyStatus ? normalizeQuotationStatus(req.body.status, prevStatus) : prevStatus;
+    if (nextStatus === "converted_to_project" && prevStatus !== "converted_to_project") {
+      return res.status(400).json({ message: "Use Convert to Project to set this status." });
+    }
+
     const doc = await Quotation.findOneAndUpdate(
       { _id: req.params.id, tenantId, deletedAt: null },
       {
@@ -1693,6 +1724,7 @@ router.put("/quotations/:id", async (req, res, next) => {
         source,
         ...calculated,
         ...typeFields,
+        status: nextStatus,
         updatedBy: req.user?.id,
         $push: { auditLog: { action: "quotation.update", by: req.user?.id, note: "Updated quotation" } },
       },
@@ -1716,24 +1748,110 @@ router.put("/quotations/:id", async (req, res, next) => {
   }
 });
 
+router.post("/quotations/:id/convert-to-project", async (req, res, next) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return next(new AppError("Tenant context is required", 400));
+    const quotation = await Quotation.findOne({ _id: req.params.id, tenantId, deletedAt: null });
+    if (!quotation) return res.status(404).json({ message: "Quotation not found" });
+
+    const st = normalizeQuotationStatus(quotation.status);
+    if (st === "converted_to_project") {
+      return res.status(400).json({ message: "This quotation is already converted to a project." });
+    }
+    if (st !== "approved") {
+      return res.status(400).json({ message: "Only approved quotations can be converted to a project." });
+    }
+    if (String(quotation.projectId || "").trim()) {
+      return res.status(400).json({ message: "This quotation is already linked to a project." });
+    }
+
+    const clientId = String(quotation.clientId || "").trim();
+    if (!clientId) return res.status(400).json({ message: "Quotation must have a client to create a project." });
+
+    const client = await Client.findOne({ _id: clientId, tenantId, deletedAt: null, isDeleted: { $ne: true } });
+    if (!client) return res.status(400).json({ message: "Client not found for this quotation." });
+
+    const qObj = typeof quotation.toObject === "function" ? quotation.toObject() : { ...quotation };
+    const { projectType: normPt, cctvType: normCctv } = normalizeNewProjectTypePayload({
+      projectType: qObj.projectType,
+      cctvType: qObj.cctvType,
+    });
+    const projectTitle = String(quotation.name || quotation.quotationNo || "Project").trim() || "Project";
+    const grandTotal = Number(quotation.grandTotal ?? quotation.subtotal ?? 0);
+
+    const project = await Project.create({
+      name: projectTitle,
+      clientId,
+      quotationId: String(quotation._id),
+      budget: grandTotal,
+      totalRevenue: grandTotal,
+      projectType: normPt,
+      cctvType: normCctv,
+      tenantId,
+      createdBy: req.user?.id,
+      updatedBy: req.user?.id,
+      auditLog: [
+        {
+          action: "project.create_from_quotation",
+          by: req.user?.id,
+          note: `From quotation ${quotation.quotationNo || quotation._id}`,
+        },
+      ],
+    });
+
+    const updatedQuote = await Quotation.findOneAndUpdate(
+      { _id: quotation._id, tenantId, deletedAt: null },
+      {
+        projectId: String(project._id),
+        status: "converted_to_project",
+        updatedBy: req.user?.id,
+        $push: {
+          auditLog: {
+            action: "quotation.convert_to_project",
+            by: req.user?.id,
+            note: `Linked project ${project._id}`,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    await Invoice.updateMany(
+      { tenantId, quotationId: String(quotation._id), deletedAt: null },
+      { $set: { projectId: String(project._id), updatedBy: req.user?.id } }
+    );
+
+    if (updatedQuote) {
+      await syncInventoryUsageForQuotation({ tenantId, quotation: updatedQuote, userId: req.user?.id });
+    }
+    await syncProjectFinancialsForProject({ tenantId, projectId: String(project._id), userId: req.user?.id });
+
+    res.status(201).json({ quotation: updatedQuote, project });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.patch("/quotations/:id/approve", async (req, res, next) => {
   try {
     const tenantId = getTenantId(req);
     if (!tenantId) return next(new AppError("Tenant context is required", 400));
     const before = await Quotation.findOne({ _id: req.params.id, tenantId, deletedAt: null });
     if (!before) return res.status(404).json({ message: "Quotation not found" });
-    const quotationSource = String(before.source || "project").toLowerCase();
-    const isWalkInQuotation =
-      String(before.customerKind || "").toLowerCase() === "walkin" ||
-      Boolean(String(before.walkInCustomerName || "").trim());
-    if (
-      quotationSource === "project" &&
-      (before.projectId == null || String(before.projectId).trim() === "") &&
-      !isWalkInQuotation
-    ) {
-      return res.status(400).json({
-        message: "Quotation must be linked to a project before approval.",
+    const beforeStatus = normalizeQuotationStatus(before.status);
+    if (beforeStatus === "converted_to_project") {
+      return res.status(400).json({ message: "This quotation was converted to a project." });
+    }
+    if (beforeStatus === "approved") {
+      const invoice = await createInvoiceFromQuotation({
+        quotation: before,
+        req,
+        note: "Invoice ensured for approved quotation",
       });
+      const out = typeof before.toObject === "function" ? before.toObject() : { ...before };
+      out.invoice = invoice;
+      return res.json(out);
     }
 
     const doc = await Quotation.findOneAndUpdate(

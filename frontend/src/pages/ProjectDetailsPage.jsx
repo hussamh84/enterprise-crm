@@ -5,9 +5,6 @@ import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
 import { formatProjectTypeDisplay } from "../utils/projectTypeDisplay";
 
-const __filename = import.meta.url;
-console.log("CHECK PAGE:", __filename);
-
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");
 
 const projectStatusBadgeClass = (status) => {
@@ -157,6 +154,16 @@ export default function ProjectDetailsPage() {
             <h2 className="font-semibold text-[#0a2540] mb-4">Project Overview</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <Field label="Project Name" value={project.name} />
+              {project.quotationId ? (
+                <Field
+                  label="Source quotation"
+                  value={
+                    <Link to={`/quotations/${project.quotationId}`} className="text-[#635bff] hover:underline">
+                      Open quotation
+                    </Link>
+                  }
+                />
+              ) : null}
               <Field label="Project Type" value={formatProjectTypeDisplay(project)} />
               <Field
                 label="Client Name"
