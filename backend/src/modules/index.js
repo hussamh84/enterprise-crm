@@ -310,6 +310,17 @@ const ensureClientProjectLink = async ({ tenantId, clientId, projectId }) => {
   return { client, project };
 };
 
+/** When a quotation has no project, still verify the client exists (builder allows client-only quotes). */
+const ensureQuotationClientContext = async ({ tenantId, clientId, projectId }) => {
+  const pid = String(projectId || "").trim();
+  if (pid) {
+    await ensureClientProjectLink({ tenantId, clientId, projectId: pid });
+    return;
+  }
+  const client = await Client.findOne({ _id: clientId, tenantId, deletedAt: null, isDeleted: { $ne: true } });
+  if (!client) throw new AppError("Client not found", 404);
+};
+
 const resolveClientForSale = async ({ req, tenantId, source, clientIdRaw, walkInCustomer }) => {
   const clientId = String(clientIdRaw || "").trim();
   if (clientId) return clientId;
@@ -357,9 +368,6 @@ const resolveQuotationClientAndProject = ({
 
   if (!clientId) {
     return { error: new AppError("clientId is required", 400) };
-  }
-  if (!projectId) {
-    return { error: new AppError("projectId is required", 400) };
   }
   return {
     isWalkIn: false,
@@ -1351,7 +1359,7 @@ const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
   const source = String(payload?.source || "project").toLowerCase();
   const isInventorySource = source === "inventory";
   const productIds = [...new Set(rawItems.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
-  if (!productIds.length && rawItems.length > 0) {
+  if (isInventorySource && rawItems.some((item) => !String(item?.productId || "").trim())) {
     throw new AppError("Each quotation item must reference an inventory product.", 400);
   }
   const inventoryItems = productIds.length
@@ -1367,6 +1375,27 @@ const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
 
   const items = rawItems.map((item) => {
     const productId = String(item.productId || "").trim();
+    if (!productId) {
+      if (isInventorySource) {
+        throw new AppError("Each quotation item must reference an inventory product.", 400);
+      }
+      const manualName = String(item.description || item.name || "").trim();
+      if (!manualName) {
+        throw new AppError("Each quotation line needs a description or a linked inventory product.", 400);
+      }
+      const quantity = Number(item.quantity || 0);
+      const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
+      const total = Number((quantity * unitPrice).toFixed(2));
+      return {
+        productId: "",
+        name: manualName,
+        description: manualName,
+        price: unitPrice,
+        quantity,
+        unitPrice,
+        total,
+      };
+    }
     const inventoryProduct = inventoryMap[productId];
     if (!inventoryProduct) {
       throw new AppError("Each quotation item must reference a valid inventory product.", 400);
@@ -1523,7 +1552,7 @@ router.post("/quotations", async (req, res, next) => {
         customerPhone = resolved.customerPhone;
         customerEmail = resolved.customerEmail;
       } else {
-        await ensureClientProjectLink({ tenantId, clientId, projectId });
+        await ensureQuotationClientContext({ tenantId, clientId, projectId });
       }
     }
 
@@ -1563,7 +1592,7 @@ router.post("/quotations", async (req, res, next) => {
       purchaseCost: Number.isFinite(purchaseCost) && purchaseCost >= 0 ? purchaseCost : 0,
       supplierName: String(req.body?.supplierName || "").trim(),
       supplierPhone: String(req.body?.supplierPhone || "").trim(),
-      projectId: source === "inventory" ? null : projectId,
+      projectId: source === "inventory" ? null : projectId || null,
       source,
       ...calculated,
       ...typeFields,
@@ -1633,7 +1662,7 @@ router.put("/quotations/:id", async (req, res, next) => {
         customerPhone = resolved.customerPhone;
         customerEmail = resolved.customerEmail;
       } else {
-        await ensureClientProjectLink({ tenantId, clientId, projectId });
+        await ensureQuotationClientContext({ tenantId, clientId, projectId });
       }
     }
 
@@ -1644,7 +1673,7 @@ router.put("/quotations/:id", async (req, res, next) => {
       {
         ...req.body,
         clientId,
-        projectId: source === "inventory" ? null : projectId,
+        projectId: source === "inventory" ? null : projectId || null,
         customerKind: source === "inventory" ? "existing" : customerKind,
         walkInCustomerName: source === "inventory" ? "" : walkInCustomerName,
         walkInCustomerPhone: source === "inventory" ? "" : walkInCustomerPhone,

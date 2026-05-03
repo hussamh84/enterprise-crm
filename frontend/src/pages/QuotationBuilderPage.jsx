@@ -16,9 +16,6 @@ const BLANK_ITEM = { productId: "", description: "", quantity: 1, unitPrice: 0, 
 
 const toNumber = (value) => Number(value || 0);
 
-const __filename = import.meta.url;
-console.log("CHECK PAGE:", __filename);
-
 export default function QuotationBuilderPage() {
   const { quotationId } = useParams();
   const isEdit = Boolean(quotationId);
@@ -42,6 +39,8 @@ export default function QuotationBuilderPage() {
   const [cctvType, setCctvType] = useState("");
   const [itemSearch, setItemSearch] = useState({});
   const [itemSuggestions, setItemSuggestions] = useState({});
+  const [saveError, setSaveError] = useState(null);
+  const [postSaveNotice, setPostSaveNotice] = useState(null);
   const searchTimersRef = useRef({});
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -156,6 +155,28 @@ export default function QuotationBuilderPage() {
   }, [discountType, discountValue, subtotal]);
   const grandTotal = subtotal - discountAmount + toNumber(tax);
 
+  const saveBlockedReasons = useMemo(() => {
+    const reasons = [];
+    if (!name.trim()) reasons.push("Quotation title is required.");
+    if (!projectType) reasons.push("Select a project type.");
+    if (projectType === "CCTV" && !cctvType) reasons.push("Select IP or Analog for CCTV.");
+    if (calculatedItems.length === 0 || calculatedItems.some((item) => !item.description)) {
+      reasons.push("Each line item needs a description.");
+    }
+    if (customerMode === "walkin") {
+      if (!walkInName.trim()) reasons.push("Walk-in customer name is required.");
+    } else if (!clientId) {
+      reasons.push("Select a client.");
+    }
+    return reasons;
+  }, [name, projectType, cctvType, calculatedItems, customerMode, walkInName, clientId]);
+
+  const canSave = saveBlockedReasons.length === 0;
+
+  useEffect(() => {
+    setSaveError(null);
+  }, [name, clientId, projectId, customerMode, walkInName, walkInPhone, walkInEmail, projectType, cctvType, items, quoteStatus]);
+
   const saveQuotation = useMutation({
     mutationFn: async () => {
       const isWalkin = customerMode === "walkin";
@@ -174,27 +195,41 @@ export default function QuotationBuilderPage() {
         tax: toNumber(tax),
         ...(isEdit ? { status: quoteStatus } : {}),
       };
-      if (isEdit) return api.put(`/quotations/${quotationId}`, body);
-      return api.post("/quotations", body);
+      console.log("[quotation save] validation (client)", { canSave, blocked: saveBlockedReasons });
+      console.log("[quotation save] payload", body);
+      try {
+        const response = isEdit ? await api.put(`/quotations/${quotationId}`, body) : await api.post("/quotations", body);
+        console.log("[quotation save] response ok", response?.status, response?.data?._id);
+        return response;
+      } catch (err) {
+        console.error("[quotation save] response error", err?.response?.status, err?.response?.data || err);
+        throw err;
+      }
+    },
+    onMutate: () => {
+      setSaveError(null);
+      setPostSaveNotice(null);
     },
     onSuccess: async (response) => {
+      console.log("[quotation save] onSuccess", response?.data?._id);
       await queryClient.invalidateQueries({ queryKey: ["/quotations"] });
       const id = response?.data?._id || quotationId;
       if (id) {
         await queryClient.invalidateQueries({ queryKey: ["quotation-view", id] });
         await queryClient.invalidateQueries({ queryKey: ["quotation-edit", id] });
       }
+      setPostSaveNotice(isEdit ? "Changes saved." : "Quotation saved successfully.");
+      await new Promise((resolve) => setTimeout(resolve, 650));
+      setPostSaveNotice(null);
       if (id) navigate(`/quotations/${id}`);
       else navigate("/quotations");
     },
+    onError: (err) => {
+      const msg = err?.response?.data?.message || err?.message || "Could not save quotation.";
+      console.error("[quotation save] onError", msg);
+      setSaveError(msg);
+    },
   });
-
-  const canSave = useMemo(() => {
-    if (!name.trim() || !projectType || (projectType === "CCTV" && !cctvType)) return false;
-    if (calculatedItems.length === 0 || calculatedItems.some((item) => !item.description)) return false;
-    if (customerMode === "walkin") return Boolean(walkInName.trim());
-    return Boolean(clientId);
-  }, [name, projectType, cctvType, calculatedItems, customerMode, walkInName, clientId]);
 
   const updateItem = (index, key, value) => {
     setItems((previous) => previous.map((item, itemIndex) => (itemIndex === index ? { ...item, [key]: value } : item)));
@@ -492,6 +527,33 @@ export default function QuotationBuilderPage() {
           </div>
         </div>
 
+        {saveBlockedReasons.length > 0 ? (
+          <div
+            className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+            role="alert"
+          >
+            <p className="font-medium">Complete the following to save:</p>
+            <ul className="mt-1 list-disc pl-5 space-y-0.5">
+              {saveBlockedReasons.map((reason) => (
+                <li key={reason}>{reason}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {saveError ? (
+          <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert">
+            {saveError}
+          </div>
+        ) : null}
+        {postSaveNotice ? (
+          <div
+            className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900"
+            role="status"
+          >
+            {postSaveNotice}
+          </div>
+        ) : null}
+
         <div
           style={{
             display: "flex",
@@ -512,6 +574,7 @@ export default function QuotationBuilderPage() {
               borderRadius: "8px",
             }}
             disabled={saveQuotation.isPending || !canSave}
+            title={saveBlockedReasons[0] || undefined}
             onClick={() => saveQuotation.mutate()}
           >
             <FileText size={16} />
