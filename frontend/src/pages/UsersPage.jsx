@@ -73,23 +73,29 @@ export default function UsersPage() {
 
       <div className="saas-table-shell">
         <div className="saas-grid-head grid grid-cols-12">
-          <p className="col-span-3">Name</p>
-          <p className="col-span-3">Email</p>
+          <p className="col-span-3 min-w-0">Name</p>
+          <p className="col-span-2 min-w-0">Email</p>
           <p className="col-span-2">Role</p>
-          <p className="col-span-2">Created</p>
-          <p className="col-span-2">Actions</p>
+          <p className="col-span-1 min-w-0">Created</p>
+          <p className="col-span-4 min-w-0 text-center">Actions</p>
         </div>
         {isLoading && <div className="p-8 text-center text-[#6b7c93]">Loading users...</div>}
         {!isLoading && users.map((user) => (
           <div key={user._id || user.id} className="saas-grid-row grid grid-cols-12 items-center text-sm">
-            <p className="col-span-3 font-medium text-[#0a2540]">{user.fullName}</p>
-            <p className="col-span-3 text-[#425466]">{user.email}</p>
-            <p className="col-span-2 capitalize">{user.role}</p>
-            <p className="col-span-2 text-[#6b7c93]">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-"}</p>
-            <div className="col-span-2 flex items-center gap-3">
+            <p className="col-span-3 min-w-0 truncate font-medium text-[#0a2540]" title={user.fullName || ""}>
+              {user.fullName}
+            </p>
+            <p className="col-span-2 min-w-0 truncate text-[#425466]" title={user.email || ""}>
+              {user.email}
+            </p>
+            <p className="col-span-2 min-w-0 capitalize">{user.role}</p>
+            <p className="col-span-1 min-w-0 text-[#6b7c93]">
+              {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-"}
+            </p>
+            <div className="col-span-4 flex min-w-0 flex-wrap items-center justify-center gap-2">
               <button
                 type="button"
-                className="text-[#635bff] hover:underline"
+                className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md px-2 text-xs font-medium text-[#635bff] hover:bg-violet-50 hover:underline"
                 onClick={() => {
                   const nextName = window.prompt("Update name", user.fullName || "");
                   if (nextName == null) return;
@@ -105,10 +111,16 @@ export default function UsersPage() {
               >
                 Edit
               </button>
-              <button type="button" className="text-[#635bff] hover:underline" onClick={() => resetPassword.mutate(user._id || user.id)}>Reset Password</button>
               <button
                 type="button"
-                className="text-[#635bff] hover:underline"
+                className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md px-2 text-xs font-medium text-[#635bff] hover:bg-violet-50 hover:underline"
+                onClick={() => resetPassword.mutate(user._id || user.id)}
+              >
+                Reset Password
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md px-2 text-xs font-medium text-[#635bff] hover:bg-violet-50 hover:underline"
                 onClick={() => {
                   const oldPassword = window.prompt("Old password");
                   if (oldPassword == null || !oldPassword) return;
@@ -119,7 +131,13 @@ export default function UsersPage() {
               >
                 Change Password
               </button>
-              <button type="button" className="text-rose-600 hover:underline" onClick={() => deleteUser.mutate(user._id || user.id)}>Delete</button>
+              <button
+                type="button"
+                className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md px-2 text-xs font-medium text-rose-600 hover:bg-rose-50 hover:underline"
+                onClick={() => deleteUser.mutate(user._id || user.id)}
+              >
+                Delete
+              </button>
             </div>
           </div>
         ))}
