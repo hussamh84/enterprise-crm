@@ -10,7 +10,9 @@ const env = require("./config/env");
 const { authRouter } = require("./modules/auth/auth.routes");
 const { moduleRouter } = require("./modules");
 const { pdfRouter } = require("./modules/pdf.routes");
+const { backupRouter } = require("./modules/backup.routes");
 
+const { authMiddleware } = require("./middlewares/authMiddleware");
 const { tenantMiddleware } = require("./middlewares/tenantMiddleware");
 const { errorHandler } = require("./middlewares/errorHandler");
 
@@ -48,7 +50,7 @@ app.use(helmet());
 
 /* ===================== MIDDLEWARE ===================== */
 app.use(morgan("dev"));
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "20mb" }));
 
 /* ===================== STATIC ===================== */
 app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
@@ -65,12 +67,14 @@ app.use("/api", apiLimiter);
 app.use("/api/v1/auth/login", loginLimiter);
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/backup", authMiddleware, tenantMiddleware, backupRouter);
 app.use("/api/v1", tenantMiddleware, moduleRouter);
 app.use("/api/v1", tenantMiddleware, pdfRouter);
 
 // Backward-compatible aliases so frontend calls to /api/* continue to work.
 app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth", authRouter);
+app.use("/api/backup", authMiddleware, tenantMiddleware, backupRouter);
 app.use("/api", tenantMiddleware, moduleRouter);
 app.use("/api", tenantMiddleware, pdfRouter);
 

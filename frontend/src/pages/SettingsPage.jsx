@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
 import { useCompanyBrandingSnapshot } from "../lib/companySettings";
@@ -93,6 +94,19 @@ export default function SettingsPage() {
         >
           {updateSettings.isPending ? "Saving..." : "Save Settings"}
         </button>
+      </div>
+
+      <div className="premium-card p-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-[#0a2540]">Data protection</p>
+          <p className="text-sm text-[#6b7c93] mt-1">Export or restore a full JSON backup of this workspace.</p>
+        </div>
+        <Link
+          to="/settings/backup"
+          className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-[#425466] hover:bg-slate-50"
+        >
+          Backup &amp; Restore
+        </Link>
       </div>
     </div>
   );

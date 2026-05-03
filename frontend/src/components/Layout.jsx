@@ -2,6 +2,7 @@ import {
   Bell,
   Boxes,
   Briefcase,
+  DatabaseBackup,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -34,7 +35,8 @@ const nav = [
   { to: "/invoices", label: "Invoices", icon: Receipt },
   { to: "/inventory", label: "Inventory", icon: Boxes },
   { to: "/users", label: "Users", icon: UserCog },
-  { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/settings", label: "Settings", icon: Settings, end: true },
+  { to: "/settings/backup", label: "Backup & Restore", icon: DatabaseBackup },
   { to: "/company-settings", label: "Company Settings", icon: Palette },
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
@@ -201,6 +203,7 @@ export default function Layout() {
                 <NavLink
                   key={item.to}
                   to={item.to}
+                  end={Boolean(item.end)}
                   onClick={handleNavItemClick}
                   className={({ isActive }) =>
                     `sidebar-item flex items-center gap-2 text-[14px] transition ${

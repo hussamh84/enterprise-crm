@@ -9,6 +9,7 @@ import ClientsPage from "./pages/ClientsPage";
 import UsersPage from "./pages/UsersPage";
 import SettingsPage from "./pages/SettingsPage";
 import CompanySettingsPage from "./pages/CompanySettingsPage";
+import BackupRestorePage from "./pages/BackupRestorePage";
 import ProfilePage from "./pages/ProfilePage";
 import ReportsPage from "./pages/ReportsPage";
 import CreateClientPage from "./pages/CreateClientPage";
@@ -54,6 +55,7 @@ function App() {
         <Route path="sales/new" element={<SalesFromInventoryPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="settings/backup" element={<BackupRestorePage />} />
         <Route path="company-settings" element={<CompanySettingsPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="reports" element={<ReportsPage />} />
