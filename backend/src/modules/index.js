@@ -104,6 +104,11 @@ const Quotation = makeEntityModel("Quotation", {
       price: { type: Number, default: 0 },
       unitPrice: { type: Number, default: 0 },
       total: { type: Number, default: 0 },
+      sourceType: { type: String, enum: ["inventory", "market_purchase"], default: "inventory" },
+      purchasePrice: { type: Number, min: 0, default: 0 },
+      supplier: { type: String, trim: true, default: "" },
+      purchaseReference: { type: String, trim: true, default: "" },
+      addToInventory: { type: Boolean, default: false },
     },
   ],
   discount: {
@@ -158,6 +163,11 @@ const Invoice = makeEntityModel("Invoice", {
       price: { type: Number, default: 0 },
       unitPrice: { type: Number, default: 0 },
       total: { type: Number, default: 0 },
+      sourceType: { type: String, enum: ["inventory", "market_purchase"], default: "inventory" },
+      purchasePrice: { type: Number, min: 0, default: 0 },
+      supplier: { type: String, trim: true, default: "" },
+      purchaseReference: { type: String, trim: true, default: "" },
+      addToInventory: { type: Boolean, default: false },
     },
   ],
   invoiceNo: { type: String, trim: true },
@@ -396,26 +406,32 @@ const normalizeQuotationStatus = (value, fallback = "draft") => {
 const calculateInvoiceProfitFromItems = async ({ tenantId, items = [] }) => {
   const safeItems = Array.isArray(items) ? items : [];
   if (!safeItems.length) return 0;
-  const productIds = [...new Set(safeItems.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
-  if (!productIds.length) return 0;
+  const inventoryBacked = safeItems.filter((item) => String(item?.sourceType || "").toLowerCase() !== "market_purchase");
+  const productIds = [...new Set(inventoryBacked.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
 
-  const products = await InventoryItem.find({
-    tenantId,
-    _id: { $in: productIds },
-    deletedAt: null,
-  })
-    .select("_id cost")
-    .lean();
+  const products = productIds.length
+    ? await InventoryItem.find({
+        tenantId,
+        _id: { $in: productIds },
+        deletedAt: null,
+      })
+        .select("_id cost")
+        .lean()
+    : [];
   const productCostMap = Object.fromEntries(products.map((product) => [String(product._id), Number(product.cost || 0)]));
 
   const totalProfit = safeItems.reduce((sum, item) => {
+    const qty = Number(item?.quantity || item?.qty || 0);
+    if (!Number.isFinite(qty) || qty <= 0) return sum;
+    const sellPrice = Number(item?.unitPrice ?? item?.price ?? 0);
+    if (String(item?.sourceType || "").toLowerCase() === "market_purchase") {
+      const buy = Number(item?.purchasePrice ?? 0);
+      return sum + (sellPrice - buy) * qty;
+    }
     const productId = String(item?.productId || "").trim();
     if (!productId) return sum;
-    const qty = Number(item?.quantity || item?.qty || 0);
-    const sellPrice = Number(item?.unitPrice ?? item?.price ?? 0);
     const purchaseCost = Number(productCostMap[productId] || 0);
-    const itemProfit = (sellPrice - purchaseCost) * qty;
-    return sum + itemProfit;
+    return sum + (sellPrice - purchaseCost) * qty;
   }, 0);
 
   return Number(totalProfit.toFixed(2));
@@ -427,6 +443,75 @@ const calculateInvoiceProfitFromQuotation = async ({ tenantId, quotationId }) =>
   if (!quotation) return 0;
   const items = Array.isArray(quotation.items) ? quotation.items : [];
   return calculateInvoiceProfitFromItems({ tenantId, items });
+};
+
+/** COGS from quotation lines linked to a project (inventory cost + market purchase price). */
+const sumProcurementCostFromQuotations = async ({ tenantId, quotations = [] }) => {
+  const allItems = quotations.flatMap((q) => (Array.isArray(q.items) ? q.items : []));
+  if (!allItems.length) return 0;
+  const invLines = allItems.filter((item) => String(item?.sourceType || "").toLowerCase() !== "market_purchase");
+  const productIds = [...new Set(invLines.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
+  const products = productIds.length
+    ? await InventoryItem.find({ tenantId, _id: { $in: productIds }, deletedAt: null }).select("_id cost").lean()
+    : [];
+  const costMap = Object.fromEntries(products.map((p) => [String(p._id), Number(p.cost || 0)]));
+  let sum = 0;
+  for (const item of allItems) {
+    const st = String(item?.sourceType || "").toLowerCase();
+    const qty = Number(item?.quantity || 0);
+    if (!Number.isFinite(qty) || qty <= 0) continue;
+    if (st === "market_purchase") {
+      sum += Number(item.purchasePrice || 0) * qty;
+      continue;
+    }
+    const pid = String(item?.productId || "").trim();
+    if (pid) sum += Number(costMap[pid] || 0) * qty;
+  }
+  return Number(sum.toFixed(2));
+};
+
+/** On create only: optional checkbox adds market lines into inventory (never automatic on update). */
+const applyMarketPurchaseInventoryAdds = async ({ tenantId, quotation, userId }) => {
+  const q = quotation?.toObject ? quotation.toObject() : quotation;
+  const items = Array.isArray(q?.items) ? q.items : [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (String(item.sourceType || "").toLowerCase() !== "market_purchase") continue;
+    if (!item.addToInventory) continue;
+    const name = String(item.name || item.description || "").trim();
+    if (!name) continue;
+    const qty = Number(item.quantity || 0);
+    if (!Number.isFinite(qty) || qty <= 0) continue;
+    const cost = Number(item.purchasePrice || 0);
+    const sell = Number(item.unitPrice ?? item.price ?? 0);
+    const sku = `MP-${String(q._id).slice(-8)}-${i + 1}-${Date.now().toString(36)}`.toUpperCase().slice(0, 40);
+    try {
+      await InventoryItem.create({
+        tenantId,
+        name,
+        sku,
+        category: "Market Purchase",
+        supplier: String(item.supplier || ""),
+        price: sell,
+        cost,
+        quantity: qty,
+        minQuantity: 0,
+        unit: "pcs",
+        createdBy: userId,
+        updatedBy: userId,
+        auditLog: [
+          {
+            action: "inventory.create_from_market_quotation",
+            by: userId,
+            note: `From quotation ${q.quotationNo || q._id}`,
+          },
+        ],
+      });
+    } catch (err) {
+      if (err?.code === 11000) continue;
+      throw err;
+    }
+  }
 };
 
 const normalizeInventorySaleItems = async ({ tenantId, items = [], enforceInventoryPrice = false }) => {
@@ -489,7 +574,10 @@ const deductInventoryForInvoice = async ({ invoice, tenantId, userId, session = 
     }).session(session);
     if (!quotation) return invoice;
     items = (Array.isArray(quotation.items) ? quotation.items : []).filter(
-      (item) => String(item?.productId || "").trim() && Number(item?.quantity || 0) > 0
+      (item) =>
+        String(item?.sourceType || "").toLowerCase() !== "market_purchase" &&
+        String(item?.productId || "").trim() &&
+        Number(item?.quantity || 0) > 0
     );
   }
   if (!items.length) return invoice;
@@ -551,7 +639,10 @@ const syncInventoryUsageForQuotation = async ({ tenantId, quotation, userId }) =
   await InventoryUsage.deleteMany({ tenantId, quotationId, source: "quotation" });
 
   const items = Array.isArray(quotation.items) ? quotation.items : [];
-  const candidateItems = items.filter((item) => String(item?.productId || "").trim());
+  const candidateItems = items.filter(
+    (item) =>
+      String(item?.sourceType || "").toLowerCase() !== "market_purchase" && String(item?.productId || "").trim()
+  );
   if (!candidateItems.length) return;
 
   const inventoryIds = [...new Set(candidateItems.map((item) => String(item.productId).trim()))];
@@ -674,6 +765,9 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
     return existing;
   }
   const invoiceNo = await generateDocumentNo({ model: Invoice, prefix: "INV", tenantId });
+  const invoiceLineItems = (Array.isArray(quotation.items) ? quotation.items : []).map((row) =>
+    typeof row?.toObject === "function" ? row.toObject() : { ...row }
+  );
 
   let invoice = null;
   const session = await mongoose.startSession();
@@ -695,6 +789,7 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
           customerPhone: String(quotation.walkInCustomerPhone || quotation.customerPhone || ""),
           customerEmail: String(quotation.walkInCustomerEmail || quotation.customerEmail || ""),
           quotationId: String(quotation._id),
+          items: invoiceLineItems,
           total,
           profit:
             quotationSaleType === "external_purchase"
@@ -746,20 +841,24 @@ const createInvoiceFromQuotation = async ({ quotation, req, note }) => {
 };
 
 const calculateProjectFinancials = async ({ tenantId, projectId }) => {
-  const [expenses, invoices] = await Promise.all([
-    Expense.find({ tenantId, projectId: String(projectId), deletedAt: null }).lean(),
-    Invoice.find({ tenantId, projectId: String(projectId), deletedAt: null }).lean(),
+  const pid = String(projectId);
+  const [expenses, invoices, quotations] = await Promise.all([
+    Expense.find({ tenantId, projectId: pid, deletedAt: null }).lean(),
+    Invoice.find({ tenantId, projectId: pid, deletedAt: null }).lean(),
+    Quotation.find({ tenantId, projectId: pid, deletedAt: null }).lean(),
   ]);
 
-  const totalExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+  const expenseLedger = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+  const quotationProcurementCost = await sumProcurementCostFromQuotations({ tenantId, quotations });
+  const totalExpenses = Number((expenseLedger + quotationProcurementCost).toFixed(2));
   const totalRevenue = invoices.reduce((sum, invoice) => {
     const paidAmount = Number(invoice.paidAmount ?? 0);
     if (paidAmount > 0) return sum + paidAmount;
     if (invoice.status === "paid") return sum + Number(invoice.total || 0);
     return sum;
   }, 0);
-  const profit = totalRevenue - totalExpenses;
-  return { totalRevenue, totalExpenses, profit };
+  const profit = Number((totalRevenue - totalExpenses).toFixed(2));
+  return { totalRevenue, totalExpenses, profit, quotationProcurementCost };
 };
 
 const normalizeInvoiceStatus = (inv) => String(inv?.status || "").toLowerCase();
@@ -823,7 +922,7 @@ const syncProjectFinancialsForProject = async ({ tenantId, projectId, userId }) 
         auditLog: {
           action: "project.financials.sync",
           by: userId,
-          note: `Revenue ${snapshot.totalRevenue}, Expenses ${snapshot.totalExpenses}, Profit ${snapshot.profit}`,
+          note: `Revenue ${snapshot.totalRevenue}, Expenses ${snapshot.totalExpenses} (incl. procurement ${snapshot.quotationProcurementCost || 0}), Profit ${snapshot.profit}`,
         },
       },
     }
@@ -1372,7 +1471,11 @@ const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
   const rawItems = Array.isArray(payload.items) ? payload.items : [];
   const source = String(payload?.source || "project").toLowerCase();
   const isInventorySource = source === "inventory";
-  const productIds = [...new Set(rawItems.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
+  if (isInventorySource && rawItems.some((item) => String(item?.sourceType || "").toLowerCase() === "market_purchase")) {
+    throw new AppError("Market purchase lines are not valid for inventory quotations.", 400);
+  }
+  const nonMarketLines = rawItems.filter((item) => String(item?.sourceType || "").toLowerCase() !== "market_purchase");
+  const productIds = [...new Set(nonMarketLines.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
   if (isInventorySource && rawItems.some((item) => !String(item?.productId || "").trim())) {
     throw new AppError("Each quotation item must reference an inventory product.", 400);
   }
@@ -1388,6 +1491,38 @@ const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
   const inventoryMap = Object.fromEntries(inventoryItems.map((item) => [String(item._id), item]));
 
   const items = rawItems.map((item) => {
+    const lineSource = String(item.sourceType || "").toLowerCase();
+    if (!isInventorySource && lineSource === "market_purchase") {
+      const manualName = String(item.description || item.name || "").trim();
+      if (!manualName) {
+        throw new AppError("Each market purchase line needs a description.", 400);
+      }
+      const quantity = Number(item.quantity || 0);
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        throw new AppError("Invalid quantity on market purchase line.", 400);
+      }
+      const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
+      const purchasePrice = Number(item.purchasePrice ?? 0);
+      if (!Number.isFinite(purchasePrice) || purchasePrice < 0) {
+        throw new AppError("Market purchase lines require a valid purchase price.", 400);
+      }
+      const total = Number((quantity * unitPrice).toFixed(2));
+      return {
+        productId: "",
+        name: manualName,
+        description: manualName,
+        price: unitPrice,
+        quantity,
+        unitPrice,
+        total,
+        sourceType: "market_purchase",
+        purchasePrice,
+        supplier: String(item.supplier || "").trim(),
+        purchaseReference: String(item.purchaseReference || "").trim(),
+        addToInventory: Boolean(item.addToInventory),
+      };
+    }
+
     const productId = String(item.productId || "").trim();
     if (!productId) {
       if (isInventorySource) {
@@ -1408,6 +1543,11 @@ const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
         quantity,
         unitPrice,
         total,
+        sourceType: "inventory",
+        purchasePrice: 0,
+        supplier: "",
+        purchaseReference: "",
+        addToInventory: false,
       };
     }
     const inventoryProduct = inventoryMap[productId];
@@ -1429,6 +1569,11 @@ const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
       quantity,
       unitPrice,
       total,
+      sourceType: "inventory",
+      purchasePrice: 0,
+      supplier: "",
+      purchaseReference: "",
+      addToInventory: false,
     };
   });
 
@@ -1617,6 +1762,7 @@ router.post("/quotations", async (req, res, next) => {
       auditLog: [{ action: "quotation.create", by: req.user?.id, note: "Created quotation" }],
     };
     const doc = await Quotation.create(payload);
+    await applyMarketPurchaseInventoryAdds({ tenantId, quotation: doc, userId: req.user?.id });
     await syncInventoryUsageForQuotation({ tenantId, quotation: doc, userId: req.user?.id });
     if (source === "project" && doc.projectId && typeFields.projectType) {
       await syncProjectTypesFromQuotation({
@@ -1624,6 +1770,13 @@ router.post("/quotations", async (req, res, next) => {
         projectId: doc.projectId,
         projectType: typeFields.projectType,
         cctvType: typeFields.cctvType,
+        userId: req.user?.id,
+      });
+    }
+    if (source === "project" && doc.projectId) {
+      await syncProjectFinancialsForProject({
+        tenantId,
+        projectId: String(doc.projectId),
         userId: req.user?.id,
       });
     }
@@ -1738,6 +1891,13 @@ router.put("/quotations/:id", async (req, res, next) => {
           projectId: doc.projectId,
           projectType: typeFields.projectType,
           cctvType: typeFields.cctvType,
+          userId: req.user?.id,
+        });
+      }
+      if (source === "project" && doc.projectId) {
+        await syncProjectFinancialsForProject({
+          tenantId,
+          projectId: String(doc.projectId),
           userId: req.user?.id,
         });
       }
@@ -1986,10 +2146,12 @@ router.get("/projects/:id/details", async (req, res, next) => {
       .lean();
 
     const totalQuoted = quotations.reduce((sum, q) => sum + Number(q.grandTotal ?? q.subtotal ?? 0), 0);
-    const totalExpenses = Number(project.totalExpenses ?? expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0));
-    const totalRevenue = Number(project.totalRevenue ?? 0);
     const progress = Number(project.progress || 0);
-    const calculatedProfit = Number(project.profit ?? totalRevenue - totalExpenses);
+    const financialSnapshot = await calculateProjectFinancials({ tenantId, projectId: String(project._id) });
+    const totalExpenses = financialSnapshot.totalExpenses;
+    const totalRevenue = financialSnapshot.totalRevenue;
+    const calculatedProfit = financialSnapshot.profit;
+    const quotationProcurementCost = financialSnapshot.quotationProcurementCost;
     const inventorySummary = {
       totalItemsUsed: inventoryUsage.reduce((sum, row) => sum + Number(row.quantity || 0), 0),
       totalUsageAmount: inventoryUsage.reduce((sum, row) => sum + Number(row.amount || 0), 0),
@@ -2011,6 +2173,7 @@ router.get("/projects/:id/details", async (req, res, next) => {
         totalRevenue,
         totalExpenses,
         calculatedProfit,
+        quotationProcurementCost,
       },
       progress,
     });

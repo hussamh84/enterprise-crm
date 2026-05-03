@@ -23,6 +23,8 @@ const calculateItemTotal = (item) => {
   return qty * unitPrice;
 };
 
+const isMarketPurchaseLine = (item) => String(item?.sourceType || "inventory").toLowerCase() === "market_purchase";
+
 export default function QuotationViewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -218,9 +220,37 @@ export default function QuotationViewPage() {
                       const qty = Number(item.qty ?? item.quantity ?? 0);
                       const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
                       const rowTotal = calculateItemTotal(item);
+                      const market = isMarketPurchaseLine(item);
+                      const pp = item.purchasePrice != null ? Number(item.purchasePrice) : null;
+                      const supplier = String(item.supplier || "").trim();
+                      const pref = String(item.purchaseReference || "").trim();
                       return (
                         <tr key={item._id || `${item.name || "item"}-${index}`}>
-                          <td className="text-left font-medium">{item.name || item.description || "Item"}</td>
+                          <td className="text-left font-medium align-top">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span>{item.name || item.description || "Item"}</span>
+                              {market ? (
+                                <span className="inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-amber-50 text-amber-900 border border-amber-200">
+                                  Market
+                                </span>
+                              ) : null}
+                            </div>
+                            {market && (pp != null && !Number.isNaN(pp) || supplier || pref) ? (
+                              <p className="mt-1 text-xs font-normal text-[#64748b] leading-snug">
+                                {pp != null && !Number.isNaN(pp) ? (
+                                  <span>
+                                    Purchase: <span className="numeric">{formatCurrency(pp)}</span>
+                                  </span>
+                                ) : null}
+                                {supplier ? (
+                                  <span className={pp != null && !Number.isNaN(pp) ? " ml-2" : ""}>Supplier: {supplier}</span>
+                                ) : null}
+                                {pref ? (
+                                  <span className={supplier || (pp != null && !Number.isNaN(pp)) ? " ml-2" : ""}>Ref: {pref}</span>
+                                ) : null}
+                              </p>
+                            ) : null}
+                          </td>
                           <td className="text-center text-[#475569]">{qty}</td>
                           <td className="numeric text-right text-[#475569] currency-col unit-price">
                             <span className="numeric">{formatCurrency(unitPrice)}</span>

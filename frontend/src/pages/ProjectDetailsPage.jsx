@@ -55,6 +55,7 @@ export default function ProjectDetailsPage() {
   const totalRevenue = Number(profitability?.totalRevenue ?? quotationSummary?.totalQuoted ?? 0);
   const totalExpenses = Number(profitability?.totalExpenses ?? 0);
   const netProfit = Number(profitability?.calculatedProfit ?? totalRevenue - totalExpenses);
+  const quotationProcurementCost = Number(profitability?.quotationProcurementCost ?? 0);
   const projectInvoices = useMemo(
     () =>
       invoices.filter((invoice) => {
@@ -191,6 +192,10 @@ export default function ProjectDetailsPage() {
               />
               <Field label="Budget" value={<span className="currency numeric">{formatCurrency(project.budget)}</span>} />
               <Field label="Total Revenue" value={<span className="currency numeric">{formatCurrency(totalRevenue)}</span>} />
+              <Field
+                label="Quoted procurement (COGS)"
+                value={<span className="currency numeric">{formatCurrency(quotationProcurementCost)}</span>}
+              />
               <Field label="Total Expenses" value={<span className="currency numeric">{formatCurrency(totalExpenses)}</span>} />
               <Field
                 label="Net Profit"

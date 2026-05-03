@@ -13,7 +13,18 @@ const PROJECT_TYPE_OPTIONS = [
   { value: "Network", label: "Network" },
 ];
 
-const BLANK_ITEM = { productId: "", description: "", quantity: 1, unitPrice: 0, lockPrice: false };
+const BLANK_ITEM = {
+  productId: "",
+  description: "",
+  quantity: 1,
+  unitPrice: 0,
+  lockPrice: false,
+  sourceType: "inventory",
+  purchasePrice: "",
+  supplier: "",
+  purchaseReference: "",
+  addToInventory: false,
+};
 
 const toNumber = (value) => Number(value || 0);
 
@@ -77,6 +88,11 @@ export default function QuotationBuilderPage() {
           quantity: row.quantity ?? 1,
           unitPrice: row.unitPrice ?? row.price ?? 0,
           lockPrice: false,
+          sourceType: String(row.sourceType || "inventory").toLowerCase() === "market_purchase" ? "market_purchase" : "inventory",
+          purchasePrice: row.purchasePrice ?? "",
+          supplier: row.supplier ?? "",
+          purchaseReference: row.purchaseReference ?? "",
+          addToInventory: Boolean(row.addToInventory),
         }))
       );
     } else {
@@ -132,7 +148,9 @@ export default function QuotationBuilderPage() {
         const quantity = toNumber(item.quantity);
         const unitPrice = toNumber(item.unitPrice);
         const total = quantity * unitPrice;
-        return {
+        const st =
+          String(item.sourceType || "inventory").toLowerCase() === "market_purchase" ? "market_purchase" : "inventory";
+        const base = {
           productId: item.productId || "",
           name: item.description?.trim() || "",
           description: item.description?.trim() || "",
@@ -140,7 +158,23 @@ export default function QuotationBuilderPage() {
           price: unitPrice,
           unitPrice,
           total,
+          sourceType: st,
+          purchasePrice: 0,
+          supplier: "",
+          purchaseReference: "",
+          addToInventory: false,
         };
+        if (st === "market_purchase") {
+          return {
+            ...base,
+            productId: "",
+            purchasePrice: toNumber(item.purchasePrice),
+            supplier: String(item.supplier || "").trim(),
+            purchaseReference: String(item.purchaseReference || "").trim(),
+            addToInventory: Boolean(item.addToInventory),
+          };
+        }
+        return base;
       }),
     [items]
   );
@@ -163,13 +197,21 @@ export default function QuotationBuilderPage() {
     if (calculatedItems.length === 0 || calculatedItems.some((item) => !item.description)) {
       reasons.push("Each line item needs a description.");
     }
+    for (const item of items) {
+      if (String(item.sourceType || "inventory").toLowerCase() !== "market_purchase") continue;
+      const pp = toNumber(item.purchasePrice);
+      if (!Number.isFinite(pp) || pp < 0) {
+        reasons.push("Market purchase lines need a valid purchase price (0 or greater).");
+        break;
+      }
+    }
     if (customerMode === "walkin") {
       if (!walkInName.trim()) reasons.push("Walk-in customer name is required.");
     } else if (!clientId) {
       reasons.push("Select a client.");
     }
     return reasons;
-  }, [name, projectType, cctvType, calculatedItems, customerMode, walkInName, clientId]);
+  }, [name, projectType, cctvType, calculatedItems, items, customerMode, walkInName, clientId]);
 
   const canSave = saveBlockedReasons.length === 0;
 
@@ -246,9 +288,14 @@ export default function QuotationBuilderPage() {
         itemIndex === index
           ? {
               ...item,
+              sourceType: "inventory",
               productId: String(selectedProduct._id),
               description: String(selectedProduct.name || ""),
               unitPrice: Number(selectedProduct.price || 0),
+              purchasePrice: "",
+              supplier: "",
+              purchaseReference: "",
+              addToInventory: false,
             }
           : item
       )
@@ -276,11 +323,45 @@ export default function QuotationBuilderPage() {
     setItemSearch((previous) => ({ ...previous, [index]: value }));
     updateItem(index, "description", value);
     updateItem(index, "productId", "");
+    const line = items[index];
+    if (String(line?.sourceType || "inventory").toLowerCase() === "market_purchase") {
+      setItemSuggestions((previous) => ({ ...previous, [index]: [] }));
+      return;
+    }
     const currentTimer = searchTimersRef.current[index];
     if (currentTimer) clearTimeout(currentTimer);
     searchTimersRef.current[index] = setTimeout(() => {
       void searchInventorySuggestions(index, value);
     }, 220);
+  };
+
+  const setItemSourceType = (index, nextSource) => {
+    const isMarket = nextSource === "market_purchase";
+    setItems((previous) =>
+      previous.map((item, itemIndex) => {
+        if (itemIndex !== index) return item;
+        if (isMarket) {
+          return {
+            ...item,
+            sourceType: "market_purchase",
+            productId: "",
+            lockPrice: false,
+            addToInventory: false,
+          };
+        }
+        return {
+          ...item,
+          sourceType: "inventory",
+          purchasePrice: "",
+          supplier: "",
+          purchaseReference: "",
+          addToInventory: false,
+        };
+      })
+    );
+    if (isMarket) {
+      setItemSuggestions((previous) => ({ ...previous, [index]: [] }));
+    }
   };
 
   if (isEdit && editLoading) {
@@ -462,61 +543,119 @@ export default function QuotationBuilderPage() {
         </div>
 
         <div className="space-y-3">
-          {items.map((item, index) => (
-            <div key={`quotation-item-${index}`} className="grid grid-cols-12 gap-3 items-center">
-              <div className="col-span-3 relative">
-                <input
-                  className="input-field"
-                  value={itemSearch[index] ?? item.description}
-                  onChange={(event) => handleItemNameInput(index, event.target.value)}
-                  placeholder="Type item name (e.g. cam)"
-                />
-                {Array.isArray(itemSuggestions[index]) && itemSuggestions[index].length > 0 ? (
-                  <div
-                    className="autocomplete-dropdown absolute left-0 right-0 top-[calc(100%+4px)] z-20 bg-white text-black border border-gray-200 rounded-xl shadow-lg"
-                    style={{ background: "#fff", color: "#000" }}
+          {items.map((item, index) => {
+            const isMarket = String(item.sourceType || "inventory").toLowerCase() === "market_purchase";
+            return (
+              <div key={`quotation-item-${index}`} className="space-y-2">
+                <div className="grid grid-cols-12 gap-2 sm:gap-3 items-center">
+                  <select
+                    className="col-span-12 sm:col-span-2 input-field text-xs sm:text-sm"
+                    aria-label="Line source type"
+                    value={isMarket ? "market_purchase" : "inventory"}
+                    onChange={(e) => setItemSourceType(index, e.target.value)}
                   >
-                    {itemSuggestions[index].map((suggestion) => (
-                      <button
-                        key={suggestion._id}
-                        type="button"
-                        className={`autocomplete-item hover:bg-gray-100 text-black ${item.productId === suggestion._id ? "active" : ""}`}
+                    <option value="inventory">Inventory</option>
+                    <option value="market_purchase">Market Purchase</option>
+                  </select>
+                  <div className="col-span-12 sm:col-span-3 relative">
+                    <input
+                      className="input-field"
+                      value={itemSearch[index] ?? item.description}
+                      onChange={(event) => handleItemNameInput(index, event.target.value)}
+                      placeholder={isMarket ? "Item description" : "Type item name (e.g. cam)"}
+                    />
+                    {!isMarket &&
+                    Array.isArray(itemSuggestions[index]) &&
+                    itemSuggestions[index].length > 0 ? (
+                      <div
+                        className="autocomplete-dropdown absolute left-0 right-0 top-[calc(100%+4px)] z-20 bg-white text-black border border-gray-200 rounded-xl shadow-lg"
                         style={{ background: "#fff", color: "#000" }}
-                        onClick={() => handleProductSelect(index, suggestion)}
                       >
-                        <span className="font-medium text-slate-800">{suggestion.name}</span>
-                        <span className="ml-2 text-xs text-slate-500">{suggestion.sku || "N/A"} - {formatCurrency(suggestion.price || 0)}</span>
-                      </button>
-                    ))}
+                        {itemSuggestions[index].map((suggestion) => (
+                          <button
+                            key={suggestion._id}
+                            type="button"
+                            className={`autocomplete-item hover:bg-gray-100 text-black ${item.productId === suggestion._id ? "active" : ""}`}
+                            style={{ background: "#fff", color: "#000" }}
+                            onClick={() => handleProductSelect(index, suggestion)}
+                          >
+                            <span className="font-medium text-slate-800">{suggestion.name}</span>
+                            <span className="ml-2 text-xs text-slate-500">
+                              {suggestion.sku || "N/A"} - {formatCurrency(suggestion.price || 0)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                  <input
+                    type="number"
+                    min="0"
+                    className="col-span-4 sm:col-span-2 input-field text-center"
+                    value={item.quantity}
+                    onChange={(event) => updateItem(index, "quantity", event.target.value)}
+                    placeholder="Qty"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    className="col-span-4 sm:col-span-2 input-field price numeric"
+                    value={item.unitPrice}
+                    onChange={(event) => updateItem(index, "unitPrice", event.target.value)}
+                    placeholder={isMarket ? "Sell price" : "Unit price"}
+                    readOnly={Boolean(item.lockPrice)}
+                  />
+                  <div className="col-span-4 sm:col-span-2 total-field numeric text-sm">
+                    {formatCurrency(calculatedItems[index]?.total)}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="col-span-12 sm:col-span-1 delete-btn text-slate-500 hover:text-rose-600 justify-self-end sm:justify-self-start"
+                    onClick={() => removeItem(index)}
+                    aria-label="Remove line"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+                {isMarket ? (
+                  <div className="grid grid-cols-12 gap-2 sm:gap-3 items-center border-l-2 border-slate-200 pl-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="col-span-6 sm:col-span-2 input-field text-sm"
+                      placeholder="Purchase price"
+                      value={item.purchasePrice}
+                      onChange={(e) => updateItem(index, "purchasePrice", e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      className="col-span-6 sm:col-span-3 input-field text-sm"
+                      placeholder="Supplier"
+                      value={item.supplier}
+                      onChange={(e) => updateItem(index, "supplier", e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      className="col-span-12 sm:col-span-3 input-field text-sm"
+                      placeholder="Purchase reference"
+                      value={item.purchaseReference}
+                      onChange={(e) => updateItem(index, "purchaseReference", e.target.value)}
+                    />
+                    <label className="col-span-12 sm:col-span-4 flex items-center gap-2 text-xs text-slate-600 cursor-pointer whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(item.addToInventory)}
+                        onChange={(e) => updateItem(index, "addToInventory", e.target.checked)}
+                      />
+                      Add purchased item to inventory
+                    </label>
                   </div>
                 ) : null}
               </div>
-              <input
-                type="number"
-                min="0"
-                className="col-span-2 input-field text-center"
-                value={item.quantity}
-                onChange={(event) => updateItem(index, "quantity", event.target.value)}
-                placeholder="Qty"
-              />
-              <input
-                type="number"
-                min="0"
-                className="col-span-2 input-field price numeric"
-                value={item.unitPrice}
-                onChange={(event) => updateItem(index, "unitPrice", event.target.value)}
-                placeholder="Unit price"
-                readOnly={Boolean(item.lockPrice)}
-              />
-              <div className="col-span-2 total-field numeric">
-                {formatCurrency(calculatedItems[index]?.total)}
-              </div>
-
-              <button type="button" className="col-span-3 delete-btn text-slate-500 hover:text-rose-600 justify-self-start" onClick={() => removeItem(index)} aria-label="Remove line">
-                <Trash2 size={16} />
-              </button>
-            </div>
-          ))}
+            );
+          })}
           <button type="button" className="btn-secondary btn-compact !border-dashed flex items-center gap-2" onClick={() => setItems((previous) => [...previous, { ...BLANK_ITEM }])}>
             <CirclePlus size={14} /> Add Item
           </button>
