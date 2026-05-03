@@ -217,7 +217,9 @@ export default function BackupRestorePage() {
           <h1 className="section-title">Backup &amp; Restore</h1>
           <p className="page-subtitle text-[#6b7c93] mt-1">
             Manual JSON export/restore plus a lightweight <strong>daily automatic backup</strong> on the server (local{" "}
-            <code className="text-xs bg-slate-100 px-1 rounded">/backups</code> folder, last 30 files kept).
+            <code className="text-xs bg-slate-100 px-1 rounded">/backups</code>, files like{" "}
+            <code className="text-xs bg-slate-100 px-1 rounded">backup-YYYY-MM-DD-HH-mm-&lt;workspace&gt;.json</code>, newest 30
+            kept).
           </p>
         </div>
       </div>
