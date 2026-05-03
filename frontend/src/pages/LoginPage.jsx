@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { onCompanyLogoImgError } from "../config/company";
 import api from "../lib/api";
@@ -69,20 +70,14 @@ export default function LoginPage() {
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
-            <span
+            <button
+              type="button"
               className="toggle-eye"
-              role="button"
-              tabIndex={0}
               onClick={togglePassword}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  togglePassword();
-                }
-              }}
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              👁
-            </span>
+              {showPassword ? <EyeOff size={18} strokeWidth={2} aria-hidden /> : <Eye size={18} strokeWidth={2} aria-hidden />}
+            </button>
           </div>
 
           <div className="row">
