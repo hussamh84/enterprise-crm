@@ -2,6 +2,7 @@ const env = require("./config/env");
 const mongoose = require("mongoose");
 const { app } = require("./app");
 const User = require("./modules/users/user.model");
+const { startBackupScheduler } = require("./services/backupScheduler");
 
 const start = async () => {
   try {
@@ -29,6 +30,8 @@ const start = async () => {
     await mongoose.connect(env.mongoUri);
     console.log("MongoDB connected successfully ✅");
     console.log(`MongoDB database: ${mongoose.connection.name}`);
+
+    startBackupScheduler();
 
     app.listen(env.port, () => {
       console.log(`Server running on port ${env.port}`);

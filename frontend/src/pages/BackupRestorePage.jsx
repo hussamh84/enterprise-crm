@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DatabaseBackup, Download, Upload } from "lucide-react";
 import api from "../lib/api";
 import {
@@ -18,6 +18,11 @@ import { useAuthStore } from "../store/authStore";
 export default function BackupRestorePage() {
   const queryClient = useQueryClient();
   const tenantId = useAuthStore((s) => s.user?.tenantId || "");
+  const { data: autoStatus, refetch: refetchAutoStatus } = useQuery({
+    queryKey: ["backup-auto-status"],
+    queryFn: async () => (await api.get("/backup/auto-status")).data,
+    refetchInterval: 60_000,
+  });
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [restoreError, setRestoreError] = useState("");
@@ -147,6 +152,37 @@ export default function BackupRestorePage() {
     }
   };
 
+  const handleDownloadLatestAuto = async () => {
+    setRestoreError("");
+    try {
+      const res = await api.get("/backup/auto/latest", { responseType: "blob" });
+      const dispo = res.headers["content-disposition"];
+      let name = "latest-auto-backup.json";
+      if (dispo && dispo.includes("filename=")) {
+        const m = dispo.match(/filename="?([^";]+)"?/i);
+        if (m) name = m[1];
+      }
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      let msg = e?.response?.data?.message || e.message || "No automatic backup available yet.";
+      if (e?.response?.data instanceof Blob) {
+        try {
+          const t = await e.response.data.text();
+          const j = JSON.parse(t);
+          if (j?.message) msg = j.message;
+        } catch {
+          /* ignore */
+        }
+      }
+      setRestoreError(typeof msg === "string" ? msg : "No automatic backup available yet.");
+    }
+  };
+
   const runRestore = async () => {
     if (!pendingBackup || !confirmChecked) return;
     setImporting(true);
@@ -158,6 +194,7 @@ export default function BackupRestorePage() {
       setConfirmOpen(false);
       setPendingBackup(null);
       await queryClient.invalidateQueries();
+      await queryClient.invalidateQueries({ queryKey: ["backup-auto-status"] });
     } catch (e) {
       const msg =
         e?.response?.data?.errors?.join?.("; ") ||
@@ -179,9 +216,69 @@ export default function BackupRestorePage() {
         <div>
           <h1 className="section-title">Backup &amp; Restore</h1>
           <p className="page-subtitle text-[#6b7c93] mt-1">
-            Export a full JSON snapshot of your workspace, or restore from a previously exported file. Automatic cloud
-            backups are not enabled in this phase.
+            Manual JSON export/restore plus a lightweight <strong>daily automatic backup</strong> on the server (local{" "}
+            <code className="text-xs bg-slate-100 px-1 rounded">/backups</code> folder, last 30 files kept).
           </p>
+        </div>
+      </div>
+
+      <div className="premium-card p-5 space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h2 className="text-base font-semibold text-[#0a2540]">Automatic daily backup</h2>
+          <button
+            type="button"
+            onClick={() => refetchAutoStatus()}
+            className="text-xs font-medium text-[#635bff] hover:underline"
+          >
+            Refresh status
+          </button>
+        </div>
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Auto backup status</dt>
+            <dd className="mt-1 font-medium text-[#0a2540]">
+              {autoStatus?.autoBackupEnabled ? "Enabled" : "—"}
+              {autoStatus?.lastRunOk === false ? (
+                <span className="ml-2 text-rose-600 text-xs font-normal">Last run failed</span>
+              ) : null}
+            </dd>
+          </div>
+          <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Schedule</dt>
+            <dd className="mt-1 text-[#334155]">{autoStatus?.schedule || "—"}</dd>
+          </div>
+          <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Last server backup run</dt>
+            <dd className="mt-1 text-[#334155]">
+              {autoStatus?.lastRunAt ? new Date(autoStatus.lastRunAt).toLocaleString() : "Not run yet"}
+            </dd>
+          </div>
+          <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2">
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Latest for this workspace</dt>
+            <dd className="mt-1 text-[#334155] break-all">
+              {autoStatus?.latestTenantBackupAt
+                ? `${new Date(autoStatus.latestTenantBackupAt).toLocaleString()} (${autoStatus.latestTenantBackupFile || ""})`
+                : "—"}
+            </dd>
+          </div>
+          <div className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 sm:col-span-2">
+            <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Total auto-backup files on server</dt>
+            <dd className="mt-1 text-[#334155]">
+              {autoStatus?.totalSavedBackups != null ? autoStatus.totalSavedBackups : "—"}{" "}
+              <span className="text-slate-400">(rotation: newest 30 files)</span>
+            </dd>
+          </div>
+        </dl>
+        {autoStatus?.lastError ? <p className="text-xs text-rose-600">Last error: {autoStatus.lastError}</p> : null}
+        <div className="flex flex-wrap gap-2 pt-1">
+          <button
+            type="button"
+            onClick={handleDownloadLatestAuto}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-[#425466] hover:bg-slate-50"
+          >
+            <Download className="h-4 w-4 shrink-0" aria-hidden />
+            Download latest auto backup
+          </button>
         </div>
       </div>
 

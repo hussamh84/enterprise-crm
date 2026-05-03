@@ -1,7 +1,9 @@
 const express = require("express");
+const fs = require("fs");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const User = require("./users/user.model");
+const { getAutoBackupStatusForTenant, getLatestAutoBackupFileForSlug, safeTenantSlug } = require("../services/backupScheduler");
 
 const router = express.Router();
 
@@ -82,6 +84,38 @@ function mapBackupRoleToDb(role) {
   if (r === "admin") return "company_admin";
   return "sales";
 }
+
+router.get("/auto-status", (req, res, next) => {
+  try {
+    const tenantId = req.user?.tenantId || req.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({ message: "Tenant context is required." });
+    }
+    const data = getAutoBackupStatusForTenant(tenantId);
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/auto/latest", (req, res, next) => {
+  try {
+    const tenantId = req.user?.tenantId || req.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({ message: "Tenant context is required." });
+    }
+    const slug = safeTenantSlug(tenantId);
+    const latest = getLatestAutoBackupFileForSlug(slug);
+    if (!latest) {
+      return res.status(404).json({ message: "No automatic backup for this workspace yet." });
+    }
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${latest.name}"`);
+    fs.createReadStream(latest.fp).pipe(res);
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.post("/validate", (req, res) => {
   try {
