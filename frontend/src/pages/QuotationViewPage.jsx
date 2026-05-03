@@ -6,6 +6,7 @@ import { openPdf } from "../utils/pdf";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 import { formatProjectTypeDisplay } from "../utils/projectTypeDisplay";
 import { formatQuotationStatusLabel, normalizeQuotationStatus } from "../utils/quotationStatus";
+import { DEFAULT_QUOTATION_NOTES } from "../utils/defaultDocNotes";
 
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");
 
@@ -265,9 +266,9 @@ export default function QuotationViewPage() {
               <div className="notes">
                 <h4>Notes</h4>
                 <ul>
-                  <li>This quotation is valid for 15 days only.</li>
-                  <li>30% advance payment is required, 70% after completion.</li>
-                  <li>Warranty is 1 year.</li>
+                  {DEFAULT_QUOTATION_NOTES.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
                 </ul>
               </div>
             </>

@@ -8,6 +8,18 @@ const { models } = require("./index");
 
 const router = express.Router();
 
+/** Display-only; keep in sync with frontend `src/utils/defaultDocNotes.js`. */
+const DEFAULT_PAYMENT_NOTE_LINES = [
+  "70% advance payment is required.",
+  "30% is due upon project completion.",
+];
+const DEFAULT_QUOTATION_NOTE_LINES = [
+  "This quotation is valid for 15 days only.",
+  ...DEFAULT_PAYMENT_NOTE_LINES,
+  "Warranty is 1 year.",
+];
+const DEFAULT_INVOICE_NOTE_LINES = [...DEFAULT_PAYMENT_NOTE_LINES, "Warranty is 1 year."];
+
 const pickBrandingField = (settingsValue, envValue, defaultValue) => {
   const s = typeof settingsValue === "string" ? settingsValue.trim() : "";
   if (s) return s;
@@ -301,31 +313,19 @@ const addTotals = (doc, { subtotal, discount = {}, tax = 0, grandTotal, total },
   return y;
 };
 
-const addQuotationNotes = (doc, startY) => {
+const addBulletedNotes = (doc, startY, lines) => {
   const y = Math.min(startY + 8, 690);
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(11)
-    .fillColor("#374151")
-    .text("Notes", 50, y);
-
-  const notes = [
-    "This quotation is valid for 15 days only.",
-    "30% advance payment is required, 70% after completion.",
-    "Warranty is 1 year.",
-  ];
-
+  doc.font("Helvetica-Bold").fontSize(11).fillColor("#374151").text("Notes", 50, y);
   let lineY = y + 16;
-  doc
-    .font("Helvetica")
-    .fontSize(10)
-    .fillColor("#555");
-  notes.forEach((item) => {
+  doc.font("Helvetica").fontSize(10).fillColor("#555");
+  lines.forEach((item) => {
     doc.text(`• ${item}`, 58, lineY, { width: 492 });
     lineY += 16;
   });
   return lineY;
 };
+
+const addQuotationNotes = (doc, startY) => addBulletedNotes(doc, startY, DEFAULT_QUOTATION_NOTE_LINES);
 
 const streamPdf = (res, filename, painter) => {
   const doc = new PDFDocument({ size: "A4", margin: 50 });
@@ -454,17 +454,20 @@ router.get("/invoices/:id/pdf", async (req, res, next) => {
         },
         y
       );
+      const summaryBaseY = totalsEndY;
       doc
         .fontSize(9)
         .font("Helvetica")
         .fillColor("#0f172a")
-        .text(`Status: ${statusLabel}`, 50, totalsEndY - 8)
-        .text(`Paid to date: ${formatCurrency(paid)}`, 50, totalsEndY + 8)
-        .text(`Balance due: ${formatCurrency(remaining)}`, 50, totalsEndY + 24);
+        .text(`Status: ${statusLabel}`, 50, summaryBaseY - 8)
+        .text(`Paid to date: ${formatCurrency(paid)}`, 50, summaryBaseY + 8)
+        .text(`Balance due: ${formatCurrency(remaining)}`, 50, summaryBaseY + 24);
+      const notesEndY = addBulletedNotes(doc, summaryBaseY + 36, DEFAULT_INVOICE_NOTE_LINES);
       doc
         .fontSize(9)
+        .font("Helvetica")
         .fillColor("#6b7c93")
-        .text("Thank you for your business", 50, Math.min(totalsEndY + 48, 760));
+        .text("Thank you for your business", 50, Math.min(notesEndY + 12, 760));
     });
   } catch (error) {
     next(error);

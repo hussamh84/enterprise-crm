@@ -5,6 +5,7 @@ import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
 import { openPdf } from "../utils/pdf";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
+import { DEFAULT_INVOICE_NOTES } from "../utils/defaultDocNotes";
 
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");
 
@@ -196,6 +197,19 @@ export default function InvoiceDetailPage() {
               <span className="value">{formatCurrency(total)}</span>
               <span className="currency">SDG</span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="enterprise-doc-card">
+        <div className="p-8">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.1em] text-[#64748b] mb-4">Notes</h3>
+          <div className="notes text-sm text-[#475569]">
+            <ul className="list-disc pl-5 space-y-1">
+              {DEFAULT_INVOICE_NOTES.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>
