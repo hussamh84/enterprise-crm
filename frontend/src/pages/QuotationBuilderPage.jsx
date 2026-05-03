@@ -114,11 +114,6 @@ export default function QuotationBuilderPage() {
     return clients.filter((c) => String(c.name || "").toLowerCase().includes(q) || String(c.email || "").toLowerCase().includes(q));
   }, [clients, clientSearch]);
 
-  const projectsForClient = useMemo(() => {
-    if (!clientId || customerMode !== "existing") return [];
-    return projects.filter((p) => String(p.clientId?._id || p.clientId) === String(clientId));
-  }, [projects, clientId, customerMode]);
-
   useEffect(() => {
     if (isEdit || customerMode !== "existing") return;
     if (!projectId || !clientId) return;
@@ -164,7 +159,6 @@ export default function QuotationBuilderPage() {
   const saveBlockedReasons = useMemo(() => {
     const reasons = [];
     if (!name.trim()) reasons.push("Quotation title is required.");
-    if (!projectType) reasons.push("Select a project type.");
     if (projectType === "CCTV" && !cctvType) reasons.push("Select IP or Analog for CCTV.");
     if (calculatedItems.length === 0 || calculatedItems.some((item) => !item.description)) {
       reasons.push("Each line item needs a description.");
@@ -194,7 +188,7 @@ export default function QuotationBuilderPage() {
         walkInCustomerName: isWalkin ? walkInName.trim() : "",
         walkInCustomerPhone: isWalkin ? walkInPhone.trim() : "",
         walkInCustomerEmail: isWalkin ? walkInEmail.trim().toLowerCase() : "",
-        projectType,
+        projectType: projectType || "Network",
         cctvType: projectType === "CCTV" ? cctvType : "",
         items: calculatedItems,
         discount: { type: discountType, value: toNumber(discountValue) },
@@ -386,41 +380,22 @@ export default function QuotationBuilderPage() {
             </div>
 
             {customerMode === "existing" ? (
-              <>
-                <select
-                  id="quote-client"
-                  className="w-full h-12 border rounded-xl px-4"
-                  value={clientId}
-                  onChange={(event) => {
-                    setClientId(event.target.value);
-                    setProjectId("");
-                  }}
-                >
-                  <option value="">Select Client</option>
-                  {filteredClients.map((client) => (
-                    <option key={client._id} value={client._id}>
-                      {client.name}
-                    </option>
-                  ))}
-                </select>
-                <label htmlFor="quote-project-link" className="block text-sm font-medium mb-2 mt-3">
-                  Project
-                </label>
-                <select
-                  id="quote-project-link"
-                  className="w-full h-12 border rounded-xl px-4"
-                  value={projectId}
-                  onChange={(event) => setProjectId(event.target.value)}
-                  disabled={!clientId}
-                >
-                  <option value="">{clientId ? "Select project (optional)" : "Select client first"}</option>
-                  {projectsForClient.map((p) => (
-                    <option key={p._id} value={p._id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </>
+              <select
+                id="quote-client"
+                className="w-full h-12 border rounded-xl px-4"
+                value={clientId}
+                onChange={(event) => {
+                  setClientId(event.target.value);
+                  setProjectId("");
+                }}
+              >
+                <option value="">Select Client</option>
+                {filteredClients.map((client) => (
+                  <option key={client._id} value={client._id}>
+                    {client.name}
+                  </option>
+                ))}
+              </select>
             ) : null}
             {customerMode === "walkin" ? (
               <div className="space-y-2">
@@ -463,7 +438,7 @@ export default function QuotationBuilderPage() {
                 if (v !== "CCTV") setCctvType("");
               }}
             >
-              <option value="">Select type</option>
+              <option value="">Select project (optional)</option>
               {PROJECT_TYPE_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
