@@ -3,23 +3,24 @@ const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
 const env = require("../config/env");
+const { COMPANY } = require("../config/company");
 const { models } = require("./index");
 
-console.log("CHECK PAGE:", __filename);
-
 const router = express.Router();
-const PDF_COMPANY = {
-  name: "Config Engineering",
-  address: "Sudan, Omdurman, Al Abraj St.",
-  phone: "Phone No: +249 912679849 - +249 124000486",
-  email: "Email: configengineering.sd@gmail.com",
+
+const pickBrandingField = (settingsValue, envValue, defaultValue) => {
+  const s = typeof settingsValue === "string" ? settingsValue.trim() : "";
+  if (s) return s;
+  const e = typeof envValue === "string" ? envValue.trim() : "";
+  if (e) return e;
+  return typeof defaultValue === "string" ? defaultValue : "";
 };
 
 const resolveLogoPath = (configuredPath) => {
   const candidates = [];
   if (typeof configuredPath === "string" && configuredPath.trim()) {
     const trimmed = configuredPath.trim();
-    if (trimmed === "/logo.png") {
+    if (trimmed === COMPANY.logo || trimmed === "/logo.png") {
       candidates.push(path.resolve(process.cwd(), "../frontend/public/logo.png"));
     } else if (trimmed.startsWith("/uploads/")) {
       candidates.push(path.resolve(process.cwd(), `.${trimmed}`));
@@ -35,12 +36,16 @@ const resolveLogoPath = (configuredPath) => {
 
 const resolveBranding = async (tenantId) => {
   const settings = await models.Settings.findOne({ tenantId, deletedAt: null });
-  const logoPath = resolveLogoPath(settings?.companyLogoUrl || env.companyLogoPath || "/logo.png");
+  const logoConfigured =
+    (typeof settings?.companyLogoUrl === "string" && settings.companyLogoUrl.trim()) ||
+    (typeof env.companyLogoPath === "string" && env.companyLogoPath.trim()) ||
+    COMPANY.logo;
+  const logoPath = resolveLogoPath(logoConfigured);
   return {
-    companyName: PDF_COMPANY.name,
-    companyAddress: PDF_COMPANY.address,
-    companyPhone: PDF_COMPANY.phone,
-    companyEmail: PDF_COMPANY.email,
+    companyName: pickBrandingField(settings?.companyName, env.companyName, COMPANY.name),
+    companyAddress: pickBrandingField(settings?.companyAddress, env.companyAddress, COMPANY.address),
+    companyPhone: pickBrandingField(settings?.companyPhone, env.companyPhone, COMPANY.phone),
+    companyEmail: pickBrandingField(settings?.companyEmail, env.companyEmail, COMPANY.email),
     companyTaxId: env.companyTaxId,
     companyLogoPath: logoPath,
   };

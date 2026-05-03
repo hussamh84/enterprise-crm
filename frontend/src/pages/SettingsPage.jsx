@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { COMPANY } from "../config/company";
 import api from "../lib/api";
 
 export default function SettingsPage() {
@@ -54,7 +55,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="section-title">Settings</h1>
-        <p className="text-[#6b7c93] mt-1">Configure Config Engineering branding and global settings.</p>
+        <p className="text-[#6b7c93] mt-1">Configure {COMPANY.name} branding and global settings.</p>
       </div>
 
       <div className="premium-card p-5 grid md:grid-cols-2 gap-4">

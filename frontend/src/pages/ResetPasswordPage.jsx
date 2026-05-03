@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
+import { COMPANY } from "../config/company";
 import api from "../lib/api";
 
 export default function ResetPasswordPage() {
+useEffect(() => {
+  document.title = COMPANY.name;
+}, []);
+
 const { token } = useParams();
 const navigate = useNavigate();
 const [password, setPassword] = useState("");

@@ -11,8 +11,7 @@ const { clientNumberField } = require("./clients/client.model");
 const { AppError } = require("../utils/appError");
 const { User } = require("./auth/auth.routes");
 const { sendMulticast } = require("../services/fcm");
-
-console.log("CHECK PAGE:", __filename);
+const { COMPANY } = require("../config/company");
 
 const router = express.Router();
 const uploadsDir = path.resolve(__dirname, "../../uploads");
@@ -269,9 +268,9 @@ const SettingsSchema = new mongoose.Schema(
     tenantId: { type: String, required: true, index: true },
     currency: { type: String, default: "SDG", trim: true },
     locale: { type: String, default: "en-US", trim: true },
-    companyName: { type: String, default: "Config Engineering", trim: true },
-    companyAddress: { type: String, default: "Sudan, Khartoum - Omdurman, Al Abraj St.", trim: true },
-    companyPhone: { type: String, default: "+249 912679849, +249 124000486", trim: true },
+    companyName: { type: String, default: COMPANY.name, trim: true },
+    companyAddress: { type: String, default: COMPANY.address, trim: true },
+    companyPhone: { type: String, default: COMPANY.phone, trim: true },
     companyLogoUrl: { type: String, default: "", trim: true },
     backgroundImageUrl: { type: String, default: "", trim: true },
     createdBy: { type: String },
@@ -2789,9 +2788,9 @@ router.get("/settings", async (req, res, next) => {
         tenantId: req.tenantId,
         currency: "SDG",
         locale: "en-US",
-        companyName: "Config Engineering",
-        companyAddress: "Sudan, Khartoum - Omdurman, Al Abraj St.",
-        companyPhone: "+249 912679849, +249 124000486",
+        companyName: COMPANY.name,
+        companyAddress: COMPANY.address,
+        companyPhone: COMPANY.phone,
         createdBy: req.user?.id,
         updatedBy: req.user?.id,
       });
@@ -2830,9 +2829,9 @@ router.put("/settings", async (req, res, next) => {
           tenantId: req.tenantId,
           currency: "SDG",
           locale: "en-US",
-          companyName: "Config Engineering",
-          companyAddress: "Sudan, Khartoum - Omdurman, Al Abraj St.",
-          companyPhone: "+249 912679849, +249 124000486",
+          companyName: COMPANY.name,
+          companyAddress: COMPANY.address,
+          companyPhone: COMPANY.phone,
           createdBy: req.user?.id,
         },
       },
@@ -2860,9 +2859,9 @@ router.post("/settings/logo", logoUpload.single("logo"), async (req, res, next) 
           tenantId: req.tenantId,
           currency: "SDG",
           locale: "en-US",
-          companyName: "Config Engineering",
-          companyAddress: "Sudan, Khartoum - Omdurman, Al Abraj St.",
-          companyPhone: "+249 912679849, +249 124000486",
+          companyName: COMPANY.name,
+          companyAddress: COMPANY.address,
+          companyPhone: COMPANY.phone,
           createdBy: req.user?.id,
         },
       },

@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { COMPANY, onCompanyLogoImgError } from "../config/company";
 import api from "../lib/api";
 
 export default function ForgotPasswordPage() {
+  useEffect(() => {
+    document.title = COMPANY.name;
+  }, []);
+
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -23,15 +28,6 @@ export default function ForgotPasswordPage() {
     }
   };
 
-  const handleLogoError = (event) => {
-    event.currentTarget.onerror = null;
-    if (!event.currentTarget.src.endsWith("/logo.png")) {
-      event.currentTarget.src = "/logo.png";
-      return;
-    }
-    event.currentTarget.src = "/favicon.svg";
-  };
-
   return (
     <div
       className="login-page"
@@ -41,7 +37,7 @@ export default function ForgotPasswordPage() {
     >
       <div className="login-page-inner">
         <form className="login-card" onSubmit={handleSubmit}>
-          <img src="/logo.png" onError={handleLogoError} alt="" />
+          <img src={COMPANY.logo} onError={onCompanyLogoImgError} alt="" />
 
           <h1>Forgot Password</h1>
 

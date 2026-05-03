@@ -6,8 +6,11 @@ import "./index.css";
 import "leaflet/dist/leaflet.css";
 import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 import App from "./App.jsx";
+import { COMPANY } from "./config/company";
 import { setAuthToken } from "./lib/api";
 import { useAuthStore } from "./store/authStore";
+
+document.title = COMPANY.name;
 
 const queryClient = new QueryClient();
 const token =

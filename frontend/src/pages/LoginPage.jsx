@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { COMPANY, onCompanyLogoImgError } from "../config/company";
 import api from "../lib/api";
 import { useAuthStore } from "../store/authStore";
 
@@ -11,6 +12,10 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    document.title = COMPANY.name;
+  }, []);
 
   useEffect(() => {
     if (sessionToken) navigate("/", { replace: true });
@@ -33,15 +38,6 @@ export default function LoginPage() {
     setShowPassword((prev) => !prev);
   };
 
-  const handleLogoError = (event) => {
-    event.currentTarget.onerror = null;
-    if (!event.currentTarget.src.endsWith("/logo.png")) {
-      event.currentTarget.src = "/logo.png";
-      return;
-    }
-    event.currentTarget.src = "/favicon.svg";
-  };
-
   return (
     <div
       className="login-page"
@@ -51,7 +47,7 @@ export default function LoginPage() {
     >
       <div className="login-page-inner">
         <form className="login-card" onSubmit={onLogin}>
-          <img src="/logo.png" onError={handleLogoError} alt="" />
+          <img src={COMPANY.logo} onError={onCompanyLogoImgError} alt="" />
 
           <label htmlFor="login-email">Email address</label>
           <input

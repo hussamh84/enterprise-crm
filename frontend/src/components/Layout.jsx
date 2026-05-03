@@ -20,10 +20,8 @@ import { useQuery } from "@tanstack/react-query";
 import { NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { syncCurrencyConfig } from "../config/currency";
+import { COMPANY, onCompanyLogoImgError, resolveCompanyLogoSrc } from "../config/company";
 import { useAuthStore } from "../store/authStore";
-
-const __filename = import.meta.url;
-console.log("CHECK PAGE:", __filename);
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -37,25 +35,6 @@ const nav = [
   { to: "/settings", label: "Settings", icon: Settings },
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
-
-const resolveLogoSrc = (logoPath) => {
-  if (!logoPath) return "/logo.png";
-  if (logoPath.startsWith("http")) return logoPath;
-  if (logoPath.startsWith("/uploads/")) {
-    const apiBase = String(import.meta.env.VITE_API_URL || "").replace(/\/api(?:\/v1)?\/?$/, "");
-    return apiBase ? `${apiBase}${logoPath}` : logoPath;
-  }
-  return logoPath;
-};
-
-const handleLogoError = (event) => {
-  event.currentTarget.onerror = null;
-  if (!event.currentTarget.src.endsWith("/logo.png")) {
-    event.currentTarget.src = "/logo.png";
-    return;
-  }
-  event.currentTarget.src = "/favicon.svg";
-};
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -90,6 +69,10 @@ export default function Layout() {
       document.documentElement.style.setProperty("--app-bg-image", `url("${settings.backgroundImageUrl}")`);
     }
   }, [settings]);
+
+  useEffect(() => {
+    document.title = settings?.companyName || COMPANY.name;
+  }, [settings?.companyName]);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -188,15 +171,15 @@ export default function Layout() {
           <div className="pb-4 mb-2 border-b border-slate-100 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <img
-                src={resolveLogoSrc(settings?.companyLogoUrl)}
-                onError={handleLogoError}
-                alt="Config Engineering Logo"
+                src={resolveCompanyLogoSrc(settings?.companyLogoUrl)}
+                onError={onCompanyLogoImgError}
+                alt=""
                 className="h-[56px] w-auto max-w-[180px] object-contain bg-transparent border-0 shadow-none"
               />
               <div>
                 <p className="muted-label">Enterprise Suite</p>
                 <p className="text-sm font-semibold mt-1 text-[#0a2540] dark:text-white leading-snug">
-                  {settings?.companyName || "Config Engineering"}
+                  {settings?.companyName || COMPANY.name}
                 </p>
               </div>
             </div>
@@ -253,13 +236,13 @@ export default function Layout() {
               </div>
               <div className="flex items-center gap-2 text-[#0a2540] font-semibold mt-0.5">
                 <img
-                  src={resolveLogoSrc(settings?.companyLogoUrl)}
-                  onError={handleLogoError}
-                  alt="Config Engineering Logo"
+                  src={resolveCompanyLogoSrc(settings?.companyLogoUrl)}
+                  onError={onCompanyLogoImgError}
+                  alt=""
                   className="hidden sm:block h-7 w-auto max-w-[120px] object-contain bg-transparent border-0 shadow-none"
                 />
                 <LayoutDashboard size={18} className="hidden sm:block" />
-                <span className="truncate">Config Engineering Workspace</span>
+                <span className="truncate">{settings?.companyName || COMPANY.name}</span>
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
