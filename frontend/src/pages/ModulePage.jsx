@@ -5,13 +5,21 @@ import api from "../lib/api";
 import { formatClientNumber } from "../utils/formatClientNumber";
 import { formatCurrency } from "../utils/format";
 import { openPdf } from "../utils/pdf";
+import { useAuthStore } from "../store/authStore";
+import { isAdminRole } from "../utils/roleUtils";
 
 const __filename = import.meta.url;
 console.log("CHECK PAGE:", __filename);
 
 export default function ModulePage({ title, endpoint }) {
   const queryClient = useQueryClient();
+  const currentUser = useAuthStore((s) => s.user);
+  const isAdmin = isAdminRole(currentUser?.role);
   const isInventory = endpoint === "/inventory";
+  const [deleteProjectId, setDeleteProjectId] = useState(null);
+  const [deleteProjectName, setDeleteProjectName] = useState("");
+  const [deletingProject, setDeletingProject] = useState(false);
+  const [deleteProjectError, setDeleteProjectError] = useState("");
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
   const [costPrice, setCostPrice] = useState("");
@@ -315,6 +323,34 @@ export default function ModulePage({ title, endpoint }) {
     }
   };
 
+  const openDeleteProject = (item) => {
+    setDeleteProjectId(item._id);
+    setDeleteProjectName(item.name || "this project");
+    setDeleteProjectError("");
+  };
+
+  const closeDeleteProject = () => {
+    setDeleteProjectId(null);
+    setDeleteProjectName("");
+    setDeleteProjectError("");
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!deleteProjectId) return;
+    setDeletingProject(true);
+    setDeleteProjectError("");
+    try {
+      await api.delete(`/projects/${deleteProjectId}`);
+      closeDeleteProject();
+      await queryClient.invalidateQueries({ queryKey: [endpoint] });
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "Delete failed";
+      setDeleteProjectError(typeof msg === "string" ? msg : "Delete failed");
+    } finally {
+      setDeletingProject(false);
+    }
+  };
+
   if (isLoading) {
     return <div className="p-6 text-center text-sm">Loading...</div>;
   }
@@ -467,6 +503,15 @@ export default function ModulePage({ title, endpoint }) {
                     <button type="button" onClick={() => handleDownloadPDF(item._id)} className="btn-primary btn-compact">
                       PDF
                     </button>
+                    {isAdmin ? (
+                      <button
+                        type="button"
+                        onClick={() => openDeleteProject(item)}
+                        className="inline-flex h-7 items-center justify-center rounded-md bg-red-500 px-2 text-xs font-medium text-white hover:bg-red-600"
+                      >
+                        Delete
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -475,6 +520,39 @@ export default function ModulePage({ title, endpoint }) {
             </div>
           </div>
         </div>
+
+        {isAdmin && deleteProjectId ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+            <div
+              className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-lg font-semibold text-[#0a2540]">Delete project?</h2>
+              <p className="text-sm text-gray-600">
+                Permanently delete <span className="font-medium text-gray-900">{deleteProjectName}</span>. This cannot be undone.
+              </p>
+              {deleteProjectError ? <p className="text-sm text-rose-600">{deleteProjectError}</p> : null}
+              <div className="flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={closeDeleteProject}
+                  disabled={deletingProject}
+                  className="inline-flex h-9 items-center px-3 rounded-lg border border-gray-300 bg-white text-sm text-black disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteProject}
+                  disabled={deletingProject}
+                  className="inline-flex h-9 items-center px-3 rounded-lg bg-red-500 text-sm text-white disabled:opacity-50 hover:bg-red-600"
+                >
+                  {deletingProject ? "Deleting…" : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   }

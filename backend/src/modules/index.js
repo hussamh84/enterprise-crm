@@ -2411,6 +2411,20 @@ router.put("/projects/:id", async (req, res, next) => {
   }
 });
 
+router.delete("/projects/:id", requireAdmin, async (req, res, next) => {
+  try {
+    const doc = await Project.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId, deletedAt: null },
+      { deletedAt: new Date(), updatedBy: req.user?.id },
+      { new: true }
+    );
+    if (!doc) return res.status(404).json({ message: "Project not found" });
+    return res.json({ message: "Deleted" });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.use("/projects", buildCrudRouter({ model: Project, entity: "project" }));
 router.get("/invoices", async (req, res, next) => {
   try {
