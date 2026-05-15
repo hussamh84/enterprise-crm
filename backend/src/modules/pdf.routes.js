@@ -156,6 +156,10 @@ const addPartyBlock = (doc, record, project) => {
   const blockH = 104;
   doc.roundedRect(50, top, 500, blockH, 6).fillAndStroke("#ffffff", "#e2e8f0");
   const typeLine = formatQuotationProjectTypePdf(record, project);
+
+  const phone = String(record.clientPhone || "").trim();
+  const email = String(record.clientEmail || "").trim();
+
   doc
     .font("Helvetica-Bold")
     .fontSize(11)
@@ -164,9 +168,18 @@ const addPartyBlock = (doc, record, project) => {
     .font("Helvetica")
     .fontSize(10)
     .fillColor("#334155")
-    .text(record.clientName || record.name || "Client", 62, top + 30)
-    .text(`Phone: ${record.clientPhone || "-"}`, 62, top + 46)
-    .text(`Email: ${record.clientEmail || "-"}`, 62, top + 62)
+    .text(record.clientName || record.name || "Client", 62, top + 30);
+
+  let leftY = top + 46;
+  if (phone) {
+    doc.text(phone, 62, leftY);
+    leftY += 16;
+  }
+  if (email) {
+    doc.text(email, 62, leftY);
+  }
+
+  doc
     .font("Helvetica-Bold")
     .fontSize(9)
     .fillColor("#64748b")
@@ -183,6 +196,7 @@ const addPartyBlock = (doc, record, project) => {
     .fontSize(10)
     .fillColor("#334155")
     .text(typeLine, 300, top + 66, { width: 230 });
+
   return top + blockH + 10;
 };
 
@@ -422,11 +436,11 @@ router.get("/quotations/:id/pdf", async (req, res, next) => {
       clientName: walkBill || client?.name || quotation.clientName,
       projectName: project?.name || quotation.projectName,
       clientEmail: walkBill
-        ? String(quotation.walkInCustomerEmail || "").trim() || "-"
-        : client?.contacts?.[0]?.email || quotation.clientEmail,
+        ? String(quotation.walkInCustomerEmail || "").trim() || ""
+        : client?.contacts?.[0]?.email || client?.email || quotation.clientEmail || "",
       clientPhone: walkBill
-        ? String(quotation.walkInCustomerPhone || "").trim() || "-"
-        : client?.contacts?.[0]?.phone || quotation.clientPhone,
+        ? String(quotation.walkInCustomerPhone || "").trim() || ""
+        : client?.contacts?.[0]?.phone || client?.phone || quotation.clientPhone || "",
       clientAddress: quotation.clientAddress || "-",
     };
 
@@ -499,8 +513,8 @@ router.get("/invoices/:id/pdf", async (req, res, next) => {
       ...invoice.toObject(),
       clientName: client?.name || invoice.clientName,
       projectName: project?.name || invoice.projectName,
-      clientEmail: client?.contacts?.[0]?.email || invoice.clientEmail,
-      clientPhone: client?.contacts?.[0]?.phone || client?.phone || invoice.clientPhone,
+      clientEmail: client?.contacts?.[0]?.email || client?.email || invoice.clientEmail || "",
+      clientPhone: client?.contacts?.[0]?.phone || client?.phone || invoice.clientPhone || "",
     };
     const total = Number(invoice.total || 0);
     const paid = Number(invoice.paidAmount || 0);
