@@ -2348,7 +2348,7 @@ router.post("/projects", async (req, res, next) => {
 
 router.get("/projects", async (req, res, next) => {
   try {
-    const docs = await Project.find({}).sort({ createdAt: -1 });
+    const docs = await Project.find({ tenantId: req.tenantId, deletedAt: null }).sort({ createdAt: -1 });
     const projectObjects = docs.map((doc) => (typeof doc.toObject === "function" ? doc.toObject() : doc));
     const clientIds = [...new Set(projectObjects.map((doc) => String(doc.clientId || "")).filter(Boolean))];
 
