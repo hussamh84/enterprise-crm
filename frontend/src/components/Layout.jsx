@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   Bell,
   Boxes,
   Briefcase,
@@ -25,8 +26,9 @@ import { syncCurrencyConfig } from "../config/currency";
 import { onCompanyLogoImgError } from "../config/company";
 import { applyCompanyThemeColors, getCompanySettings, useCompanyBrandingSnapshot } from "../lib/companySettings";
 import { useAuthStore } from "../store/authStore";
+import { isAdminRole } from "../utils/roleUtils";
 
-const nav = [
+const ALL_NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Briefcase },
   { to: "/clients", label: "Clients", icon: Users },
@@ -34,17 +36,20 @@ const nav = [
   { to: "/quotations", label: "Quotations", icon: FileText },
   { to: "/invoices", label: "Invoices", icon: Receipt },
   { to: "/inventory", label: "Inventory", icon: Boxes },
-  { to: "/users", label: "Users", icon: UserCog },
-  { to: "/settings", label: "Settings", icon: Settings, end: true },
-  { to: "/settings/backup", label: "Backup & Restore", icon: DatabaseBackup },
-  { to: "/company-settings", label: "Company Settings", icon: Palette },
+  { to: "/reports", label: "Reports", icon: BarChart3, adminOnly: true },
+  { to: "/users", label: "Users", icon: UserCog, adminOnly: true },
+  { to: "/settings", label: "Settings", icon: Settings, end: true, adminOnly: true },
+  { to: "/settings/backup", label: "Backup & Restore", icon: DatabaseBackup, adminOnly: true },
+  { to: "/company-settings", label: "Company Settings", icon: Palette, adminOnly: true },
   { to: "/profile", label: "Profile", icon: UserCircle },
 ];
 
 export default function Layout() {
   const navigate = useNavigate();
   const token = useAuthStore((s) => s.token);
+  const user = useAuthStore((s) => s.user);
   const clearSession = useAuthStore((s) => s.clearSession);
+  const visibleNav = isAdminRole(user?.role) ? ALL_NAV : ALL_NAV.filter((item) => !item.adminOnly);
   const [theme, setTheme] = useState(() => localStorage.getItem("ce_theme") || "light");
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -197,7 +202,7 @@ export default function Layout() {
           </div>
           <div className="flex-1 overflow-y-auto">
             <nav className="space-y-1">
-            {nav.map((item) => {
+            {visibleNav.map((item) => {
               const Icon = item.icon;
               return (
                 <NavLink

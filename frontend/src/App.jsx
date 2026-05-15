@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import Layout from "./components/Layout";
+import { useAuthStore } from "./store/authStore";
+import { isAdminRole } from "./utils/roleUtils";
 import DashboardPage from "./pages/DashboardPage";
 import ModulePage from "./pages/ModulePage";
 import LoginPage from "./pages/LoginPage";
@@ -53,12 +55,12 @@ function App() {
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="inventory/:inventoryId" element={<InventoryDetailsPage />} />
         <Route path="sales/new" element={<SalesFromInventoryPage />} />
-        <Route path="users" element={<UsersPage />} />
-        <Route path="settings" element={<SettingsPage />} />
-        <Route path="settings/backup" element={<BackupRestorePage />} />
-        <Route path="company-settings" element={<CompanySettingsPage />} />
+        <Route path="users" element={<RequireAdmin><UsersPage /></RequireAdmin>} />
+        <Route path="settings" element={<RequireAdmin><SettingsPage /></RequireAdmin>} />
+        <Route path="settings/backup" element={<RequireAdmin><BackupRestorePage /></RequireAdmin>} />
+        <Route path="company-settings" element={<RequireAdmin><CompanySettingsPage /></RequireAdmin>} />
         <Route path="profile" element={<ProfilePage />} />
-        <Route path="reports" element={<ReportsPage />} />
+        <Route path="reports" element={<RequireAdmin><ReportsPage /></RequireAdmin>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -70,4 +72,10 @@ export default App;
 function ClientLegacyRedirect() {
   const { clientId } = useParams();
   return <Navigate to={`/clients/${clientId}/overview`} replace />;
+}
+
+function RequireAdmin({ children }) {
+  const user = useAuthStore((s) => s.user);
+  if (!isAdminRole(user?.role)) return <Navigate to="/" replace />;
+  return children;
 }

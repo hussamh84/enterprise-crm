@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../lib/api";
+import { useAuthStore } from "../store/authStore";
+import { isAdminRole } from "../utils/roleUtils";
 
 const emptyContact = () => ({ name: "", email: "", phone: "" });
+const formatVisitDate = (value) => (value ? new Date(value).toLocaleDateString() : "—");
 
 export default function ClientsPage() {
   const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = isAdminRole(user?.role);
   const [clients, setClients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,6 +43,7 @@ export default function ClientsPage() {
       try {
         const res = await api.get("/clients");
         console.log("CLIENTS DATA:", res.data);
+        console.log("DOCTOR ROW SHAPE:", Array.isArray(res.data) ? res.data[0] : null);
         if (isMounted) {
           setClients(Array.isArray(res.data) ? res.data : []);
         }
@@ -150,11 +156,13 @@ export default function ClientsPage() {
         <div className="saas-table-shell border-0 rounded-none">
           <div
             className="saas-grid-head grid items-center gap-x-2"
-            style={{ gridTemplateColumns: "minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr) 260px" }}
+            style={{ gridTemplateColumns: "minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1fr) 260px" }}
           >
             <div className="px-4 py-2">Name</div>
             <div className="px-4 py-2">Email</div>
             <div className="px-4 py-2">Phone</div>
+            <div className="px-4 py-2">Visits</div>
+            <div className="px-4 py-2">Last Visit</div>
             <div className="px-4 py-2 text-center w-[260px]">Actions</div>
           </div>
 
@@ -162,11 +170,13 @@ export default function ClientsPage() {
             <div
               key={client._id}
               className="saas-grid-row grid items-center gap-x-2"
-              style={{ gridTemplateColumns: "minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr) 260px" }}
+              style={{ gridTemplateColumns: "minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1fr) 260px" }}
             >
               <div className="px-4 py-2 font-medium">{client.name || "No Name"}</div>
               <div className="px-4 py-2 text-sm text-gray-600">{client.email || "-"}</div>
               <div className="px-4 py-2 text-sm text-gray-600">{client.phone || "-"}</div>
+              <div className="px-4 py-2 text-sm text-gray-600">{Number(client.visit_count || 0)}</div>
+              <div className="px-4 py-2 text-sm text-gray-600">{formatVisitDate(client.last_visit_at)}</div>
               <div className="px-4 py-2">
                 <div className="flex items-center justify-center gap-2 whitespace-nowrap">
                   <button
@@ -183,13 +193,15 @@ export default function ClientsPage() {
                   >
                     Edit
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => openDelete(client)}
-                    className="bg-red-500 text-white px-3 py-2 rounded-lg text-sm"
-                  >
-                    Delete
-                  </button>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => openDelete(client)}
+                      className="bg-red-500 text-white px-3 py-2 rounded-lg text-sm"
+                    >
+                      Delete
+                    </button>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -356,7 +368,7 @@ export default function ClientsPage() {
         </div>
       ) : null}
 
-      {deleteClient ? (
+      {isAdmin && deleteClient ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" role="presentation">
           <div
             className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4"

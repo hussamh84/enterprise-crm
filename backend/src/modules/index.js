@@ -9,6 +9,7 @@ const { makeEntityModel, buildCrudRouter } = require("./shared");
 const { incrementClientCounter, Counter } = require("./clients/counter.model");
 const { clientNumberField } = require("./clients/client.model");
 const { AppError } = require("../utils/appError");
+const { requireAdmin } = require("../middlewares/requireAdmin");
 const { User } = require("./auth/auth.routes");
 const { sendMulticast } = require("../services/fcm");
 const { COMPANY } = require("../config/company");
@@ -1253,7 +1254,7 @@ router.get("/clients", async (req, res, next) => {
     return next(error);
   }
 });
-router.delete("/clients/:id", async (req, res, next) => {
+router.delete("/clients/:id", requireAdmin, async (req, res, next) => {
   try {
     const tenantId = getTenantId(req);
     if (!tenantId) {
@@ -2802,7 +2803,7 @@ router.delete("/expenses/:id", async (req, res, next) => {
   }
 });
 
-router.get("/reports/project/:id", async (req, res, next) => {
+router.get("/reports/project/:id", requireAdmin, async (req, res, next) => {
   try {
     const project = await Project.findOne({ _id: req.params.id, tenantId: req.tenantId, deletedAt: null });
     if (!project) return res.status(404).json({ message: "Project not found" });
@@ -2822,7 +2823,7 @@ router.get("/reports/project/:id", async (req, res, next) => {
   }
 });
 
-router.get("/reports/monthly", async (req, res, next) => {
+router.get("/reports/monthly", requireAdmin, async (req, res, next) => {
   try {
     const now = new Date();
     const year = Number(req.query.year || now.getFullYear());
@@ -2889,7 +2890,7 @@ router.get("/reports/monthly", async (req, res, next) => {
   }
 });
 
-router.get("/reports/yearly", async (req, res, next) => {
+router.get("/reports/yearly", requireAdmin, async (req, res, next) => {
   try {
     const tenantId = req.tenantId;
 
@@ -3244,7 +3245,7 @@ router.get("/settings", async (req, res, next) => {
   }
 });
 
-router.put("/settings", async (req, res, next) => {
+router.put("/settings", requireAdmin, async (req, res, next) => {
   try {
     const incomingCurrency = typeof req.body?.currency === "string" ? req.body.currency.trim().toUpperCase() : undefined;
     const incomingLocale = typeof req.body?.locale === "string" ? req.body.locale.trim() : undefined;
@@ -3287,7 +3288,7 @@ router.put("/settings", async (req, res, next) => {
   }
 });
 
-router.post("/settings/logo", logoUpload.single("logo"), async (req, res, next) => {
+router.post("/settings/logo", requireAdmin, logoUpload.single("logo"), async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ message: "Logo file is required" });
     const logoPath = `/uploads/${req.file.filename}`;
@@ -3316,7 +3317,7 @@ router.post("/settings/logo", logoUpload.single("logo"), async (req, res, next) 
   }
 });
 
-router.get("/users", async (req, res, next) => {
+router.get("/users", requireAdmin, async (req, res, next) => {
   try {
     const users = await User.find({}).select("-passwordHash -resetToken -resetTokenExpiry").sort({ createdAt: -1 });
     console.log("RESULT COUNT:", users.length);
@@ -3370,7 +3371,7 @@ router.put("/users/me", async (req, res, next) => {
   }
 });
 
-router.post("/users", async (req, res, next) => {
+router.post("/users", requireAdmin, async (req, res, next) => {
   try {
     const fullName = String(req.body?.fullName || "").trim();
     const email = String(req.body?.email || "").trim().toLowerCase();
@@ -3402,7 +3403,7 @@ router.post("/users", async (req, res, next) => {
   }
 });
 
-router.put("/users/:id", async (req, res, next) => {
+router.put("/users/:id", requireAdmin, async (req, res, next) => {
   try {
     const updates = {};
     if (typeof req.body?.fullName === "string") updates.fullName = req.body.fullName.trim();
@@ -3422,7 +3423,7 @@ router.put("/users/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/users/:id", async (req, res, next) => {
+router.delete("/users/:id", requireAdmin, async (req, res, next) => {
   try {
     const user = await User.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -3432,7 +3433,7 @@ router.delete("/users/:id", async (req, res, next) => {
   }
 });
 
-router.post("/users/:id/reset-password", async (req, res, next) => {
+router.post("/users/:id/reset-password", requireAdmin, async (req, res, next) => {
   try {
     const newPassword = String(req.body?.newPassword || "Password123!");
     const passwordHash = await bcrypt.hash(newPassword, 10);

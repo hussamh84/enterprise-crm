@@ -14,6 +14,7 @@ const { backupRouter } = require("./modules/backup.routes");
 
 const { authMiddleware } = require("./middlewares/authMiddleware");
 const { tenantMiddleware } = require("./middlewares/tenantMiddleware");
+const { requireAdmin } = require("./middlewares/requireAdmin");
 const { errorHandler } = require("./middlewares/errorHandler");
 
 const app = express();
@@ -67,16 +68,16 @@ app.use("/api", apiLimiter);
 app.use("/api/v1/auth/login", loginLimiter);
 
 app.use("/api/v1/auth", authRouter);
-app.use("/api/v1/backup", authMiddleware, tenantMiddleware, backupRouter);
-app.use("/api/v1", tenantMiddleware, moduleRouter);
-app.use("/api/v1", tenantMiddleware, pdfRouter);
+app.use("/api/v1/backup", authMiddleware, tenantMiddleware, requireAdmin, backupRouter);
+app.use("/api/v1", authMiddleware, tenantMiddleware, moduleRouter);
+app.use("/api/v1", authMiddleware, tenantMiddleware, pdfRouter);
 
 // Backward-compatible aliases so frontend calls to /api/* continue to work.
 app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth", authRouter);
-app.use("/api/backup", authMiddleware, tenantMiddleware, backupRouter);
-app.use("/api", tenantMiddleware, moduleRouter);
-app.use("/api", tenantMiddleware, pdfRouter);
+app.use("/api/backup", authMiddleware, tenantMiddleware, requireAdmin, backupRouter);
+app.use("/api", authMiddleware, tenantMiddleware, moduleRouter);
+app.use("/api", authMiddleware, tenantMiddleware, pdfRouter);
 
 /* ===================== ERROR HANDLER ===================== */
 app.use(errorHandler);
