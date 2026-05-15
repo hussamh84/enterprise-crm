@@ -110,6 +110,13 @@ const Quotation = makeEntityModel("Quotation", {
       supplier: { type: String, trim: true, default: "" },
       purchaseReference: { type: String, trim: true, default: "" },
       addToInventory: { type: Boolean, default: false },
+      sectionIndex: { type: Number, default: 0 },
+    },
+  ],
+  sections: [
+    {
+      title: { type: String, trim: true, default: "" },
+      notes: { type: String, trim: true, default: "" },
     },
   ],
   discount: {
@@ -1685,7 +1692,10 @@ const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
       purchaseReference: "",
       addToInventory: false,
     };
-  });
+  }).map((computed, idx) => ({
+    ...computed,
+    sectionIndex: Math.max(0, Number(rawItems[idx]?.sectionIndex) || 0),
+  }));
 
   const subtotal = Number(items.reduce((sum, item) => sum + Number(item.total || 0), 0).toFixed(2));
   const discountType = payload.discount?.type === "percentage" ? "percentage" : "fixed";
@@ -1698,6 +1708,12 @@ const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
 
   return {
     items,
+    sections: Array.isArray(payload.sections)
+      ? payload.sections.map((s) => ({
+          title: String(s?.title || "").trim(),
+          notes: String(s?.notes || "").trim(),
+        }))
+      : [],
     subtotal,
     discount: {
       type: discountType,

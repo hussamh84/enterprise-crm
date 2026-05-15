@@ -224,6 +224,21 @@ const drawTableHeader = (doc, hTop, col1, col2, col3, col4, tableWidth, descW, q
   return hTop + TABLE_HEADER_H;
 };
 
+const addSectionHeader = (doc, title, y) => {
+  const h = 24;
+  if (y + h + 10 > USABLE_BOTTOM) {
+    doc.addPage();
+    y = PAGE_MARGIN_TOP;
+  }
+  doc.rect(50, y, 500, h).fillColor("#e2e8f0").fill();
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(9)
+    .fillColor("#0f172a")
+    .text(String(title || "").toUpperCase(), 62, y + 8, { lineBreak: false });
+  return y + h + 4;
+};
+
 const addItemsTable = (doc, rows, top = 356) => {
   const items = rows?.length ? rows : [{ description: "Service", quantity: 1, unitPrice: 0, total: 0 }];
   const x = 50;
@@ -430,13 +445,31 @@ router.get("/quotations/:id/pdf", async (req, res, next) => {
       });
       addStatusBadge(doc, "QUOTATION");
       const tableTop = addPartyBlock(doc, printableQuotation, project);
-      const { y, subtotal } = addItemsTable(doc, printableQuotation.items, tableTop + 8);
+      const rawSections = Array.isArray(printableQuotation.sections) ? printableQuotation.sections : [];
+      const allItems = Array.isArray(printableQuotation.items) ? printableQuotation.items : [];
+      let tableY = tableTop + 8;
+      let combinedSubtotal = 0;
+      if (rawSections.length > 0) {
+        for (let si = 0; si < rawSections.length; si++) {
+          const sec = rawSections[si];
+          const secItems = allItems.filter((item) => (Number(item.sectionIndex) || 0) === si);
+          if (!secItems.length) continue;
+          tableY = addSectionHeader(doc, sec.title || `Section ${si + 1}`, tableY);
+          const { y: secY, subtotal: secSub } = addItemsTable(doc, secItems, tableY);
+          combinedSubtotal += secSub;
+          tableY = secY + 6;
+        }
+      } else {
+        const { y: flatY, subtotal: flatSub } = addItemsTable(doc, allItems, tableY);
+        tableY = flatY;
+        combinedSubtotal = flatSub;
+      }
       const totalsEndY = addTotals(doc, {
-        subtotal: printableQuotation.subtotal ?? subtotal,
+        subtotal: printableQuotation.subtotal ?? combinedSubtotal,
         discount: printableQuotation.discount,
         tax: printableQuotation.tax,
         grandTotal: printableQuotation.grandTotal,
-      }, y);
+      }, tableY);
       const notesEndY = addQuotationNotes(doc, totalsEndY);
       doc
         .fontSize(9)
