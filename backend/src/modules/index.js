@@ -3476,14 +3476,16 @@ router.post("/users/:id/reset-password", requireAdmin, async (req, res, next) =>
 
 router.get("/dashboard/kpis", async (req, res, next) => {
   try {
+    const tenantId = req.tenantId;
     const [leads, clients, projects, quotations, invoices, tickets, revenueAgg] = await Promise.all([
-      Lead.countDocuments({}),
-      Client.countDocuments({}),
-      Project.countDocuments({}),
-      Quotation.countDocuments({}),
-      Invoice.countDocuments({}),
-      Ticket.countDocuments({}),
+      Lead.countDocuments({ tenantId, deletedAt: null }),
+      Client.countDocuments({ tenantId, deletedAt: null }),
+      Project.countDocuments({ tenantId, deletedAt: null }),
+      Quotation.countDocuments({ tenantId, deletedAt: null }),
+      Invoice.countDocuments({ tenantId, deletedAt: null }),
+      Ticket.countDocuments({ tenantId, deletedAt: null }),
       Invoice.aggregate([
+        { $match: { tenantId, deletedAt: null } },
         {
           $group: {
             _id: null,
@@ -3493,7 +3495,6 @@ router.get("/dashboard/kpis", async (req, res, next) => {
       ]),
     ]);
     const totalRevenue = Number(revenueAgg?.[0]?.totalRevenue || 0);
-    console.log("RESULT COUNT:", clients);
     res.json({ leads, clients, projects, quotations, invoices, tickets, totalRevenue });
   } catch (error) {
     next(error);

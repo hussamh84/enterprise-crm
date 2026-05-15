@@ -286,7 +286,7 @@ export default function DashboardPage() {
       const d = raw ? new Date(raw) : null;
       return d && !Number.isNaN(d.getTime()) && d >= startOfDay;
     }).length;
-    const dayGoal = 150;
+    const dayGoal = Math.max(invoices.length, 1);
 
     return {
       queuePct,
