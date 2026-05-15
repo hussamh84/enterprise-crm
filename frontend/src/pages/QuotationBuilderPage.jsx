@@ -1,7 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { CirclePlus, FileText, Trash2 } from "lucide-react";
+import { CirclePlus, FileText, GripVertical, Trash2 } from "lucide-react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import api from "../lib/api";
 import { formatCurrency } from "../utils/format";
 import { deriveTypeFromProject } from "../utils/projectTypeDisplay";
@@ -27,6 +43,8 @@ const BLANK_ITEM = {
   addToInventory: false,
 };
 
+const newBlankItem = () => ({ ...BLANK_ITEM, uid: crypto.randomUUID() });
+
 const toNumber = (value) => Number(value || 0);
 
 export default function QuotationBuilderPage() {
@@ -47,7 +65,7 @@ export default function QuotationBuilderPage() {
   const [discountValue, setDiscountValue] = useState(0);
   const [tax, setTax] = useState(0);
   const [quoteStatus, setQuoteStatus] = useState("draft");
-  const [items, setItems] = useState([{ ...BLANK_ITEM }]);
+  const [items, setItems] = useState([newBlankItem()]);
   const [projectType, setProjectType] = useState("");
   const [cctvType, setCctvType] = useState("");
   const [itemSearch, setItemSearch] = useState({});
@@ -84,6 +102,7 @@ export default function QuotationBuilderPage() {
     if (Array.isArray(q.items) && q.items.length > 0) {
       setItems(
         q.items.map((row) => ({
+          uid: crypto.randomUUID(),
           productId: row.productId || "",
           description: row.description || row.name || "",
           quantity: row.quantity ?? 1,
@@ -103,7 +122,7 @@ export default function QuotationBuilderPage() {
         }))
       );
     } else {
-      setItems([{ ...BLANK_ITEM }]);
+      setItems([newBlankItem()]);
     }
     if (q.projectType) {
       setProjectType(q.projectType);
@@ -395,6 +414,22 @@ export default function QuotationBuilderPage() {
     }
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = ({ active, over }) => {
+    if (over && active.id !== over.id) {
+      setItems((prev) => {
+        const oldIndex = prev.findIndex((item) => item.uid === active.id);
+        const newIndex = prev.findIndex((item) => item.uid === over.id);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+      setItemSuggestions({});
+    }
+  };
+
   if (isEdit && editLoading) {
     return <div className="premium-card p-4 m-4 text-center text-xs text-slate-500">Loading quotation…</div>;
   }
@@ -574,139 +609,155 @@ export default function QuotationBuilderPage() {
         </div>
 
         <div className="space-y-3">
-          {items.map((item, index) => {
-            const srcType = String(item.sourceType || "inventory").toLowerCase();
-            const isMarket = srcType === "market_purchase";
-            const isService = srcType === "service";
-            return (
-              <div key={`quotation-item-${index}`} className="space-y-2">
-                <div className="grid grid-cols-12 gap-2 sm:gap-3 items-center">
-                  <select
-                    className="col-span-12 sm:col-span-2 input-field text-xs sm:text-sm"
-                    aria-label="Line source type"
-                    value={srcType}
-                    onChange={(e) => setItemSourceType(index, e.target.value)}
-                  >
-                    <option value="inventory">Inventory</option>
-                    <option value="market_purchase">Market Purchase</option>
-                    <option value="service">Service</option>
-                  </select>
-                  <div className="col-span-12 sm:col-span-3 relative">
-                    <input
-                      className="input-field"
-                      value={itemSearch[index] ?? item.description}
-                      onChange={(event) => handleItemNameInput(index, event.target.value)}
-                      placeholder={isMarket ? "Item description" : isService ? "Service description" : "Type item name (e.g. cam)"}
-                    />
-                    {!isMarket && !isService &&
-                    Array.isArray(itemSuggestions[index]) &&
-                    itemSuggestions[index].length > 0 ? (
-                      <div
-                        className="autocomplete-dropdown absolute left-0 right-0 top-[calc(100%+4px)] z-20 bg-white text-black border border-gray-200 rounded-xl shadow-lg"
-                        style={{ background: "#fff", color: "#000" }}
-                      >
-                        {itemSuggestions[index].map((suggestion) => (
-                          <button
-                            key={suggestion._id}
-                            type="button"
-                            className={`autocomplete-item hover:bg-gray-100 text-black ${item.productId === suggestion._id ? "active" : ""}`}
-                            style={{ background: "#fff", color: "#000" }}
-                            onClick={() => handleProductSelect(index, suggestion)}
-                          >
-                            <span className="font-medium text-slate-800">{suggestion.name}</span>
-                            <span className="ml-2 text-xs text-slate-500">
-                              {suggestion.sku || "N/A"} - {formatCurrency(suggestion.price || 0)}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                  <input
-                    type="number"
-                    min="0"
-                    className="col-span-4 sm:col-span-2 input-field text-center"
-                    value={item.quantity}
-                    onChange={(event) => updateItem(index, "quantity", event.target.value)}
-                    placeholder="Qty"
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    className="col-span-4 sm:col-span-2 input-field price numeric"
-                    value={item.unitPrice}
-                    onChange={(event) => updateItem(index, "unitPrice", event.target.value)}
-                    placeholder={isMarket ? "Sell price" : isService ? "Service price" : "Unit price"}
-                    readOnly={Boolean(item.lockPrice)}
-                  />
-                  <div className="col-span-4 sm:col-span-2 total-field numeric text-sm">
-                    {formatCurrency(calculatedItems[index]?.total)}
-                  </div>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={items.map((item) => item.uid)} strategy={verticalListSortingStrategy}>
+              {items.map((item, index) => {
+                const srcType = String(item.sourceType || "inventory").toLowerCase();
+                const isMarket = srcType === "market_purchase";
+                const isService = srcType === "service";
+                return (
+                  <SortableQuotationItem key={item.uid} id={item.uid}>
+                    {(dragListeners) => (
+                      <div className="flex gap-1.5">
+                        <div
+                          className="flex-shrink-0 flex items-start pt-2.5 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+                          {...dragListeners}
+                        >
+                          <GripVertical size={14} />
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          <div className="grid grid-cols-12 gap-2 sm:gap-3 items-center">
+                            <select
+                              className="col-span-12 sm:col-span-2 input-field text-xs sm:text-sm"
+                              aria-label="Line source type"
+                              value={srcType}
+                              onChange={(e) => setItemSourceType(index, e.target.value)}
+                            >
+                              <option value="inventory">Inventory</option>
+                              <option value="market_purchase">Market Purchase</option>
+                              <option value="service">Service</option>
+                            </select>
+                            <div className="col-span-12 sm:col-span-3 relative">
+                              <input
+                                className="input-field"
+                                value={itemSearch[index] ?? item.description}
+                                onChange={(event) => handleItemNameInput(index, event.target.value)}
+                                placeholder={isMarket ? "Item description" : isService ? "Service description" : "Type item name (e.g. cam)"}
+                              />
+                              {!isMarket && !isService &&
+                              Array.isArray(itemSuggestions[index]) &&
+                              itemSuggestions[index].length > 0 ? (
+                                <div
+                                  className="autocomplete-dropdown absolute left-0 right-0 top-[calc(100%+4px)] z-20 bg-white text-black border border-gray-200 rounded-xl shadow-lg"
+                                  style={{ background: "#fff", color: "#000" }}
+                                >
+                                  {itemSuggestions[index].map((suggestion) => (
+                                    <button
+                                      key={suggestion._id}
+                                      type="button"
+                                      className={`autocomplete-item hover:bg-gray-100 text-black ${item.productId === suggestion._id ? "active" : ""}`}
+                                      style={{ background: "#fff", color: "#000" }}
+                                      onClick={() => handleProductSelect(index, suggestion)}
+                                    >
+                                      <span className="font-medium text-slate-800">{suggestion.name}</span>
+                                      <span className="ml-2 text-xs text-slate-500">
+                                        {suggestion.sku || "N/A"} - {formatCurrency(suggestion.price || 0)}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                            <input
+                              type="number"
+                              min="0"
+                              className="col-span-4 sm:col-span-2 input-field text-center"
+                              value={item.quantity}
+                              onChange={(event) => updateItem(index, "quantity", event.target.value)}
+                              placeholder="Qty"
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              className="col-span-4 sm:col-span-2 input-field price numeric"
+                              value={item.unitPrice}
+                              onChange={(event) => updateItem(index, "unitPrice", event.target.value)}
+                              placeholder={isMarket ? "Sell price" : isService ? "Service price" : "Unit price"}
+                              readOnly={Boolean(item.lockPrice)}
+                            />
+                            <div className="col-span-4 sm:col-span-2 total-field numeric text-sm">
+                              {formatCurrency(calculatedItems[index]?.total)}
+                            </div>
 
-                  <button
-                    type="button"
-                    className="col-span-12 sm:col-span-1 delete-btn text-slate-500 hover:text-rose-600 justify-self-end sm:justify-self-start"
-                    onClick={() => removeItem(index)}
-                    aria-label="Remove line"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-                {isMarket ? (
-                  <div className="grid grid-cols-12 gap-2 sm:gap-3 items-center border-l-2 border-slate-200 pl-2">
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      className="col-span-6 sm:col-span-2 input-field text-sm"
-                      placeholder="Purchase price"
-                      value={item.purchasePrice}
-                      onChange={(e) => updateItem(index, "purchasePrice", e.target.value)}
-                    />
-                    <input
-                      type="text"
-                      className="col-span-6 sm:col-span-3 input-field text-sm"
-                      placeholder="Supplier"
-                      value={item.supplier}
-                      onChange={(e) => updateItem(index, "supplier", e.target.value)}
-                    />
-                    <input
-                      type="text"
-                      className="col-span-12 sm:col-span-3 input-field text-sm"
-                      placeholder="Purchase reference"
-                      value={item.purchaseReference}
-                      onChange={(e) => updateItem(index, "purchaseReference", e.target.value)}
-                    />
-                    <label className="col-span-12 sm:col-span-4 flex items-center gap-2 text-xs text-slate-600 cursor-pointer whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(item.addToInventory)}
-                        onChange={(e) => updateItem(index, "addToInventory", e.target.checked)}
-                      />
-                      Add purchased item to inventory
-                    </label>
-                  </div>
-                ) : null}
-                {isService ? (
-                  <div className="grid grid-cols-12 gap-2 sm:gap-3 items-center border-l-2 border-indigo-200 pl-2">
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      className="col-span-6 sm:col-span-2 input-field text-sm"
-                      placeholder="Internal cost (optional)"
-                      value={item.serviceCost}
-                      onChange={(e) => updateItem(index, "serviceCost", e.target.value)}
-                    />
-                    <span className="col-span-6 sm:col-span-10 text-xs text-slate-400 italic">
-                      Internal service cost — labour, outsourcing, etc. Not shown on client PDF.
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-          <button type="button" className="btn-secondary btn-compact !border-dashed flex items-center gap-2" onClick={() => setItems((previous) => [...previous, { ...BLANK_ITEM }])}>
+                            <button
+                              type="button"
+                              className="col-span-12 sm:col-span-1 delete-btn text-slate-500 hover:text-rose-600 justify-self-end sm:justify-self-start"
+                              onClick={() => removeItem(index)}
+                              aria-label="Remove line"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                          {isMarket ? (
+                            <div className="grid grid-cols-12 gap-2 sm:gap-3 items-center border-l-2 border-slate-200 pl-2">
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                className="col-span-6 sm:col-span-2 input-field text-sm"
+                                placeholder="Purchase price"
+                                value={item.purchasePrice}
+                                onChange={(e) => updateItem(index, "purchasePrice", e.target.value)}
+                              />
+                              <input
+                                type="text"
+                                className="col-span-6 sm:col-span-3 input-field text-sm"
+                                placeholder="Supplier"
+                                value={item.supplier}
+                                onChange={(e) => updateItem(index, "supplier", e.target.value)}
+                              />
+                              <input
+                                type="text"
+                                className="col-span-12 sm:col-span-3 input-field text-sm"
+                                placeholder="Purchase reference"
+                                value={item.purchaseReference}
+                                onChange={(e) => updateItem(index, "purchaseReference", e.target.value)}
+                              />
+                              <label className="col-span-12 sm:col-span-4 flex items-center gap-2 text-xs text-slate-600 cursor-pointer whitespace-nowrap">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(item.addToInventory)}
+                                  onChange={(e) => updateItem(index, "addToInventory", e.target.checked)}
+                                />
+                                Add purchased item to inventory
+                              </label>
+                            </div>
+                          ) : null}
+                          {isService ? (
+                            <div className="grid grid-cols-12 gap-2 sm:gap-3 items-center border-l-2 border-indigo-200 pl-2">
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                className="col-span-6 sm:col-span-2 input-field text-sm"
+                                placeholder="Internal cost (optional)"
+                                value={item.serviceCost}
+                                onChange={(e) => updateItem(index, "serviceCost", e.target.value)}
+                              />
+                              <span className="col-span-6 sm:col-span-10 text-xs text-slate-400 italic">
+                                Internal service cost — labour, outsourcing, etc. Not shown on client PDF.
+                              </span>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    )}
+                  </SortableQuotationItem>
+                );
+              })}
+            </SortableContext>
+          </DndContext>
+          <button type="button" className="btn-secondary btn-compact !border-dashed flex items-center gap-2" onClick={() => setItems((previous) => [...previous, newBlankItem()])}>
             <CirclePlus size={14} /> Add Item
           </button>
         </div>
@@ -821,6 +872,25 @@ export default function QuotationBuilderPage() {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SortableQuotationItem({ id, children }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+        position: "relative",
+        zIndex: isDragging ? 1 : "auto",
+      }}
+      {...attributes}
+    >
+      {children(listeners)}
     </div>
   );
 }
