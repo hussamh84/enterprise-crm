@@ -3323,7 +3323,7 @@ router.get("/users", requireAdmin, async (req, res, next) => {
     console.log("RESULT COUNT:", users.length);
     const normalized = users.map((user) => ({
       ...user.toObject(),
-      role: user.role === "company_admin" ? "admin" : "employee",
+      role: (user.role === "admin" || user.role === "company_admin") ? "admin" : "employee",
     }));
     res.json(normalized);
   } catch (error) {
@@ -3337,7 +3337,7 @@ router.get("/users/me", async (req, res, next) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json({
       ...user.toObject(),
-      role: user.role === "company_admin" ? "admin" : "employee",
+      role: (user.role === "admin" || user.role === "company_admin") ? "admin" : "employee",
     });
   } catch (error) {
     next(error);
@@ -3364,7 +3364,7 @@ router.put("/users/me", async (req, res, next) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json({
       ...user.toObject(),
-      role: user.role === "company_admin" ? "admin" : "employee",
+      role: (user.role === "admin" || user.role === "company_admin") ? "admin" : "employee",
     });
   } catch (error) {
     next(error);
@@ -3408,15 +3408,26 @@ router.put("/users/:id", requireAdmin, async (req, res, next) => {
     const updates = {};
     if (typeof req.body?.fullName === "string") updates.fullName = req.body.fullName.trim();
     if (typeof req.body?.role === "string") {
-      const role = req.body.role.trim().toLowerCase();
-      updates.role = role === "admin" ? "company_admin" : "sales";
+      const inputRole = req.body.role.trim().toLowerCase();
+      const newDbRole = inputRole === "admin" ? "company_admin" : "sales";
+      if (newDbRole === "sales") {
+        const current = await User.findOne({ _id: req.params.id, tenantId: req.tenantId }).select("role").lean();
+        const isCurrentlyAdmin = current?.role === "admin" || current?.role === "company_admin";
+        if (isCurrentlyAdmin) {
+          const adminCount = await User.countDocuments({ tenantId: req.tenantId, role: { $in: ["admin", "company_admin"] } });
+          if (adminCount <= 1) {
+            return res.status(400).json({ message: "Cannot demote the last admin. Promote another user to admin first." });
+          }
+        }
+      }
+      updates.role = newDbRole;
     }
     if (typeof req.body?.email === "string") updates.email = req.body.email.trim().toLowerCase();
     const user = await User.findOneAndUpdate({ _id: req.params.id, tenantId: req.tenantId }, updates, { new: true }).select("-passwordHash -resetToken -resetTokenExpiry");
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json({
       ...user.toObject(),
-      role: user.role === "company_admin" ? "admin" : "employee",
+      role: (user.role === "admin" || user.role === "company_admin") ? "admin" : "employee",
     });
   } catch (error) {
     next(error);
