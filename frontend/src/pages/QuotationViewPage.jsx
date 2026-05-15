@@ -24,6 +24,7 @@ const calculateItemTotal = (item) => {
 };
 
 const isMarketPurchaseLine = (item) => String(item?.sourceType || "inventory").toLowerCase() === "market_purchase";
+const isServiceLine = (item) => String(item?.sourceType || "inventory").toLowerCase() === "service";
 
 export default function QuotationViewPage() {
   const { id } = useParams();
@@ -221,6 +222,7 @@ export default function QuotationViewPage() {
                       const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
                       const rowTotal = calculateItemTotal(item);
                       const market = isMarketPurchaseLine(item);
+                      const service = isServiceLine(item);
                       const pp = item.purchasePrice != null ? Number(item.purchasePrice) : null;
                       const supplier = String(item.supplier || "").trim();
                       const pref = String(item.purchaseReference || "").trim();
@@ -232,6 +234,11 @@ export default function QuotationViewPage() {
                               {market ? (
                                 <span className="inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-amber-50 text-amber-900 border border-amber-200">
                                   Market
+                                </span>
+                              ) : null}
+                              {service ? (
+                                <span className="inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                  Service
                                 </span>
                               ) : null}
                             </div>

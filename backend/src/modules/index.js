@@ -104,8 +104,9 @@ const Quotation = makeEntityModel("Quotation", {
       price: { type: Number, default: 0 },
       unitPrice: { type: Number, default: 0 },
       total: { type: Number, default: 0 },
-      sourceType: { type: String, enum: ["inventory", "market_purchase"], default: "inventory" },
+      sourceType: { type: String, enum: ["inventory", "market_purchase", "service"], default: "inventory" },
       purchasePrice: { type: Number, min: 0, default: 0 },
+      serviceCost: { type: Number, min: 0, default: 0 },
       supplier: { type: String, trim: true, default: "" },
       purchaseReference: { type: String, trim: true, default: "" },
       addToInventory: { type: Boolean, default: false },
@@ -163,8 +164,9 @@ const Invoice = makeEntityModel("Invoice", {
       price: { type: Number, default: 0 },
       unitPrice: { type: Number, default: 0 },
       total: { type: Number, default: 0 },
-      sourceType: { type: String, enum: ["inventory", "market_purchase"], default: "inventory" },
+      sourceType: { type: String, enum: ["inventory", "market_purchase", "service"], default: "inventory" },
       purchasePrice: { type: Number, min: 0, default: 0 },
+      serviceCost: { type: Number, min: 0, default: 0 },
       supplier: { type: String, trim: true, default: "" },
       purchaseReference: { type: String, trim: true, default: "" },
       addToInventory: { type: Boolean, default: false },
@@ -406,7 +408,10 @@ const normalizeQuotationStatus = (value, fallback = "draft") => {
 const calculateInvoiceProfitFromItems = async ({ tenantId, items = [] }) => {
   const safeItems = Array.isArray(items) ? items : [];
   if (!safeItems.length) return 0;
-  const inventoryBacked = safeItems.filter((item) => String(item?.sourceType || "").toLowerCase() !== "market_purchase");
+  const inventoryBacked = safeItems.filter((item) => {
+    const st = String(item?.sourceType || "").toLowerCase();
+    return st !== "market_purchase" && st !== "service";
+  });
   const productIds = [...new Set(inventoryBacked.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
 
   const products = productIds.length
@@ -424,9 +429,14 @@ const calculateInvoiceProfitFromItems = async ({ tenantId, items = [] }) => {
     const qty = Number(item?.quantity || item?.qty || 0);
     if (!Number.isFinite(qty) || qty <= 0) return sum;
     const sellPrice = Number(item?.unitPrice ?? item?.price ?? 0);
-    if (String(item?.sourceType || "").toLowerCase() === "market_purchase") {
+    const st = String(item?.sourceType || "").toLowerCase();
+    if (st === "market_purchase") {
       const buy = Number(item?.purchasePrice ?? 0);
       return sum + (sellPrice - buy) * qty;
+    }
+    if (st === "service") {
+      const cost = Number(item?.serviceCost ?? 0);
+      return sum + (sellPrice - cost) * qty;
     }
     const productId = String(item?.productId || "").trim();
     if (!productId) return sum;
@@ -445,11 +455,14 @@ const calculateInvoiceProfitFromQuotation = async ({ tenantId, quotationId }) =>
   return calculateInvoiceProfitFromItems({ tenantId, items });
 };
 
-/** COGS from quotation lines linked to a project (inventory cost + market purchase price). */
+/** COGS from quotation lines linked to a project (inventory cost + market purchase price + service cost). */
 const sumProcurementCostFromQuotations = async ({ tenantId, quotations = [] }) => {
   const allItems = quotations.flatMap((q) => (Array.isArray(q.items) ? q.items : []));
   if (!allItems.length) return 0;
-  const invLines = allItems.filter((item) => String(item?.sourceType || "").toLowerCase() !== "market_purchase");
+  const invLines = allItems.filter((item) => {
+    const st = String(item?.sourceType || "").toLowerCase();
+    return st !== "market_purchase" && st !== "service";
+  });
   const productIds = [...new Set(invLines.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
   const products = productIds.length
     ? await InventoryItem.find({ tenantId, _id: { $in: productIds }, deletedAt: null }).select("_id cost").lean()
@@ -462,6 +475,10 @@ const sumProcurementCostFromQuotations = async ({ tenantId, quotations = [] }) =
     if (!Number.isFinite(qty) || qty <= 0) continue;
     if (st === "market_purchase") {
       sum += Number(item.purchasePrice || 0) * qty;
+      continue;
+    }
+    if (st === "service") {
+      sum += Number(item.serviceCost || 0) * qty;
       continue;
     }
     const pid = String(item?.productId || "").trim();
@@ -573,12 +590,12 @@ const deductInventoryForInvoice = async ({ invoice, tenantId, userId, session = 
       deletedAt: null,
     }).session(session);
     if (!quotation) return invoice;
-    items = (Array.isArray(quotation.items) ? quotation.items : []).filter(
-      (item) =>
-        String(item?.sourceType || "").toLowerCase() !== "market_purchase" &&
+    items = (Array.isArray(quotation.items) ? quotation.items : []).filter((item) => {
+      const st = String(item?.sourceType || "").toLowerCase();
+      return st !== "market_purchase" && st !== "service" &&
         String(item?.productId || "").trim() &&
-        Number(item?.quantity || 0) > 0
-    );
+        Number(item?.quantity || 0) > 0;
+    });
   }
   if (!items.length) return invoice;
 
@@ -639,10 +656,10 @@ const syncInventoryUsageForQuotation = async ({ tenantId, quotation, userId }) =
   await InventoryUsage.deleteMany({ tenantId, quotationId, source: "quotation" });
 
   const items = Array.isArray(quotation.items) ? quotation.items : [];
-  const candidateItems = items.filter(
-    (item) =>
-      String(item?.sourceType || "").toLowerCase() !== "market_purchase" && String(item?.productId || "").trim()
-  );
+  const candidateItems = items.filter((item) => {
+    const st = String(item?.sourceType || "").toLowerCase();
+    return st !== "market_purchase" && st !== "service" && String(item?.productId || "").trim();
+  });
   if (!candidateItems.length) return;
 
   const inventoryIds = [...new Set(candidateItems.map((item) => String(item.productId).trim()))];
@@ -1158,13 +1175,68 @@ router.post("/clients", async (req, res, next) => {
 });
 router.get("/clients", async (req, res, next) => {
   try {
-    const clients = await Client.find({ isDeleted: { $ne: true } }).sort({
-      clientNumber: -1,
-      createdAt: -1,
+    const clients = await Client.find({ isDeleted: { $ne: true } })
+      .sort({
+        clientNumber: -1,
+        createdAt: -1,
+      })
+      .lean();
+    const doctorIds = clients.map((client) => String(client.id || client._id));
+    const visitStats = doctorIds.length
+      ? await Visit.collection.aggregate([
+          {
+            $match: {
+              deletedAt: null,
+            },
+          },
+          {
+            $lookup: {
+              from: Project.collection.name,
+              let: { visitProjectId: "$projectId" },
+              pipeline: [
+                { $match: { $expr: { $eq: [{ $toString: "$_id" }, { $toString: "$$visitProjectId" }] } } },
+                { $project: { clientId: 1 } },
+              ],
+              as: "visitProject",
+            },
+          },
+          {
+            $addFields: {
+              resolved_doctor_id: {
+                $ifNull: [
+                  { $convert: { input: "$doctor_id", to: "string", onError: null, onNull: null } },
+                  { $convert: { input: { $arrayElemAt: ["$visitProject.clientId", 0] }, to: "string", onError: null, onNull: null } },
+                ],
+              },
+              resolved_visit_date: { $ifNull: ["$created_at", { $ifNull: ["$createdAt", "$time"] }] },
+            },
+          },
+          { $match: { resolved_doctor_id: { $in: doctorIds } } },
+          {
+            $group: {
+              _id: "$resolved_doctor_id",
+              visit_count: { $sum: 1 },
+              last_visit_at: { $max: "$resolved_visit_date" },
+            },
+          },
+        ]).toArray()
+      : [];
+    const visitStatsByDoctorId = new Map(visitStats.map((row) => [String(row._id), row]));
+    const clientsWithVisitStats = clients.map((client) => {
+      const doctorId = String(client.id || client._id);
+      const stats = visitStatsByDoctorId.get(doctorId);
+      return {
+        ...client,
+        id: doctorId,
+        doctor_name: client.name || "",
+        visit_count: Number(stats?.visit_count || 0),
+        last_visit_at: stats?.last_visit_at ? new Date(stats.last_visit_at).toISOString() : null,
+      };
     });
     console.log("RESULT COUNT:", clients.length);
+    console.log("CLIENT API ROW:", clientsWithVisitStats[0] || null);
 
-    return res.json(clients);
+    return res.json(clientsWithVisitStats);
   } catch (error) {
     console.error("[clients.list] Failed to fetch clients", {
       tenantId: req.user?.tenantId || req.tenantId || null,
@@ -1471,10 +1543,16 @@ const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
   const rawItems = Array.isArray(payload.items) ? payload.items : [];
   const source = String(payload?.source || "project").toLowerCase();
   const isInventorySource = source === "inventory";
-  if (isInventorySource && rawItems.some((item) => String(item?.sourceType || "").toLowerCase() === "market_purchase")) {
-    throw new AppError("Market purchase lines are not valid for inventory quotations.", 400);
+  if (isInventorySource && rawItems.some((item) => {
+    const st = String(item?.sourceType || "").toLowerCase();
+    return st === "market_purchase" || st === "service";
+  })) {
+    throw new AppError("Market purchase and service lines are not valid for inventory quotations.", 400);
   }
-  const nonMarketLines = rawItems.filter((item) => String(item?.sourceType || "").toLowerCase() !== "market_purchase");
+  const nonMarketLines = rawItems.filter((item) => {
+    const st = String(item?.sourceType || "").toLowerCase();
+    return st !== "market_purchase" && st !== "service";
+  });
   const productIds = [...new Set(nonMarketLines.map((item) => String(item?.productId || "").trim()).filter(Boolean))];
   if (isInventorySource && rawItems.some((item) => !String(item?.productId || "").trim())) {
     throw new AppError("Each quotation item must reference an inventory product.", 400);
@@ -1517,9 +1595,39 @@ const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
         total,
         sourceType: "market_purchase",
         purchasePrice,
+        serviceCost: 0,
         supplier: String(item.supplier || "").trim(),
         purchaseReference: String(item.purchaseReference || "").trim(),
         addToInventory: Boolean(item.addToInventory),
+      };
+    }
+
+    if (!isInventorySource && lineSource === "service") {
+      const manualName = String(item.description || item.name || "").trim();
+      if (!manualName) {
+        throw new AppError("Each service line needs a description.", 400);
+      }
+      const quantity = Number(item.quantity || 0);
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        throw new AppError("Invalid quantity on service line.", 400);
+      }
+      const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
+      const serviceCost = Number(item.serviceCost ?? 0);
+      const total = Number((quantity * unitPrice).toFixed(2));
+      return {
+        productId: "",
+        name: manualName,
+        description: manualName,
+        price: unitPrice,
+        quantity,
+        unitPrice,
+        total,
+        sourceType: "service",
+        purchasePrice: 0,
+        serviceCost,
+        supplier: "",
+        purchaseReference: "",
+        addToInventory: false,
       };
     }
 
@@ -1545,6 +1653,7 @@ const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
         total,
         sourceType: "inventory",
         purchasePrice: 0,
+        serviceCost: 0,
         supplier: "",
         purchaseReference: "",
         addToInventory: false,
@@ -1571,6 +1680,7 @@ const computeQuotationTotals = async ({ tenantId, payload = {} }) => {
       total,
       sourceType: "inventory",
       purchasePrice: 0,
+      serviceCost: 0,
       supplier: "",
       purchaseReference: "",
       addToInventory: false,
@@ -2083,6 +2193,11 @@ router.get("/clients/:id/details", async (req, res, next) => {
     const quotations = await Quotation.find({ clientId: String(client._id), tenantId, deletedAt: null }).sort({
       createdAt: -1,
     });
+    const visitQuery = { tenantId, deletedAt: null, doctor_id: String(client._id) };
+    const [totalVisits, lastVisit] = await Promise.all([
+      Visit.countDocuments(visitQuery),
+      Visit.findOne(visitQuery).sort({ time: -1 }).select("time").lean(),
+    ]);
 
     const timelineFromAudit = (entity, docs) =>
       docs.flatMap((doc) =>
@@ -2114,6 +2229,8 @@ router.get("/clients/:id/details", async (req, res, next) => {
         totalProjects: projects.length,
         totalQuotations: quotations.length,
         totalQuoted,
+        totalVisits,
+        lastVisit: lastVisit?.time || null,
       },
       projects,
       quotations,

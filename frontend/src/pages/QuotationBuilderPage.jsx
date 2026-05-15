@@ -21,6 +21,7 @@ const BLANK_ITEM = {
   lockPrice: false,
   sourceType: "inventory",
   purchasePrice: "",
+  serviceCost: "",
   supplier: "",
   purchaseReference: "",
   addToInventory: false,
@@ -88,8 +89,14 @@ export default function QuotationBuilderPage() {
           quantity: row.quantity ?? 1,
           unitPrice: row.unitPrice ?? row.price ?? 0,
           lockPrice: false,
-          sourceType: String(row.sourceType || "inventory").toLowerCase() === "market_purchase" ? "market_purchase" : "inventory",
+          sourceType: (() => {
+            const st = String(row.sourceType || "inventory").toLowerCase();
+            if (st === "market_purchase") return "market_purchase";
+            if (st === "service") return "service";
+            return "inventory";
+          })(),
           purchasePrice: row.purchasePrice ?? "",
+          serviceCost: row.serviceCost ?? "",
           supplier: row.supplier ?? "",
           purchaseReference: row.purchaseReference ?? "",
           addToInventory: Boolean(row.addToInventory),
@@ -148,8 +155,8 @@ export default function QuotationBuilderPage() {
         const quantity = toNumber(item.quantity);
         const unitPrice = toNumber(item.unitPrice);
         const total = quantity * unitPrice;
-        const st =
-          String(item.sourceType || "inventory").toLowerCase() === "market_purchase" ? "market_purchase" : "inventory";
+        const raw = String(item.sourceType || "inventory").toLowerCase();
+        const st = raw === "market_purchase" ? "market_purchase" : raw === "service" ? "service" : "inventory";
         const base = {
           productId: item.productId || "",
           name: item.description?.trim() || "",
@@ -160,6 +167,7 @@ export default function QuotationBuilderPage() {
           total,
           sourceType: st,
           purchasePrice: 0,
+          serviceCost: 0,
           supplier: "",
           purchaseReference: "",
           addToInventory: false,
@@ -172,6 +180,13 @@ export default function QuotationBuilderPage() {
             supplier: String(item.supplier || "").trim(),
             purchaseReference: String(item.purchaseReference || "").trim(),
             addToInventory: Boolean(item.addToInventory),
+          };
+        }
+        if (st === "service") {
+          return {
+            ...base,
+            productId: "",
+            serviceCost: toNumber(item.serviceCost),
           };
         }
         return base;
@@ -324,7 +339,8 @@ export default function QuotationBuilderPage() {
     updateItem(index, "description", value);
     updateItem(index, "productId", "");
     const line = items[index];
-    if (String(line?.sourceType || "inventory").toLowerCase() === "market_purchase") {
+    const lineSt = String(line?.sourceType || "inventory").toLowerCase();
+    if (lineSt === "market_purchase" || lineSt === "service") {
       setItemSuggestions((previous) => ({ ...previous, [index]: [] }));
       return;
     }
@@ -337,6 +353,7 @@ export default function QuotationBuilderPage() {
 
   const setItemSourceType = (index, nextSource) => {
     const isMarket = nextSource === "market_purchase";
+    const isService = nextSource === "service";
     setItems((previous) =>
       previous.map((item, itemIndex) => {
         if (itemIndex !== index) return item;
@@ -346,6 +363,19 @@ export default function QuotationBuilderPage() {
             sourceType: "market_purchase",
             productId: "",
             lockPrice: false,
+            serviceCost: "",
+            addToInventory: false,
+          };
+        }
+        if (isService) {
+          return {
+            ...item,
+            sourceType: "service",
+            productId: "",
+            lockPrice: false,
+            purchasePrice: "",
+            supplier: "",
+            purchaseReference: "",
             addToInventory: false,
           };
         }
@@ -353,13 +383,14 @@ export default function QuotationBuilderPage() {
           ...item,
           sourceType: "inventory",
           purchasePrice: "",
+          serviceCost: "",
           supplier: "",
           purchaseReference: "",
           addToInventory: false,
         };
       })
     );
-    if (isMarket) {
+    if (isMarket || isService) {
       setItemSuggestions((previous) => ({ ...previous, [index]: [] }));
     }
   };
@@ -544,27 +575,30 @@ export default function QuotationBuilderPage() {
 
         <div className="space-y-3">
           {items.map((item, index) => {
-            const isMarket = String(item.sourceType || "inventory").toLowerCase() === "market_purchase";
+            const srcType = String(item.sourceType || "inventory").toLowerCase();
+            const isMarket = srcType === "market_purchase";
+            const isService = srcType === "service";
             return (
               <div key={`quotation-item-${index}`} className="space-y-2">
                 <div className="grid grid-cols-12 gap-2 sm:gap-3 items-center">
                   <select
                     className="col-span-12 sm:col-span-2 input-field text-xs sm:text-sm"
                     aria-label="Line source type"
-                    value={isMarket ? "market_purchase" : "inventory"}
+                    value={srcType}
                     onChange={(e) => setItemSourceType(index, e.target.value)}
                   >
                     <option value="inventory">Inventory</option>
                     <option value="market_purchase">Market Purchase</option>
+                    <option value="service">Service</option>
                   </select>
                   <div className="col-span-12 sm:col-span-3 relative">
                     <input
                       className="input-field"
                       value={itemSearch[index] ?? item.description}
                       onChange={(event) => handleItemNameInput(index, event.target.value)}
-                      placeholder={isMarket ? "Item description" : "Type item name (e.g. cam)"}
+                      placeholder={isMarket ? "Item description" : isService ? "Service description" : "Type item name (e.g. cam)"}
                     />
-                    {!isMarket &&
+                    {!isMarket && !isService &&
                     Array.isArray(itemSuggestions[index]) &&
                     itemSuggestions[index].length > 0 ? (
                       <div
@@ -602,7 +636,7 @@ export default function QuotationBuilderPage() {
                     className="col-span-4 sm:col-span-2 input-field price numeric"
                     value={item.unitPrice}
                     onChange={(event) => updateItem(index, "unitPrice", event.target.value)}
-                    placeholder={isMarket ? "Sell price" : "Unit price"}
+                    placeholder={isMarket ? "Sell price" : isService ? "Service price" : "Unit price"}
                     readOnly={Boolean(item.lockPrice)}
                   />
                   <div className="col-span-4 sm:col-span-2 total-field numeric text-sm">
@@ -651,6 +685,22 @@ export default function QuotationBuilderPage() {
                       />
                       Add purchased item to inventory
                     </label>
+                  </div>
+                ) : null}
+                {isService ? (
+                  <div className="grid grid-cols-12 gap-2 sm:gap-3 items-center border-l-2 border-indigo-200 pl-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="col-span-6 sm:col-span-2 input-field text-sm"
+                      placeholder="Internal cost (optional)"
+                      value={item.serviceCost}
+                      onChange={(e) => updateItem(index, "serviceCost", e.target.value)}
+                    />
+                    <span className="col-span-6 sm:col-span-10 text-xs text-slate-400 italic">
+                      Internal service cost — labour, outsourcing, etc. Not shown on client PDF.
+                    </span>
                   </div>
                 ) : null}
               </div>
