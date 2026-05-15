@@ -69,6 +69,14 @@ const formatCurrency = (value = 0) =>
     maximumFractionDigits: 2,
   }).format(Number(value || 0));
 
+const A4_HEIGHT = 841.89;
+const PAGE_MARGIN_TOP = 50;
+const PAGE_MARGIN_BOTTOM = 50;
+const USABLE_BOTTOM = A4_HEIGHT - PAGE_MARGIN_BOTTOM;
+
+const sanitizeForFilename = (str) =>
+  String(str || "").trim().replace(/[^a-zA-Z0-9\-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+
 const getInvoiceStatusLabel = (invoice, remaining, paid) => {
   const raw = String(invoice?.status || "").toLowerCase();
   if (remaining <= 0 || raw === "paid") return "Paid";
@@ -198,51 +206,84 @@ const addQuotationMetaBlock = (doc, quotation) => {
     .text(new Date(quotation.createdAt || Date.now()).toLocaleDateString(), 372, 202, { width: 166, align: "right" });
 };
 
+const TABLE_HEADER_H = 26;
+const TABLE_MIN_ROW_H = 24;
+const TABLE_CELL_PAD_X = 10;
+const TABLE_FONT_SIZE = 9;
+
+const drawTableHeader = (doc, hTop, col1, col2, col3, col4, tableWidth, descW, qtyW, unitW) => {
+  doc.roundedRect(col1, hTop, tableWidth, TABLE_HEADER_H, 4).fillAndStroke("#f8fafc", "#e2e8f0");
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(TABLE_FONT_SIZE)
+    .fillColor("#475569")
+    .text("Description", col1 + TABLE_CELL_PAD_X, hTop + 8, { width: descW - TABLE_CELL_PAD_X * 2, align: "left", lineBreak: false })
+    .text("Qty", col2, hTop + 8, { width: qtyW, align: "center", lineBreak: false })
+    .text("Unit Price", col3, hTop + 8, { width: unitW - TABLE_CELL_PAD_X, align: "right", lineBreak: false })
+    .text("Total", col4, hTop + 8, { width: unitW - TABLE_CELL_PAD_X, align: "right", lineBreak: false });
+  return hTop + TABLE_HEADER_H;
+};
+
 const addItemsTable = (doc, rows, top = 356) => {
   const items = rows?.length ? rows : [{ description: "Service", quantity: 1, unitPrice: 0, total: 0 }];
   const x = 50;
   const tableWidth = 500;
-  const rowHeight = 30; // equivalent to 8px vertical spacing
-  const cellPaddingX = 12; // equivalent to 12px horizontal spacing
-  const descriptionWidth = 236;
-  const qtyWidth = 70;
-  const unitWidth = 97;
-  const totalWidth = 97;
+  const descW = 242;
+  const qtyW = 62;
+  const unitW = 98;
   const col1 = x;
-  const col2 = col1 + descriptionWidth;
-  const col3 = col2 + qtyWidth;
-  const col4 = col3 + unitWidth;
-  doc.roundedRect(x, top - 4, tableWidth, rowHeight, 4).fillAndStroke("#f8fafc", "#e2e8f0");
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(10)
-    .fillColor("#475569")
-    .text("Description", col1 + cellPaddingX, top + 8, { width: descriptionWidth - cellPaddingX * 2, align: "left" })
-    .text("Qty", col2, top + 3, { width: qtyWidth, align: "center" })
-    .text("Unit Price", col3, top + 8, { width: unitWidth - cellPaddingX, align: "right" })
-    .text("Total", col4, top + 8, { width: totalWidth - cellPaddingX, align: "right" });
+  const col2 = col1 + descW;
+  const col3 = col2 + qtyW;
+  const col4 = col3 + unitW;
 
-  let y = top + rowHeight + 6;
+  let y = drawTableHeader(doc, top, col1, col2, col3, col4, tableWidth, descW, qtyW, unitW) + 2;
   let subtotal = 0;
+
   items.forEach((item, index) => {
     const qty = Number(item.quantity || item.qty || 1);
     const rate = Number(item.unitPrice || item.rate || 0);
     const amount = Number(item.total != null ? item.total : qty * rate);
     subtotal += amount;
-    if (index % 2 === 0) doc.rect(x, y - 4, tableWidth, rowHeight).fill("#fcfdff");
+
+    const descText = String(item.description || item.name || "Line Item");
+    // Measure actual wrapped height so we allocate the right row height
+    const descH = doc.font("Helvetica").fontSize(TABLE_FONT_SIZE).heightOfString(descText, {
+      width: descW - TABLE_CELL_PAD_X * 2,
+    });
+    const rowH = Math.max(descH + 14, TABLE_MIN_ROW_H);
+
+    // If this row won't fit on the current page, start a fresh page with a new header
+    if (y + rowH > USABLE_BOTTOM - 20) {
+      doc.addPage();
+      y = PAGE_MARGIN_TOP;
+      y = drawTableHeader(doc, y, col1, col2, col3, col4, tableWidth, descW, qtyW, unitW) + 2;
+    }
+
+    // Zebra stripe
+    if (index % 2 === 0) {
+      doc.rect(x, y, tableWidth, rowH).fill("#fafcff");
+    }
+
+    // Description (top-aligned within row)
+    doc.font("Helvetica").fontSize(TABLE_FONT_SIZE).fillColor("#0a2540");
+    doc.text(descText, col1 + TABLE_CELL_PAD_X, y + 7, {
+      width: descW - TABLE_CELL_PAD_X * 2,
+      align: "left",
+      lineBreak: true,
+    });
+
+    // Qty / Unit Price / Total — vertically centred
+    const midY = y + Math.max((rowH - TABLE_FONT_SIZE) / 2, 7);
     doc
-      .font("Helvetica")
-      .fontSize(10)
-      .fillColor("#0a2540")
-      .text(item.description || item.name || "Line Item", col1 + cellPaddingX, y + 8, { width: descriptionWidth - cellPaddingX * 2, align: "left" })
-      .text(String(qty), col2, y + 8, { width: qtyWidth, align: "center" })
-      .text(formatCurrency(rate), col3, y + 8, { width: unitWidth - cellPaddingX, align: "right" })
-      .text(formatCurrency(amount), col4, y + 8, { width: totalWidth - cellPaddingX, align: "right" });
-    doc.moveTo(x, y + rowHeight - 4).lineTo(x + tableWidth, y + rowHeight - 4).strokeColor("#eef2f7").stroke();
-    y += rowHeight + 2;
+      .text(String(qty), col2, midY, { width: qtyW, align: "center", lineBreak: false })
+      .text(formatCurrency(rate), col3, midY, { width: unitW - TABLE_CELL_PAD_X, align: "right", lineBreak: false })
+      .text(formatCurrency(amount), col4, midY, { width: unitW - TABLE_CELL_PAD_X, align: "right", lineBreak: false });
+
+    doc.moveTo(x, y + rowH).lineTo(x + tableWidth, y + rowH).strokeColor("#eef2f7").lineWidth(0.5).stroke();
+    y += rowH;
   });
 
-  return { y, subtotal };
+  return { y: y + 6, subtotal };
 };
 
 const addTotals = (doc, { subtotal, discount = {}, tax = 0, grandTotal, total }, startY) => {
@@ -255,6 +296,13 @@ const addTotals = (doc, { subtotal, discount = {}, tax = 0, grandTotal, total },
     : total != null
       ? Number(total)
       : subtotal - discountAmount + Number(tax);
+
+  // Totals block height: 3 rows × 18 + divider 12 + grand-total 22 + padding = ~100px
+  if (startY + 100 > USABLE_BOTTOM) {
+    doc.addPage();
+    startY = PAGE_MARGIN_TOP;
+  }
+
   let y = startY + 18;
   const summaryX = 330;
   const summaryWidth = 220;
@@ -314,13 +362,19 @@ const addTotals = (doc, { subtotal, discount = {}, tax = 0, grandTotal, total },
 };
 
 const addBulletedNotes = (doc, startY, lines) => {
-  const y = Math.min(startY + 8, 690);
-  doc.font("Helvetica-Bold").fontSize(11).fillColor("#374151").text("Notes", 50, y);
+  // Keep the notes heading + all bullet lines together on one page
+  const notesH = 20 + lines.length * 16;
+  if (startY + notesH > USABLE_BOTTOM) {
+    doc.addPage();
+    startY = PAGE_MARGIN_TOP;
+  }
+  const y = startY + 8;
+  doc.font("Helvetica-Bold").fontSize(10).fillColor("#374151").text("Notes", 50, y);
   let lineY = y + 16;
-  doc.font("Helvetica").fontSize(10).fillColor("#555");
+  doc.font("Helvetica").fontSize(9).fillColor("#555");
   lines.forEach((item) => {
     doc.text(`• ${item}`, 58, lineY, { width: 492 });
-    lineY += 16;
+    lineY += 15;
   });
   return lineY;
 };
@@ -361,7 +415,11 @@ router.get("/quotations/:id/pdf", async (req, res, next) => {
       clientAddress: quotation.clientAddress || "-",
     };
 
-    streamPdf(res, `quotation-${quotation._id}.pdf`, (doc) => {
+    const qClientName = sanitizeForFilename(printableQuotation.clientName || "Client");
+    const qNumber = sanitizeForFilename(quotation.quotationNo || String(quotation._id));
+    const quotationFilename = `${qClientName}-Quotation-${qNumber}.pdf`;
+
+    streamPdf(res, quotationFilename, (doc) => {
       addWatermark(doc, branding);
       addHeader(doc, {
         title: "Quotation",
