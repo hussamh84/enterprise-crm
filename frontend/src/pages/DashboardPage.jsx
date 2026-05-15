@@ -58,23 +58,22 @@ function clientKey(project) {
   return String(c || "");
 }
 
-/** Reference-style status row for table (red / yellow / green) */
 function tableStatusPresentation(status) {
   const s = String(status || "").toLowerCase();
-  if (s === "completed" || s === "paid") {
-    return { label: "Support", badgeClass: "bg-[#95c11f]/20 text-[#95c11f]", barClass: "bg-[#95c11f]" };
-  }
-  if (s === "pending" || s === "in_progress" || s === "in progress") {
-    return { label: "Updating", badgeClass: "bg-amber-100 text-amber-700", barClass: "bg-amber-500" };
-  }
-  return { label: "Developing", badgeClass: "bg-[#e74c3c]/15 text-[#e74c3c]", barClass: "bg-[#e74c3c]" };
+  if (s === "completed") return { label: "Completed", badgeClass: "bg-teal-100 text-teal-700", barClass: "bg-teal-600" };
+  if (s === "partial") return { label: "Partial", badgeClass: "bg-amber-100 text-amber-700", barClass: "bg-amber-500" };
+  if (s === "active") return { label: "Active", badgeClass: "bg-green-100 text-green-700", barClass: "bg-[#95c11f]" };
+  return { label: "Pending", badgeClass: "bg-slate-100 text-slate-500", barClass: "bg-slate-400" };
 }
 
-function tableActivityPercent(status) {
-  const s = String(status || "").toLowerCase();
-  if (s === "completed" || s === "paid") return 100;
-  if (s === "pending" || s === "in_progress" || s === "in progress") return 55;
-  return 72;
+function tableActivityPercent(project) {
+  const prog = Number(project?.progress);
+  if (!Number.isNaN(prog) && prog >= 0) return Math.min(100, prog);
+  const s = String(project?.status || "").toLowerCase();
+  if (s === "completed") return 100;
+  if (s === "partial") return 60;
+  if (s === "active") return 40;
+  return 20;
 }
 
 export default function DashboardPage() {
@@ -521,13 +520,13 @@ export default function DashboardPage() {
                 {tableProjects.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="py-3 text-center text-[11px] text-gray-400">
-                      No projects yet.
+                      No active projects.
                     </td>
                   </tr>
                 ) : (
                   tableProjects.map((project) => {
                     const pres = tableStatusPresentation(project?.status);
-                    const pct = tableActivityPercent(project?.status);
+                    const pct = tableActivityPercent(project);
                     return (
                       <tr key={project?._id} className="border-b border-gray-100 last:border-0">
                         <td className="truncate py-0.5 pr-1 align-middle text-[11px] font-semibold leading-tight text-[#1a252f]" title={project?.name || ""}>
