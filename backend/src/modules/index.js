@@ -2656,52 +2656,34 @@ router.patch("/invoices/:id/pay", async (req, res, next) => {
     const remainingAmount = totalAmount - nextPaidAmount;
     const status = remainingAmount > 0 ? "partial" : "paid";
 
-    const session = await mongoose.startSession();
-    let updatedInvoice = null;
-    try {
-      await session.withTransaction(async () => {
-        const invoiceInSession = await Invoice.findOne({
-          _id: req.params.id,
-          tenantId: req.tenantId,
-          deletedAt: null,
-        }).session(session);
-        if (!invoiceInSession) throw new AppError("Invoice not found", 404);
+    // Atomic single-document update — no replica set / transaction required.
+    const $set = {
+      paidAmount: nextPaidAmount,
+      remainingAmount: remainingAmount,
+      status: status,
+      updatedBy: req.user?.id,
+    };
+    if (status === "paid") $set.paidAt = new Date();
 
-        // Accumulate payment instead of overwriting previous paid amount.
-        invoiceInSession.paidAmount = nextPaidAmount;
-        invoiceInSession.remainingAmount = remainingAmount;
-        invoiceInSession.status = status;
-        invoiceInSession.payments = [
-          ...(Array.isArray(invoiceInSession.payments) ? invoiceInSession.payments : []),
-          { amount: paymentAmount, date: new Date() },
-        ];
-        invoiceInSession.paidAt = status === "paid" ? new Date() : invoiceInSession.paidAt;
-        invoiceInSession.updatedBy = req.user?.id;
-        invoiceInSession.auditLog = [
-          ...(Array.isArray(invoiceInSession.auditLog) ? invoiceInSession.auditLog : []),
-          { action: "invoice.pay", by: req.user?.id, note: `Payment recorded: ${paymentAmount}` },
-        ];
-        if (status === "paid" && !invoiceInSession.stockDeducted) {
-          await deductInventoryForInvoice({
-            invoice: invoiceInSession,
-            tenantId: req.tenantId,
-            userId: req.user?.id,
-            session,
-          });
-          // deductInventoryForInvoice saves internally only when it actually
-          // deducts stock (sets stockDeducted = true). For service/project
-          // invoices with no inventory items it returns early without saving,
-          // so we must persist the payment fields ourselves in that case.
-          if (!invoiceInSession.stockDeducted) {
-            await invoiceInSession.save({ session });
-          }
-        } else {
-          await invoiceInSession.save({ session });
-        }
-        updatedInvoice = invoiceInSession;
+    const updatedInvoice = await Invoice.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId, deletedAt: null },
+      {
+        $set,
+        $push: {
+          payments: { amount: paymentAmount, date: new Date() },
+          auditLog: { action: "invoice.pay", by: req.user?.id, note: `Payment recorded: ${paymentAmount}` },
+        },
+      },
+      { new: true }
+    );
+    if (!updatedInvoice) return res.status(404).json({ message: "Invoice not found" });
+
+    if (status === "paid" && !updatedInvoice.stockDeducted) {
+      await deductInventoryForInvoice({
+        invoice: updatedInvoice,
+        tenantId: req.tenantId,
+        userId: req.user?.id,
       });
-    } finally {
-      await session.endSession();
     }
 
     let syncResult = null;
@@ -2712,13 +2694,7 @@ router.patch("/invoices/:id/pay", async (req, res, next) => {
         userId: req.user?.id,
       });
     }
-    const paidDoc = updatedInvoice || invoice;
-    const out =
-      paidDoc && typeof paidDoc.toObject === "function"
-        ? paidDoc.toObject()
-        : paidDoc
-          ? { ...paidDoc }
-          : {};
+    const out = typeof updatedInvoice.toObject === "function" ? updatedInvoice.toObject() : { ...updatedInvoice };
     if (syncResult?.projectAutoCompleted) {
       out.projectAutoCompleted = true;
     }
