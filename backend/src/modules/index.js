@@ -2688,6 +2688,13 @@ router.patch("/invoices/:id/pay", async (req, res, next) => {
             userId: req.user?.id,
             session,
           });
+          // deductInventoryForInvoice saves internally only when it actually
+          // deducts stock (sets stockDeducted = true). For service/project
+          // invoices with no inventory items it returns early without saving,
+          // so we must persist the payment fields ourselves in that case.
+          if (!invoiceInSession.stockDeducted) {
+            await invoiceInSession.save({ session });
+          }
         } else {
           await invoiceInSession.save({ session });
         }
