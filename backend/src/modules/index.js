@@ -2429,7 +2429,8 @@ router.use("/projects", buildCrudRouter({ model: Project, entity: "project" }));
 router.get("/invoices", async (req, res, next) => {
   try {
     const clientId = String(req.query?.clientId || "").trim();
-    const query = clientId ? { clientId } : {};
+    const query = { tenantId: req.tenantId, deletedAt: null };
+    if (clientId) query.clientId = clientId;
     const docs = await Invoice.find(query).sort({ createdAt: -1 });
     const invoiceObjects = docs.map((doc) => (typeof doc.toObject === "function" ? doc.toObject() : doc));
 

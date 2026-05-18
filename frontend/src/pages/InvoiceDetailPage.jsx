@@ -253,6 +253,11 @@ export default function InvoiceDetailPage() {
             ) : null}
           </div>
           {remainingAmount <= 0 ? <p className="text-sm text-emerald-700 mt-4 font-medium">This invoice is fully paid.</p> : null}
+          {payMutation.isError ? (
+            <p className="text-sm text-rose-600 mt-3 font-medium">
+              {payMutation.error?.response?.data?.message || "Payment failed. Please try again."}
+            </p>
+          ) : null}
         </div>
       </div>
     </div>
