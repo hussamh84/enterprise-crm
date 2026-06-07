@@ -27,10 +27,14 @@ import LeadsPage from "./pages/LeadsPage";
 import QuotationsPage from "./pages/QuotationsPage";
 import QuotationBuilderPage from "./pages/QuotationBuilderPage";
 import QuotationViewPage from "./pages/QuotationViewPage";
+import QuotationPrintPage from "./pages/QuotationPrintPage";
+import InvoicePrintPage from "./pages/InvoicePrintPage";
 
 function App() {
   return (
     <Routes>
+      <Route path="/print/quotations/:id" element={<QuotationPrintPage />} />
+      <Route path="/print/invoices/:invoiceId" element={<InvoicePrintPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />

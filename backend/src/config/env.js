@@ -8,6 +8,7 @@ module.exports = {
   mongoUri: process.env.MONGO_URI || "mongodb://127.0.0.1:27017/enterprise_crm",
   jwtSecret: process.env.JWT_SECRET || "enterprise-crm-secret",
   clientOrigin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+  frontendUrl: process.env.FRONTEND_URL || process.env.CLIENT_ORIGIN || "http://localhost:5173",
   defaultAdminName: process.env.DEFAULT_ADMIN_NAME || "System Admin",
   defaultAdminEmail: process.env.DEFAULT_ADMIN_EMAIL || "admin@demo.com",
   defaultAdminPassword: process.env.DEFAULT_ADMIN_PASSWORD || "12345678",

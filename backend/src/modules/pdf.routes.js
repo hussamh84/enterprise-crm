@@ -2,6 +2,11 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
+const { streamHtmlPdf, streamUrlPdf } = require("../services/htmlPdfRenderer");
+const {
+  buildQuotationHtml,
+  buildInvoiceHtml,
+} = require("../templates/documentPdfTemplate");
 const env = require("../config/env");
 const { COMPANY } = require("../config/company");
 const { models } = require("./index");
@@ -419,6 +424,28 @@ const streamPdf = (res, filename, painter) => {
   doc.end();
 };
 
+const computeItemsSubtotal = (items = []) =>
+  items.reduce((sum, item) => {
+    const qty = Number(item.quantity || item.qty || 1);
+    const rate = Number(item.unitPrice || item.rate || 0);
+    const amount = Number(item.total != null ? item.total : qty * rate);
+    return sum + amount;
+  }, 0);
+
+const frontendBaseUrl = String(env.frontendUrl || env.clientOrigin || "").replace(/\/$/, "");
+
+const tryStreamFrontendPrintPdf = async (res, filename, printPath, accessToken) => {
+  if (!frontendBaseUrl || !accessToken) return false;
+  const printUrl = `${frontendBaseUrl}${printPath}?access_token=${encodeURIComponent(accessToken)}`;
+  try {
+    await streamUrlPdf(res, filename, printUrl);
+    return true;
+  } catch (error) {
+    console.warn("[PDF] Frontend print rendering failed, falling back to server HTML:", error.message);
+    return false;
+  }
+};
+
 router.get("/quotations/:id/pdf", async (req, res, next) => {
   try {
     const branding = await resolveBranding(req.tenantId);
@@ -448,48 +475,34 @@ router.get("/quotations/:id/pdf", async (req, res, next) => {
     const qNumber = sanitizeForFilename(quotation.quotationNo || String(quotation._id));
     const quotationFilename = `${qClientName}-Quotation-${qNumber}.pdf`;
 
-    streamPdf(res, quotationFilename, (doc) => {
-      addWatermark(doc, branding);
-      addHeader(doc, {
-        title: "Quotation",
-        docNoLabel: "Quotation No:",
-        docNo: String(quotation.quotationNo || "").trim() || "—",
-        branding,
-        issueDate: new Date(quotation.createdAt || Date.now()).toLocaleDateString(),
-      });
-      addStatusBadge(doc, "QUOTATION");
-      const tableTop = addPartyBlock(doc, printableQuotation, project);
-      const rawSections = Array.isArray(printableQuotation.sections) ? printableQuotation.sections : [];
-      const allItems = Array.isArray(printableQuotation.items) ? printableQuotation.items : [];
-      let tableY = tableTop + 8;
-      let combinedSubtotal = 0;
-      if (rawSections.length > 0) {
-        for (let si = 0; si < rawSections.length; si++) {
-          const sec = rawSections[si];
-          const secItems = allItems.filter((item) => (Number(item.sectionIndex) || 0) === si);
-          if (!secItems.length) continue;
-          tableY = addSectionHeader(doc, sec.title || `Section ${si + 1}`, tableY);
-          const { y: secY, subtotal: secSub } = addItemsTable(doc, secItems, tableY);
-          combinedSubtotal += secSub;
-          tableY = secY + 6;
-        }
-      } else {
-        const { y: flatY, subtotal: flatSub } = addItemsTable(doc, allItems, tableY);
-        tableY = flatY;
-        combinedSubtotal = flatSub;
-      }
-      const totalsEndY = addTotals(doc, {
+    const rawSections = Array.isArray(printableQuotation.sections) ? printableQuotation.sections : [];
+    const allItems = Array.isArray(printableQuotation.items) ? printableQuotation.items : [];
+    const accessToken = String(req.query.access_token || "");
+    const usedFrontendPrint = await tryStreamFrontendPrintPdf(
+      res,
+      quotationFilename,
+      `/print/quotations/${req.params.id}`,
+      accessToken
+    );
+    if (usedFrontendPrint) return;
+
+    const combinedSubtotal = computeItemsSubtotal(allItems);
+    const html = buildQuotationHtml({
+      branding,
+      record: printableQuotation,
+      project,
+      items: allItems,
+      sections: rawSections,
+      totals: {
         subtotal: printableQuotation.subtotal ?? combinedSubtotal,
         discount: printableQuotation.discount,
         tax: printableQuotation.tax,
         grandTotal: printableQuotation.grandTotal,
-      }, tableY);
-      const notesEndY = addQuotationNotes(doc, totalsEndY);
-      doc
-        .fontSize(9)
-        .fillColor("#6b7c93")
-        .text("Thank you for your business", 50, Math.min(notesEndY + 12, 760));
+      },
+      notes: DEFAULT_QUOTATION_NOTE_LINES,
     });
+
+    await streamHtmlPdf(res, quotationFilename, html);
   } catch (error) {
     next(error);
   }
@@ -533,47 +546,42 @@ router.get("/invoices/:id/pdf", async (req, res, next) => {
     const tax = quotation ? Number(quotation.tax ?? 0) : 0;
     const grandTotal = total;
 
-    streamPdf(res, `invoice-${invoice.invoiceNo || invoice._id}.pdf`, (doc) => {
-      const invoiceNumber = String(invoice.invoiceNumber || invoice.invoiceNo || "").trim() || "—";
-      addWatermark(doc, branding);
-      addHeader(doc, {
-        title: "Invoice",
-        docNoLabel: "Invoice #:",
-        docNo: invoiceNumber,
-        branding,
-        issueDate: new Date(invoice.createdAt || Date.now()).toLocaleDateString(),
-      });
-      addStatusBadge(doc, badgeLabel);
-      const tableTop = addPartyBlock(doc, printableInvoice, project);
-      const { y, subtotal: lineSubtotal } = addItemsTable(doc, items, tableTop + 8);
-      const summarySubtotal = quotation
-        ? Number(quotation.subtotal != null ? quotation.subtotal : lineSubtotal)
-        : lineSubtotal;
-      const totalsEndY = addTotals(
-        doc,
-        {
-          subtotal: summarySubtotal,
-          discount,
-          tax,
-          grandTotal,
-        },
-        y
-      );
-      const summaryBaseY = totalsEndY;
-      doc
-        .fontSize(9)
-        .font("Helvetica")
-        .fillColor("#0f172a")
-        .text(`Status: ${statusLabel}`, 50, summaryBaseY - 8)
-        .text(`Paid to date: ${formatCurrency(paid)}`, 50, summaryBaseY + 8)
-        .text(`Balance due: ${formatCurrency(remaining)}`, 50, summaryBaseY + 24);
-      const notesEndY = addBulletedNotes(doc, summaryBaseY + 36, DEFAULT_INVOICE_NOTE_LINES);
-      doc
-        .fontSize(9)
-        .font("Helvetica")
-        .fillColor("#6b7c93")
-        .text("Thank you for your business", 50, Math.min(notesEndY + 12, 760));
+    const invoiceNumber = String(invoice.invoiceNumber || invoice.invoiceNo || "").trim() || "—";
+
+    const accessToken = String(req.query.access_token || "");
+    const usedFrontendPrint = await tryStreamFrontendPrintPdf(
+      res,
+      `invoice-${invoice.invoiceNo || invoice._id}.pdf`,
+      `/print/invoices/${req.params.id}`,
+      accessToken
+    );
+    if (usedFrontendPrint) return;
+
+    const lineSubtotal = computeItemsSubtotal(items);
+    const summarySubtotal = quotation
+      ? Number(quotation.subtotal != null ? quotation.subtotal : lineSubtotal)
+      : lineSubtotal;
+
+    const html = buildInvoiceHtml({
+      branding,
+      record: printableInvoice,
+      project,
+      items,
+      totals: {
+        subtotal: summarySubtotal,
+        discount,
+        tax,
+        grandTotal,
+      },
+      notes: DEFAULT_INVOICE_NOTE_LINES,
+      invoiceNumber,
+      statusLabel,
+      paid,
+      remaining,
+      badgeLabel,
     });
+
+    await streamHtmlPdf(res, `invoice-${invoice.invoiceNo || invoice._id}.pdf`, html);
   } catch (error) {
     next(error);
   }

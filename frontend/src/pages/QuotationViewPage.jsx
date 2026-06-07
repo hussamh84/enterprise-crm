@@ -7,6 +7,8 @@ import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 import { formatProjectTypeDisplay } from "../utils/projectTypeDisplay";
 import { formatQuotationStatusLabel, normalizeQuotationStatus } from "../utils/quotationStatus";
 import { DEFAULT_QUOTATION_NOTES } from "../utils/defaultDocNotes";
+import ArabicText from "../components/ArabicText";
+import { arabicTextProps } from "../utils/arabicText";
 
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");
 
@@ -232,7 +234,7 @@ export default function QuotationViewPage() {
                           <tr key={item._id || `${item.name || "item"}-${index}`}>
                             <td className="text-left font-medium align-top">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span>{item.name || item.description || "Item"}</span>
+                                <ArabicText>{item.name || item.description || "Item"}</ArabicText>
                                 {market ? (
                                   <span className="inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-amber-50 text-amber-900 border border-amber-200">
                                     Market
@@ -273,7 +275,7 @@ export default function QuotationViewPage() {
                             sec.title ? (
                               <tr key={`sec-hdr-${si}`}>
                                 <td colSpan={4} className="py-1.5 px-3 bg-slate-100 text-xs font-bold uppercase tracking-widest text-slate-600 border-y border-slate-200">
-                                  <span className="mr-2">{sec.title}</span>
+                                  <ArabicText as="span" className="mr-2">{sec.title}</ArabicText>
                                   <span className="font-normal text-slate-500 normal-case tracking-normal">{formatCurrency(secTotal)}</span>
                                 </td>
                               </tr>
@@ -329,10 +331,11 @@ export default function QuotationViewPage() {
 }
 
 function InfoField({ label, value }) {
+  const text = String(value ?? "");
   return (
     <div className="rounded-lg bg-[#f8fafc] border border-[#eee] p-3">
       <p className="text-xs text-[#64748b] uppercase tracking-[0.08em] font-medium">{label}</p>
-      <p className="text-sm font-medium text-[#0f172a] mt-1">{value}</p>
+      <p className="text-sm font-medium text-[#0f172a] mt-1 break-words" {...arabicTextProps(text)}>{text}</p>
     </div>
   );
 }

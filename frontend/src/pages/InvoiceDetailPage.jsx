@@ -6,6 +6,7 @@ import { formatCurrency } from "../utils/format";
 import { openPdf } from "../utils/pdf";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 import { DEFAULT_INVOICE_NOTES } from "../utils/defaultDocNotes";
+import { arabicTextProps } from "../utils/arabicText";
 
 const dateValue = (value) => (value ? new Date(value).toLocaleDateString() : "-");
 
@@ -265,10 +266,11 @@ export default function InvoiceDetailPage() {
 }
 
 function Field({ label, value }) {
+  const text = String(value ?? "");
   return (
     <div className="rounded-lg bg-[#f8fafc] border border-[#eee] p-3">
       <p className="text-xs text-[#64748b] uppercase tracking-[0.08em] font-medium">{label}</p>
-      <p className="text-sm font-medium text-[#0f172a] mt-1 break-words">{value}</p>
+      <p className="text-sm font-medium text-[#0f172a] mt-1 break-words" {...arabicTextProps(text)}>{text}</p>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://enterprise-crm-backend-hyb0.onrender.com/api",
+  baseURL: import.meta.env.VITE_API_URL || "https://enterprise-crm-backend-hyb0.onrender.com/api",
 });
 
 export const setAuthToken = (token) => {

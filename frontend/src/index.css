@@ -845,6 +845,26 @@ a.btn-approve {
   border-bottom: none;
 }
 
+.arabic-pdf-text {
+  font-family: "Noto Sans Arabic", Arial, sans-serif;
+  direction: rtl;
+  text-align: right;
+  unicode-bidi: isolate;
+  font-feature-settings: "liga" 1, "calt" 1;
+}
+
+.arabic-text {
+  font-family: "Noto Sans Arabic", Inter, ui-sans-serif, system-ui, sans-serif;
+  direction: rtl;
+  unicode-bidi: plaintext;
+  text-align: right;
+}
+
+.arabic-text-mixed {
+  direction: unset;
+  text-align: left;
+}
+
 .enterprise-doc-grand-total {
   font-size: 18px;
   font-weight: 700;
