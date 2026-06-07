@@ -14,7 +14,7 @@
   "type": "commonjs",
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
-    "@sparticuz/chromium": "^133.0.0",
+    "@sparticuz/chromium": "^148.0.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",

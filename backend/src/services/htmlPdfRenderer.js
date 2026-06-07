@@ -72,6 +72,7 @@ const resolveBrowserExecutable = async () => {
     const chromium = getSparticuzChromium();
     if (chromium) {
       try {
+        chromium.setGraphicsMode = false;
         const linuxPath = await chromium.executablePath();
         if (linuxPath && fs.existsSync(linuxPath)) {
           source = "sparticuz";
