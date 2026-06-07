@@ -22,6 +22,11 @@ const CHROME_CANDIDATES = [
 
 const DEBUG_HTML_DIR = path.resolve(__dirname, "../../debug-output");
 
+/** Max time to wait on frontend print URL before server HTML fallback. */
+const URL_PRINT_MAX_MS = 5000;
+const URL_GOTO_TIMEOUT_MS = 2500;
+const URL_PDF_READY_TIMEOUT_MS = 2500;
+
 let cachedBrowserPath = null;
 let puppeteerBrowserPromise = null;
 
@@ -500,43 +505,39 @@ const renderUrlWithCli = async (url) => {
   return fs.readFileSync(pdfPath);
 };
 
-const renderUrlToPdfBufferInner = async (url) => {
+const renderUrlToPdfBufferInner = async (url, browser) => {
+  const page = await browser.newPage();
   try {
-    const browser = await getPuppeteerBrowser();
-    if (browser) {
-      const page = await browser.newPage();
-      try {
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
-        await page.waitForFunction(() => document.body?.dataset?.pdfReady === "true", { timeout: 45000 });
-        await waitForFontsInPage((fn) => page.evaluate(fn));
-        const pdf = await page.pdf({
-          format: "A4",
-          printBackground: true,
-          margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
-        });
-        return Buffer.from(pdf);
-      } finally {
-        await page.close();
-      }
-    }
-  } catch (error) {
-    console.warn("[PDF] puppeteer URL render failed:", error.message);
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: URL_GOTO_TIMEOUT_MS });
+    await page.waitForFunction(() => document.body?.dataset?.pdfReady === "true", {
+      timeout: URL_PDF_READY_TIMEOUT_MS,
+    });
+    await waitForFontsInPage((fn) => page.evaluate(fn));
+    const pdf = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
+    });
+    return Buffer.from(pdf);
+  } finally {
+    await page.close();
   }
-
-  try {
-    const cdpPdf = await withTimeout(renderUrlWithCdp(url), 30000, "CDP URL PDF");
-    return cdpPdf;
-  } catch (error) {
-    console.warn("[PDF] CDP URL render failed:", error.message);
-  }
-
-  const cliPdf = await renderUrlWithCli(url);
-  return cliPdf;
 };
 
 const renderUrlToPdfBuffer = async (url) => {
   console.log(`[PDF] Rendering URL: ${url}`);
-  return withTimeout(renderUrlToPdfBufferInner(url), 90000, "URL PDF render");
+  const browser = await getPuppeteerBrowser();
+  if (!browser) throw new Error("No headless browser found for PDF generation.");
+  try {
+    return await withTimeout(
+      renderUrlToPdfBufferInner(url, browser),
+      URL_PRINT_MAX_MS,
+      "URL PDF render"
+    );
+  } catch (error) {
+    console.warn("[PDF] Frontend print URL render failed:", error.message);
+    throw error;
+  }
 };
 
 const streamHtmlPdf = async (res, filename, html) => {
