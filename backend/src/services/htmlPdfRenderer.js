@@ -144,10 +144,17 @@ const getPuppeteerBrowser = async () => {
   if (!puppeteer) return null;
 
   if (!puppeteerBrowserPromise) {
-    puppeteerBrowserPromise = (async () => {
-      const launchOptions = await buildLaunchOptions(["--allow-file-access-from-files"]);
-      return puppeteer.launch(launchOptions);
-    })();
+    puppeteerBrowserPromise = withTimeout(
+      (async () => {
+        const launchOptions = await buildLaunchOptions(["--allow-file-access-from-files"]);
+        return puppeteer.launch(launchOptions);
+      })(),
+      30000,
+      "Puppeteer launch"
+    ).catch((error) => {
+      puppeteerBrowserPromise = null;
+      throw error;
+    });
   }
 
   return puppeteerBrowserPromise;
@@ -336,30 +343,34 @@ const renderWithCli = async (bundle) => {
   if (!browser) throw new Error("No headless browser found for PDF generation.");
 
   const pdfPath = path.join(bundle.tmpDir, "document.pdf");
-  await new Promise((resolve, reject) => {
-    const args = [
-      "--headless=new",
-      "--disable-gpu",
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--allow-file-access-from-files",
-      "--no-pdf-header-footer",
-      "--run-all-compositor-stages-before-draw",
-      "--virtual-time-budget=30000",
-      `--print-to-pdf=${pdfPath}`,
-      bundle.fileUrl,
-    ];
-    const proc = spawn(browser, args, { stdio: ["ignore", "pipe", "pipe"] });
-    let stderr = "";
-    proc.stderr.on("data", (chunk) => {
-      stderr += String(chunk);
-    });
-    proc.on("error", reject);
-    proc.on("close", (code) => {
-      if (code === 0 && fs.existsSync(pdfPath)) resolve();
-      else reject(new Error(stderr.trim() || `CLI PDF renderer exited with code ${code}`));
-    });
-  });
+  await withTimeout(
+    new Promise((resolve, reject) => {
+      const args = [
+        "--headless=new",
+        "--disable-gpu",
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--allow-file-access-from-files",
+        "--no-pdf-header-footer",
+        "--run-all-compositor-stages-before-draw",
+        "--virtual-time-budget=30000",
+        `--print-to-pdf=${pdfPath}`,
+        bundle.fileUrl,
+      ];
+      const proc = spawn(browser, args, { stdio: ["ignore", "pipe", "pipe"] });
+      let stderr = "";
+      proc.stderr.on("data", (chunk) => {
+        stderr += String(chunk);
+      });
+      proc.on("error", reject);
+      proc.on("close", (code) => {
+        if (code === 0 && fs.existsSync(pdfPath)) resolve();
+        else reject(new Error(stderr.trim() || `CLI PDF renderer exited with code ${code}`));
+      });
+    }),
+    45000,
+    "CLI PDF"
+  );
   return fs.readFileSync(pdfPath);
 };
 
@@ -459,33 +470,37 @@ const renderUrlWithCli = async (url) => {
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "crm-url-pdf-"));
   const pdfPath = path.join(tmpDir, "document.pdf");
-  await new Promise((resolve, reject) => {
-    const args = [
-      "--headless=new",
-      "--disable-gpu",
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--no-pdf-header-footer",
-      "--run-all-compositor-stages-before-draw",
-      "--virtual-time-budget=45000",
-      `--print-to-pdf=${pdfPath}`,
-      url,
-    ];
-    const proc = spawn(browser, args, { stdio: ["ignore", "pipe", "pipe"] });
-    let stderr = "";
-    proc.stderr.on("data", (chunk) => {
-      stderr += String(chunk);
-    });
-    proc.on("error", reject);
-    proc.on("close", (code) => {
-      if (code === 0 && fs.existsSync(pdfPath)) resolve();
-      else reject(new Error(stderr.trim() || `CLI URL PDF renderer exited with code ${code}`));
-    });
-  });
+  await withTimeout(
+    new Promise((resolve, reject) => {
+      const args = [
+        "--headless=new",
+        "--disable-gpu",
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--no-pdf-header-footer",
+        "--run-all-compositor-stages-before-draw",
+        "--virtual-time-budget=45000",
+        `--print-to-pdf=${pdfPath}`,
+        url,
+      ];
+      const proc = spawn(browser, args, { stdio: ["ignore", "pipe", "pipe"] });
+      let stderr = "";
+      proc.stderr.on("data", (chunk) => {
+        stderr += String(chunk);
+      });
+      proc.on("error", reject);
+      proc.on("close", (code) => {
+        if (code === 0 && fs.existsSync(pdfPath)) resolve();
+        else reject(new Error(stderr.trim() || `CLI URL PDF renderer exited with code ${code}`));
+      });
+    }),
+    60000,
+    "CLI URL PDF"
+  );
   return fs.readFileSync(pdfPath);
 };
 
-const renderUrlToPdfBuffer = async (url) => {
+const renderUrlToPdfBufferInner = async (url) => {
   try {
     const browser = await getPuppeteerBrowser();
     if (browser) {
@@ -509,7 +524,7 @@ const renderUrlToPdfBuffer = async (url) => {
   }
 
   try {
-    const cdpPdf = await withTimeout(renderUrlWithCdp(url), 120000, "CDP URL PDF");
+    const cdpPdf = await withTimeout(renderUrlWithCdp(url), 30000, "CDP URL PDF");
     return cdpPdf;
   } catch (error) {
     console.warn("[PDF] CDP URL render failed:", error.message);
@@ -517,6 +532,11 @@ const renderUrlToPdfBuffer = async (url) => {
 
   const cliPdf = await renderUrlWithCli(url);
   return cliPdf;
+};
+
+const renderUrlToPdfBuffer = async (url) => {
+  console.log(`[PDF] Rendering URL: ${url}`);
+  return withTimeout(renderUrlToPdfBufferInner(url), 90000, "URL PDF render");
 };
 
 const streamHtmlPdf = async (res, filename, html) => {
