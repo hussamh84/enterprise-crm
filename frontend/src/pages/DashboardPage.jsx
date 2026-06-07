@@ -319,6 +319,7 @@ export default function DashboardPage() {
   });
 
   const revenueDisplay = formatCurrency(paidInvoicesTotal);
+  const inventoryValueDisplay = formatCurrency(inventoryValue);
   const revenueMeta = lastPaidAt
     ? lastPaidAt.toLocaleString(undefined, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
     : now.toLocaleString(undefined, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -480,8 +481,8 @@ export default function DashboardPage() {
                   data={inventoryDonutData}
                   cx="50%"
                   cy="50%"
-                  innerRadius="42%"
-                  outerRadius="78%"
+                  innerRadius="58%"
+                  outerRadius="76%"
                   paddingAngle={1}
                   dataKey="value"
                   stroke="none"
@@ -493,9 +494,19 @@ export default function DashboardPage() {
                 <Tooltip formatter={(v) => formatCurrency(Number(v))} />
               </PieChart>
             </ResponsiveContainer>
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-2 text-center">
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-3 text-center">
               <p className="text-[10px] font-bold uppercase tracking-wide text-gray-600">Inventory Value</p>
-              <p className="mt-1 text-lg font-bold tabular-nums leading-none text-[#1a252f]">{formatCurrency(inventoryValue)}</p>
+              <p
+                className={`mt-1 max-w-[88%] font-bold tabular-nums text-[#1a252f] ${
+                  inventoryValueDisplay.length > 14
+                    ? "text-xs leading-tight"
+                    : inventoryValueDisplay.length > 11
+                      ? "text-sm leading-tight"
+                      : "text-lg leading-none"
+                }`}
+              >
+                {inventoryValueDisplay}
+              </p>
             </div>
           </div>
         </article>
