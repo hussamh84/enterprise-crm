@@ -1765,6 +1765,76 @@ router.get("/quotations", async (req, res, next) => {
   }
 });
 
+router.get("/quotations/deleted", requireAdmin, async (req, res, next) => {
+  try {
+    const tenantId = getTenantId(req);
+    const docs = await Quotation.find({ tenantId, deletedAt: { $ne: null } })
+      .sort({ deletedAt: -1 })
+      .lean();
+    const clientIds = [...new Set(docs.map((doc) => String(doc.clientId || "")).filter(Boolean))];
+    const clients = clientIds.length
+      ? await Client.find({ tenantId, _id: { $in: clientIds } }).select("_id name").lean()
+      : [];
+    const clientNameById = Object.fromEntries(clients.map((client) => [String(client._id), client.name]));
+    const rows = docs.map((doc) => ({
+      _id: String(doc._id),
+      title: doc.name || "",
+      quotationNo: doc.quotationNo || "",
+      clientName:
+        String(doc.walkInCustomerName || "").trim() ||
+        clientNameById[String(doc.clientId || "")] ||
+        String(doc.customerName || "").trim() ||
+        "",
+      deletedAt: doc.deletedAt,
+      deletedFlagField: "deletedAt",
+    }));
+    res.json(rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/quotations/:id/restore", requireAdmin, async (req, res, next) => {
+  try {
+    const tenantId = getTenantId(req);
+    const doc = await Quotation.findOneAndUpdate(
+      { _id: req.params.id, tenantId, deletedAt: { $ne: null } },
+      {
+        deletedAt: null,
+        updatedBy: req.user?.id,
+        $push: {
+          auditLog: {
+            action: "quotation.restore",
+            by: req.user?.id,
+            note: "Restored soft-deleted quotation",
+          },
+        },
+      },
+      { new: true }
+    );
+    if (!doc) return res.status(404).json({ message: "Soft-deleted quotation not found" });
+
+    await InventoryUsage.updateMany(
+      { tenantId, quotationId: String(doc._id), source: "quotation", deletedAt: { $ne: null } },
+      {
+        deletedAt: null,
+        updatedBy: req.user?.id,
+        $push: {
+          auditLog: {
+            action: "inventory.usage.restore",
+            by: req.user?.id,
+            note: "Restored with quotation",
+          },
+        },
+      }
+    );
+
+    res.json({ message: "Restored", doc });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/quotations/:id", async (req, res, next) => {
   try {
     const tenantId = req.tenantId;
