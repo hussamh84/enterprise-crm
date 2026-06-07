@@ -27,11 +27,70 @@ let puppeteerBrowserPromise = null;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const findBrowser = () => {
-  if (cachedBrowserPath && fs.existsSync(cachedBrowserPath)) return cachedBrowserPath;
-  cachedBrowserPath = CHROME_CANDIDATES.find((candidate) => fs.existsSync(candidate)) || "";
-  return cachedBrowserPath;
+const getPuppeteerModule = () => {
+  try {
+    return require("puppeteer");
+  } catch (error) {
+    try {
+      return require("puppeteer-core");
+    } catch (innerError) {
+      return null;
+    }
+  }
 };
+
+const resolveBrowserExecutable = async () => {
+  if (cachedBrowserPath && fs.existsSync(cachedBrowserPath)) return cachedBrowserPath;
+
+  const envCandidates = [
+    process.env.PUPPETEER_EXECUTABLE_PATH,
+    process.env.CHROME_PATH,
+    process.env.EDGE_PATH,
+  ].filter(Boolean);
+
+  for (const candidate of envCandidates) {
+    if (fs.existsSync(candidate)) {
+      cachedBrowserPath = candidate;
+      return candidate;
+    }
+  }
+
+  const puppeteer = getPuppeteerModule();
+  if (puppeteer?.executablePath) {
+    try {
+      const bundled = puppeteer.executablePath();
+      if (bundled && fs.existsSync(bundled)) {
+        cachedBrowserPath = bundled;
+        return bundled;
+      }
+    } catch (error) {
+      console.warn("[PDF] puppeteer executablePath lookup failed:", error.message);
+    }
+  }
+
+  try {
+    const chromium = require("@sparticuz/chromium");
+    const sparticuzPath = await chromium.executablePath();
+    if (sparticuzPath && fs.existsSync(sparticuzPath)) {
+      cachedBrowserPath = sparticuzPath;
+      return sparticuzPath;
+    }
+  } catch (error) {
+    console.warn("[PDF] @sparticuz/chromium lookup failed:", error.message);
+  }
+
+  const systemPath = CHROME_CANDIDATES.find((candidate) => fs.existsSync(candidate)) || "";
+  cachedBrowserPath = systemPath;
+  return systemPath;
+};
+
+const findBrowser = () => cachedBrowserPath;
+
+const getPuppeteerLaunchOptions = async (extraArgs = []) => ({
+  headless: true,
+  executablePath: await resolveBrowserExecutable(),
+  args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", ...extraArgs],
+});
 
 const prepareHtmlBundle = (html) => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "crm-pdf-"));
@@ -107,10 +166,10 @@ const waitForDevtools = (port, attempts = 40) =>
     tick();
   });
 
-const launchHeadlessBrowser = (port) => {
-  const browser = findBrowser();
+const launchHeadlessBrowser = async (port) => {
+  const browser = await resolveBrowserExecutable();
   if (!browser) {
-    throw new Error("No headless browser found for PDF generation. Install Chrome/Edge or set CHROME_PATH.");
+    throw new Error("No headless browser found for PDF generation.");
   }
   const args = [
     `--remote-debugging-port=${port}`,
@@ -127,24 +186,11 @@ const launchHeadlessBrowser = (port) => {
 };
 
 const renderWithPuppeteer = async (bundle) => {
-  let puppeteer;
-  try {
-    puppeteer = require("puppeteer");
-  } catch (error) {
-    try {
-      puppeteer = require("puppeteer-core");
-    } catch (innerError) {
-      return null;
-    }
-  }
+  const puppeteer = getPuppeteerModule();
+  if (!puppeteer) return null;
 
   if (!puppeteerBrowserPromise) {
-    const launchOptions = {
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--allow-file-access-from-files"],
-    };
-    const executablePath = findBrowser();
-    if (executablePath) launchOptions.executablePath = executablePath;
+    const launchOptions = await getPuppeteerLaunchOptions(["--allow-file-access-from-files"]);
     puppeteerBrowserPromise = puppeteer.launch(launchOptions);
   }
 
@@ -170,7 +216,7 @@ const renderWithCdp = async (bundle) => {
   let cdp = null;
 
   try {
-    browserProc = launchHeadlessBrowser(port);
+    browserProc = await launchHeadlessBrowser(port);
     await waitForDevtools(port);
 
     const targets = await fetchJson(`http://127.0.0.1:${port}/json/list`);
@@ -231,7 +277,7 @@ const renderWithCdp = async (bundle) => {
 };
 
 const renderWithCli = async (bundle) => {
-  const browser = findBrowser();
+  const browser = await resolveBrowserExecutable();
   if (!browser) throw new Error("No headless browser found for PDF generation.");
 
   const pdfPath = path.join(bundle.tmpDir, "document.pdf");
@@ -303,7 +349,7 @@ const renderUrlWithCdp = async (url) => {
   let cdp = null;
 
   try {
-    browserProc = launchHeadlessBrowser(port);
+    browserProc = await launchHeadlessBrowser(port);
     await waitForDevtools(port);
 
     const targets = await fetchJson(`http://127.0.0.1:${port}/json/list`);
@@ -353,7 +399,7 @@ const renderUrlWithCdp = async (url) => {
 };
 
 const renderUrlWithCli = async (url) => {
-  const browser = findBrowser();
+  const browser = await resolveBrowserExecutable();
   if (!browser) throw new Error("No headless browser found for PDF generation.");
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "crm-url-pdf-"));
@@ -385,46 +431,37 @@ const renderUrlWithCli = async (url) => {
 };
 
 const renderUrlToPdfBuffer = async (url) => {
+  const puppeteer = getPuppeteerModule();
+  if (!puppeteer) {
+    throw new Error("No headless browser found for PDF generation.");
+  }
+
   try {
-    let puppeteer;
-    try {
-      puppeteer = require("puppeteer");
-    } catch (error) {
-      try {
-        puppeteer = require("puppeteer-core");
-      } catch (innerError) {
-        puppeteer = null;
+    if (!puppeteerBrowserPromise) {
+      const launchOptions = await getPuppeteerLaunchOptions();
+      if (!launchOptions.executablePath) {
+        throw new Error("No headless browser found for PDF generation.");
       }
+      puppeteerBrowserPromise = puppeteer.launch(launchOptions);
     }
 
-    if (puppeteer) {
-      if (!puppeteerBrowserPromise) {
-        const launchOptions = {
-          headless: true,
-          args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-        };
-        const executablePath = findBrowser();
-        if (executablePath) launchOptions.executablePath = executablePath;
-        puppeteerBrowserPromise = puppeteer.launch(launchOptions);
-      }
-
-      const browser = await puppeteerBrowserPromise;
-      const page = await browser.newPage();
-      try {
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
-        await page.waitForFunction(() => document.body?.dataset?.pdfReady === "true", { timeout: 45000 });
-        await waitForFontsInPage((fn) => page.evaluate(fn));
-        const pdf = await page.pdf({
-          format: "A4",
-          printBackground: true,
-          margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
-        });
-        return Buffer.from(pdf);
-      } finally {
-        await page.close();
-      }
+    const browser = await puppeteerBrowserPromise;
+    const page = await browser.newPage();
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
+      await page.waitForFunction(() => document.body?.dataset?.pdfReady === "true", { timeout: 45000 });
+      await waitForFontsInPage((fn) => page.evaluate(fn));
+      const pdf = await page.pdf({
+        format: "A4",
+        printBackground: true,
+        margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
+      });
+      return Buffer.from(pdf);
+    } finally {
+      await page.close();
     }
   } catch (error) {
+    puppeteerBrowserPromise = null;
     console.warn("[PDF] puppeteer URL render failed:", error.message);
   }
 
@@ -435,8 +472,7 @@ const renderUrlToPdfBuffer = async (url) => {
     console.warn("[PDF] CDP URL render failed:", error.message);
   }
 
-  const cliPdf = await renderUrlWithCli(url);
-  return cliPdf;
+  return renderUrlWithCli(url);
 };
 
 const streamHtmlPdf = async (res, filename, html) => {
@@ -455,6 +491,7 @@ const streamUrlPdf = async (res, filename, url) => {
 
 module.exports = {
   findBrowser,
+  resolveBrowserExecutable,
   renderHtmlToPdfBuffer,
   renderUrlToPdfBuffer,
   streamHtmlPdf,
