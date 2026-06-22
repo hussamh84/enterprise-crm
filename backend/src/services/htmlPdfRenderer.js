@@ -219,7 +219,7 @@ const waitForFontsInPage = async (evaluate) => {
         setTimeout(() => {
           observer.disconnect();
           resolve(true);
-        }, 8000);
+        }, 500);
       })
   );
 };
@@ -264,7 +264,7 @@ const renderWithPuppeteer = async (bundle) => {
 
   const page = await browser.newPage();
   try {
-    await page.goto(bundle.fileUrl, { waitUntil: "networkidle0", timeout: 45000 });
+    await page.goto(bundle.fileUrl, { waitUntil: "load", timeout: 45000 });
     await waitForFontsInPage((fn) => page.evaluate(fn));
     const pdf = await page.pdf({
       format: "A4",
@@ -321,7 +321,7 @@ const renderWithCdp = async (bundle) => {
     });
     await cdp.send("Runtime.evaluate", {
       expression:
-        "new Promise((resolve)=>{if(document.body?.dataset?.fontsReady==='true')return resolve(true);const obs=new MutationObserver(()=>{if(document.body?.dataset?.fontsReady==='true'){obs.disconnect();resolve(true);}});obs.observe(document.body,{attributes:true,attributeFilter:['data-fonts-ready']});setTimeout(()=>{obs.disconnect();resolve(true);},8000);})",
+        "new Promise((resolve)=>{if(document.body?.dataset?.fontsReady==='true')return resolve(true);const obs=new MutationObserver(()=>{if(document.body?.dataset?.fontsReady==='true'){obs.disconnect();resolve(true);}});obs.observe(document.body,{attributes:true,attributeFilter:['data-fonts-ready']});setTimeout(()=>{obs.disconnect();resolve(true);},500);})",
       awaitPromise: true,
     });
 
