@@ -8,7 +8,7 @@ export const DEFAULT_PAYMENT_TERM_LINES = [
 ];
 
 export const DEFAULT_QUOTATION_NOTES = [
-  "This quotation is valid for 15 days only.",
+  "This quotation is valid for 1 day only.",
   ...DEFAULT_PAYMENT_TERM_LINES,
   "Warranty is 1 year.",
 ];

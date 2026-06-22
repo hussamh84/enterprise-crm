@@ -19,7 +19,7 @@ const DEFAULT_PAYMENT_NOTE_LINES = [
   "30% is due upon project completion.",
 ];
 const DEFAULT_QUOTATION_NOTE_LINES = [
-  "This quotation is valid for 15 days only.",
+  "This quotation is valid for 1 day only.",
   ...DEFAULT_PAYMENT_NOTE_LINES,
   "Warranty is 1 year.",
 ];
