@@ -253,6 +253,7 @@ const buildDocumentHtml = ({
     .party-block p { margin: 0 0 4px; color: #334155; }
     .items-table {
       width: 100%;
+      table-layout: fixed;
       border-collapse: collapse;
       margin-top: 8px;
       font-size: 9pt;
@@ -287,6 +288,8 @@ const buildDocumentHtml = ({
     .col-desc { width: 48%; }
     .col-qty { width: 12%; text-align: center; }
     .col-money { width: 20%; text-align: right; white-space: nowrap; }
+    .items-table th.col-qty { text-align: center; }
+    .items-table th.col-money { text-align: right; }
     .arabic-desc, .arabic-text {
       direction: rtl;
       unicode-bidi: isolate;
@@ -321,7 +324,15 @@ const buildDocumentHtml = ({
     .notes h4 { margin: 0 0 8px; font-size: 10pt; color: #374151; }
     .notes li { margin: 0 0 4px; color: #555; font-size: 9pt; }
     .footer-lines { margin-top: 12px; color: #0f172a; font-size: 9pt; }
-    .thank-you { margin-top: 16px; color: #6b7c93; font-size: 9pt; }
+    .thank-you {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      margin: 0;
+      color: #6b7c93;
+      font-size: 9pt;
+      text-align: right;
+    }
   </style>
 </head>
 <body>
