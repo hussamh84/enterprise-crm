@@ -264,6 +264,9 @@ const renderWithPuppeteer = async (bundle) => {
 
   const page = await browser.newPage();
   try {
+    // The browser instance is a long-lived singleton reused across every PDF request; disable
+    // its HTTP cache so a freshly-edited quotation/invoice can never be masked by a prior render.
+    await page.setCacheEnabled(false);
     await page.goto(bundle.fileUrl, { waitUntil: "load", timeout: 45000 });
     await waitForFontsInPage((fn) => page.evaluate(fn));
     const pdf = await page.pdf({
@@ -508,6 +511,10 @@ const renderUrlWithCli = async (url) => {
 const renderUrlToPdfBufferInner = async (url, browser) => {
   const page = await browser.newPage();
   try {
+    // Same reasoning as renderWithPuppeteer: this page loads the frontend print route, which
+    // fetches the quotation/invoice over the network. The browser instance is reused across
+    // requests, so a cached API response here would silently serve a stale, pre-edit PDF.
+    await page.setCacheEnabled(false);
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: URL_GOTO_TIMEOUT_MS });
     await page.waitForFunction(() => document.body?.dataset?.pdfReady === "true", {
       timeout: URL_PDF_READY_TIMEOUT_MS,
@@ -540,10 +547,18 @@ const renderUrlToPdfBuffer = async (url) => {
   }
 };
 
+/** Every PDF is generated fresh from the database on each request; never let a browser or proxy cache it. */
+const setNoStoreHeaders = (res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+};
+
 const streamHtmlPdf = async (res, filename, html) => {
   const buffer = await renderHtmlToPdfBuffer(html);
   res.setHeader("Content-Type", "application/pdf; charset=utf-8");
   res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+  setNoStoreHeaders(res);
   res.end(buffer);
 };
 
@@ -551,6 +566,7 @@ const streamUrlPdf = async (res, filename, url) => {
   const buffer = await renderUrlToPdfBuffer(url);
   res.setHeader("Content-Type", "application/pdf; charset=utf-8");
   res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+  setNoStoreHeaders(res);
   res.end(buffer);
 };
 

@@ -1862,6 +1862,7 @@ router.get("/quotations/:id", async (req, res, next) => {
       quotation.projectId ? Project.findOne({ _id: quotation.projectId, tenantId, deletedAt: null }) : null,
     ]);
     const walkName = String(quotation.walkInCustomerName || "").trim();
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
     res.json({
       quotation,
       client,
@@ -2595,6 +2596,7 @@ router.get("/invoices/:id", async (req, res, next) => {
     })
       .sort({ createdAt: -1 })
       .lean();
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
     res.json({
       ...invoice,
       quotationNo: quotation?.quotationNo || "",
