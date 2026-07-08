@@ -287,10 +287,12 @@ const buildDocumentHtml = ({
     .col-desc { width: 48%; }
     .col-qty { width: 12%; text-align: center; }
     .col-money { width: 20%; text-align: right; white-space: nowrap; }
-    .desc-cell, .arabic-desc, .arabic-text {
+    .arabic-desc, .arabic-text {
       direction: rtl;
-      text-align: right;
       unicode-bidi: isolate;
+    }
+    .desc-cell, .arabic-text {
+      text-align: left;
     }
     .totals {
       width: 220px;
