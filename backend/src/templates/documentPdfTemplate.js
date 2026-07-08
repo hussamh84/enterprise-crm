@@ -133,6 +133,7 @@ const buildDocumentHtml = ({
   docNo,
   issueDate,
   badgeLabel,
+  showBadge = true,
   branding,
   record,
   project,
@@ -210,12 +211,13 @@ const buildDocumentHtml = ({
     }
     .brand { display: flex; gap: 16px; align-items: flex-start; min-width: 0; }
     .brand img { width: 110px; height: auto; object-fit: contain; }
-    .brand-meta { color: #64748b; font-size: 9pt; }
-    .brand-meta strong { display: block; color: #0f172a; font-size: 10pt; margin-bottom: 4px; }
+    .brand-meta { color: #64748b; font-size: 9pt; line-height: 1.3; }
+    .brand-meta strong { display: block; color: #0f172a; font-size: 10pt; line-height: 1.1; margin: 0 0 4px; }
     .doc-meta { text-align: right; min-width: 220px; }
     .doc-meta h1 {
       margin: 0;
       font-size: 24pt;
+      line-height: 1;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: #0f172a;
@@ -356,7 +358,7 @@ const buildDocumentHtml = ({
         </div>
       </div>
 
-      <div class="badge ${badgeLabel === "PAID" ? "paid" : badgeLabel === "UNPAID" ? "unpaid" : ""}">${escapeHtml(badgeLabel)}</div>
+      ${showBadge ? `<div class="badge ${badgeLabel === "PAID" ? "paid" : badgeLabel === "UNPAID" ? "unpaid" : ""}">${escapeHtml(badgeLabel)}</div>` : ""}
 
       <div class="party-block">
         <div>
@@ -408,6 +410,7 @@ const buildQuotationHtml = ({ branding, record, project, items, sections, totals
     docNo: String(record?.quotationNo || "").trim() || "—",
     issueDate: new Date(record?.createdAt || Date.now()).toLocaleDateString(),
     badgeLabel: "QUOTATION",
+    showBadge: false,
     branding,
     record,
     project,
