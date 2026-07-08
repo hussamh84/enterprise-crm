@@ -6,7 +6,7 @@ import { openPdf } from "../utils/pdf";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 import { formatProjectTypeDisplay } from "../utils/projectTypeDisplay";
 import { formatQuotationStatusLabel, normalizeQuotationStatus } from "../utils/quotationStatus";
-import { DEFAULT_QUOTATION_NOTES } from "../utils/defaultDocNotes";
+import { buildQuotationNoteLines } from "../utils/defaultDocNotes";
 import ArabicText from "../components/ArabicText";
 import { arabicTextProps } from "../utils/arabicText";
 
@@ -317,8 +317,8 @@ export default function QuotationViewPage() {
               <div className="notes">
                 <h4>Notes</h4>
                 <ul>
-                  {DEFAULT_QUOTATION_NOTES.map((line) => (
-                    <li key={line}>{line}</li>
+                  {buildQuotationNoteLines(quotation).map((line, index) => (
+                    <li key={`${index}-${line}`}>{line}</li>
                   ))}
                 </ul>
               </div>

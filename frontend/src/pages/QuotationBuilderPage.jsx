@@ -29,6 +29,12 @@ const PROJECT_TYPE_OPTIONS = [
   { value: "Network", label: "Network" },
 ];
 
+const VALIDITY_OPTIONS = ["1 day", "7 days", "15 days", "30 days", "45 days"];
+const ADVANCE_PERCENT_OPTIONS = [0, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+const DEFAULT_VALIDITY = "1 day";
+const DEFAULT_ADVANCE_PERCENT = 70;
+const DEFAULT_WARRANTY = "1 Year";
+
 const BLANK_ITEM = {
   productId: "",
   description: "",
@@ -74,6 +80,10 @@ export default function QuotationBuilderPage() {
   const [sections, setSections] = useState([]);
   const [projectType, setProjectType] = useState("");
   const [cctvType, setCctvType] = useState("");
+  const [quotationValidity, setQuotationValidity] = useState(DEFAULT_VALIDITY);
+  const [advancePaymentPercent, setAdvancePaymentPercent] = useState(DEFAULT_ADVANCE_PERCENT);
+  const [warranty, setWarranty] = useState(DEFAULT_WARRANTY);
+  const [additionalNotes, setAdditionalNotes] = useState("");
   const [itemSearch, setItemSearch] = useState({});
   const [itemSuggestions, setItemSuggestions] = useState({});
   const [saveError, setSaveError] = useState(null);
@@ -153,6 +163,14 @@ export default function QuotationBuilderPage() {
       setProjectType("Network");
       setCctvType("");
     }
+    setQuotationValidity(String(q.quotationValidity || "").trim() || DEFAULT_VALIDITY);
+    setAdvancePaymentPercent(
+      q.advancePaymentPercent === null || q.advancePaymentPercent === undefined || q.advancePaymentPercent === ""
+        ? DEFAULT_ADVANCE_PERCENT
+        : Number(q.advancePaymentPercent)
+    );
+    setWarranty(String(q.warranty || "").trim() || DEFAULT_WARRANTY);
+    setAdditionalNotes(String(q.additionalNotes || ""));
   }, [isEdit, editBundle]);
 
   useEffect(() => () => {
@@ -295,6 +313,10 @@ export default function QuotationBuilderPage() {
         sections: sections.map((s) => ({ title: s.title.trim(), notes: (s.notes || "").trim() })),
         discount: { type: discountType, value: toNumber(discountValue) },
         tax: toNumber(tax),
+        quotationValidity,
+        advancePaymentPercent: toNumber(advancePaymentPercent),
+        warranty: warranty.trim(),
+        additionalNotes: additionalNotes.trim(),
         ...(isEdit ? { status: quoteStatus } : {}),
       };
       try {
@@ -813,6 +835,67 @@ export default function QuotationBuilderPage() {
               </div>
             </>
           )}
+        </div>
+
+        {/* Terms & Notes */}
+        <div className="space-y-3 rounded-xl border border-slate-200 p-4">
+          <p className="text-sm font-semibold text-slate-700">Terms &amp; Notes</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <label htmlFor="quote-validity" className="block text-xs font-medium mb-1.5 text-slate-600">Quotation Validity</label>
+              <select
+                id="quote-validity"
+                className="w-full h-12 border rounded-xl px-4"
+                value={quotationValidity}
+                onChange={(e) => setQuotationValidity(e.target.value)}
+              >
+                {VALIDITY_OPTIONS.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="quote-advance" className="block text-xs font-medium mb-1.5 text-slate-600">Advance Payment</label>
+              <select
+                id="quote-advance"
+                className="w-full h-12 border rounded-xl px-4"
+                value={advancePaymentPercent}
+                onChange={(e) => setAdvancePaymentPercent(Number(e.target.value))}
+              >
+                {ADVANCE_PERCENT_OPTIONS.map((option) => (
+                  <option key={option} value={option}>{option}%</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5 text-slate-600">Remaining Payment</label>
+              <div className="w-full h-12 border rounded-xl px-4 flex items-center bg-slate-50 text-slate-600">
+                {Math.max(0, 100 - toNumber(advancePaymentPercent))}% (calculated automatically)
+              </div>
+            </div>
+            <div>
+              <label htmlFor="quote-warranty" className="block text-xs font-medium mb-1.5 text-slate-600">Warranty</label>
+              <input
+                id="quote-warranty"
+                type="text"
+                className="w-full h-12 border rounded-xl px-4"
+                value={warranty}
+                onChange={(e) => setWarranty(e.target.value)}
+                placeholder="e.g. No Warranty, 6 Months, 1 Year, 2 Years"
+              />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="quote-additional-notes" className="block text-xs font-medium mb-1.5 text-slate-600">Additional Notes</label>
+            <textarea
+              id="quote-additional-notes"
+              className="w-full border rounded-xl px-4 py-3"
+              rows={3}
+              value={additionalNotes}
+              onChange={(e) => setAdditionalNotes(e.target.value)}
+              placeholder="e.g. Delivery within 7 days. Installation included. Transportation excluded."
+            />
+          </div>
         </div>
 
         {/* Status (edit only) */}

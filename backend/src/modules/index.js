@@ -134,6 +134,11 @@ const Quotation = makeEntityModel("Quotation", {
   grandTotal: { type: Number, default: 0 },
   projectType: { type: String, trim: true, default: "" },
   cctvType: { type: String, trim: true, default: "" },
+  /** Per-quotation notes/terms. Empty/null means "not set" so old quotations fall back to defaults at read time. */
+  quotationValidity: { type: String, trim: true, default: "" },
+  advancePaymentPercent: { type: Number, default: null, min: 0, max: 100 },
+  warranty: { type: String, trim: true, default: "" },
+  additionalNotes: { type: String, trim: true, default: "" },
 });
 const Project = makeEntityModel("Project", {
   clientId: { type: String, required: true },
@@ -954,6 +959,18 @@ const syncProjectFinancialsForProject = async ({ tenantId, projectId, userId }) 
   );
   const completion = await syncProjectCompletionFromInvoices({ tenantId, projectId, userId });
   return { ...snapshot, ...completion };
+};
+
+/** Editable per-quotation notes/terms. Blank/absent stays blank so old-quotation defaults apply at read time. */
+const pickQuotationNotesFields = (body = {}) => {
+  const quotationValidity = typeof body?.quotationValidity === "string" ? body.quotationValidity.trim() : "";
+  const warranty = typeof body?.warranty === "string" ? body.warranty.trim() : "";
+  const additionalNotes = typeof body?.additionalNotes === "string" ? body.additionalNotes.trim() : "";
+  const rawAdvance = body?.advancePaymentPercent;
+  let advancePaymentPercent = rawAdvance === "" || rawAdvance === null || rawAdvance === undefined ? null : Number(rawAdvance);
+  if (advancePaymentPercent != null && !Number.isFinite(advancePaymentPercent)) advancePaymentPercent = null;
+  if (advancePaymentPercent != null) advancePaymentPercent = Math.min(100, Math.max(0, advancePaymentPercent));
+  return { quotationValidity, warranty, additionalNotes, advancePaymentPercent };
 };
 
 const pickQuotationProjectTypeFields = (body = {}) => {
@@ -1952,6 +1969,7 @@ router.post("/quotations", async (req, res, next) => {
       source,
       ...calculated,
       ...typeFields,
+      ...pickQuotationNotesFields(req.body),
       status: "draft",
       tenantId,
       createdBy: req.user?.id,
@@ -2074,6 +2092,7 @@ router.put("/quotations/:id", async (req, res, next) => {
         source,
         ...calculated,
         ...typeFields,
+        ...pickQuotationNotesFields(req.body),
         status: nextStatus,
         updatedBy: req.user?.id,
         $push: { auditLog: { action: "quotation.update", by: req.user?.id, note: "Updated quotation" } },

@@ -6,7 +6,7 @@ import { formatCurrency } from "../utils/format";
 import EnterpriseDocHeader from "../components/EnterpriseDocHeader";
 import PdfArabicText from "../components/PdfArabicText";
 import { formatProjectTypeDisplay } from "../utils/projectTypeDisplay";
-import { DEFAULT_QUOTATION_NOTES } from "../utils/defaultDocNotes";
+import { buildQuotationNoteLines } from "../utils/defaultDocNotes";
 import { usePrintAuthToken } from "../hooks/usePrintAuthToken";
 import { hasArabic } from "../utils/arabicText";
 
@@ -189,8 +189,8 @@ export default function QuotationPrintPage() {
           <div className="notes">
             <h4>Notes</h4>
             <ul>
-              {DEFAULT_QUOTATION_NOTES.map((line) => (
-                <li key={line}>
+              {buildQuotationNoteLines(quotation).map((line, index) => (
+                <li key={`${index}-${line}`}>
                   <PdfArabicText>{line}</PdfArabicText>
                 </li>
               ))}
