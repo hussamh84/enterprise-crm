@@ -209,9 +209,9 @@ const buildDocumentHtml = ({
       border-bottom: 1px solid #e2e8f0;
       margin-bottom: 16px;
     }
-    .brand { display: flex; gap: 16px; align-items: flex-start; min-width: 0; }
+    .brand { display: flex; align-items: flex-start; min-width: 0; }
     .brand img { width: 110px; height: auto; object-fit: contain; }
-    .brand-meta { color: #64748b; font-size: 9pt; line-height: 1.3; }
+    .brand-meta { color: #64748b; font-size: 9pt; line-height: 1.3; margin-top: 10px; }
     .brand-meta strong { display: block; color: #0f172a; font-size: 10pt; line-height: 1.1; margin: 0 0 4px; }
     .doc-meta { text-align: right; min-width: 220px; }
     .doc-meta h1 {
@@ -344,15 +344,15 @@ const buildDocumentHtml = ({
       <div class="header">
         <div class="brand">
           ${logoDataUri ? `<img src="${logoDataUri}" alt="" />` : ""}
+        </div>
+        <div class="doc-meta">
+          <h1>${escapeHtml(title)}</h1>
           <div class="brand-meta">
             <strong>${escapeHtml(branding?.companyName || "")}</strong>
             ${branding?.companyAddress ? `<div>${escapeHtml(branding.companyAddress)}</div>` : ""}
             ${branding?.companyPhone ? `<div>${escapeHtml(branding.companyPhone)}</div>` : ""}
             ${branding?.companyEmail ? `<div>${escapeHtml(branding.companyEmail)}</div>` : ""}
           </div>
-        </div>
-        <div class="doc-meta">
-          <h1>${escapeHtml(title)}</h1>
           <p>${escapeHtml(docNoLabel)} ${escapeHtml(docNo)}</p>
           <p>Issue Date: ${escapeHtml(issueDate)}</p>
         </div>
